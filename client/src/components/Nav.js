@@ -27,13 +27,9 @@ export default function Nav() {
             {Auth.loggedIn() && (
                 <>
                     <ul className="navLinks">
-                        {userName && (
-                            <li>
-                                <span style={{ color: 'var(--color-gold)', fontSize: '15px' }}>
-                                    {userName}
-                                </span>
-                            </li>
-                        )}
+                        <li>
+                            <Link to="/letter" onClick={closeMenu}>Letter</Link>
+                        </li>
                         <li>
                             <button onClick={handleLogout}>Sign Out</button>
                         </li>
@@ -44,11 +40,7 @@ export default function Nav() {
                     </div>
 
                     <div className={`navMobileMenu ${menuOpen ? 'open' : ''}`}>
-                        {userName && (
-                            <span style={{ color: 'var(--color-gold)', fontSize: '16px', paddingBottom: '8px' }}>
-                                {userName}
-                            </span>
-                        )}
+                        <Link to="/letter" onClick={closeMenu}>Letter</Link>
                         <button onClick={() => { handleLogout(); closeMenu(); }}>
                             Sign Out
                         </button>

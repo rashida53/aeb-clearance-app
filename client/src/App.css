@@ -88,7 +88,7 @@ label {
 .navLinks button {
   font-family: var(--font-body);
   font-size: 16px;
-  color: var(--color-white);
+  color: var(--color-gold);
   text-decoration: none;
   background: none;
   border: none;
@@ -100,7 +100,7 @@ label {
 
 .navLinks a:hover,
 .navLinks button:hover {
-  color: var(--color-gold);
+  color: #4a90d9;
 }
 
 /* Mobile nav */
@@ -468,6 +468,192 @@ label {
 .modalCard h3 {
   color: var(--color-navy);
   margin-bottom: 20px;
+}
+
+/* ── Letter page ── */
+.letterHeader {
+  margin-bottom: 28px;
+  max-width: 560px;
+  margin-left: auto;
+  margin-right: auto;
+  text-align: center;
+}
+
+.letterForm {
+  background-color: var(--color-white);
+  border-radius: 12px;
+  padding: 32px;
+  max-width: 560px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  margin: 0 auto;
+}
+
+.letterStepIndicator {
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: bold;
+  color: var(--color-gold);
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  margin-bottom: 20px;
+}
+
+.letterStep {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.letterQuestion {
+  color: var(--color-gold);
+  margin-bottom: 4px;
+  text-align: center;
+}
+
+.letterOptions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.letterOptionBtn {
+  width: 100%;
+  padding: 14px 20px;
+  background-color: var(--color-light-gray);
+  color: var(--color-navy);
+  border: 2px solid transparent;
+  border-radius: 8px;
+  font-family: var(--font-body);
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  text-align: left;
+  letter-spacing: 0.5px;
+  transition: background-color var(--transition-standard), border-color var(--transition-standard), color var(--transition-standard);
+  min-height: 44px;
+}
+
+.letterOptionBtn:hover {
+  background-color: var(--color-navy);
+  color: var(--color-gold);
+  border-color: var(--color-navy);
+}
+
+.letterGenerateBtn {
+  display: inline-block;
+  width: auto;
+  padding: 12px 32px;
+  background-color: var(--color-navy);
+  color: var(--color-gold);
+  border: none;
+  border-radius: 6px;
+  font-family: var(--font-body);
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  letter-spacing: 1px;
+  text-decoration: none;
+  text-align: center;
+  transition: background-color var(--transition-standard), color var(--transition-standard);
+  min-height: 44px;
+  align-self: center;
+}
+
+.letterGenerateBtn:hover {
+  background-color: var(--color-gold);
+  color: var(--color-navy);
+}
+
+.letterCalendarNote {
+  font-family: var(--font-heading);
+  font-size: 16px;
+  font-weight: bold;
+  color: var(--color-navy);
+  margin-bottom: 10px;
+  line-height: 1.4;
+  text-align: center;
+}
+
+.letterCalendarLink {
+  color: var(--color-gold);
+  text-decoration: underline;
+  transition: color var(--transition-standard);
+}
+
+.letterCalendarLink:hover {
+  color: var(--color-navy);
+}
+
+.letterDateInput {
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-family: var(--font-body);
+  font-size: 16px;
+  transition: border-color var(--transition-standard);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.letterDateInput:focus {
+  outline: none;
+  border-color: var(--color-gold);
+}
+
+.letterSuccessMsg {
+  background-color: #eafaf1;
+  border: 1px solid #a9dfbf;
+  border-radius: 6px;
+  padding: 10px 12px;
+  font-size: 14px;
+  color: #1e8449;
+  text-align: center;
+}
+
+.letterBackBtn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-size: 18px;
+  font-weight: bold;
+  color: #888;
+  padding: 0;
+  text-align: center;
+  align-self: center;
+  transition: color var(--transition-standard);
+  min-height: 44px;
+}
+
+.letterBackBtn:hover {
+  color: var(--color-navy);
+}
+
+.letterBreadcrumb {
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: #666;
+  background-color: var(--color-light-gray);
+  padding: 10px 14px;
+  border-radius: 6px;
+  margin-bottom: 4px;
+}
+
+.letterTextarea {
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-family: var(--font-body);
+  font-size: 16px;
+  resize: vertical;
+  transition: border-color var(--transition-standard);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.letterTextarea:focus {
+  outline: none;
+  border-color: var(--color-gold);
 }
 
 /* ── Responsive ── */

@@ -40,12 +40,14 @@ type QBOpen {
 type Query {
     me: LoggedInUser
     getMyOpenBalances(hofIts: String!): [QBOpen]
+    getMyQbOpens(userId: ID!): [QBOpen]
 }
 
 type Mutation {
     login(email: String!, password: String!): Auth
     addMember(email: String!, password: String!, fullName: String!, its: String!, hofIts: String!): Auth
     resetPassword(password: String!, its: String!, hofIts: String!): Member
+    generateLetter(hofIts: String!, hofName: String!, reason: String!, description: String!): Boolean
 }
 `;
 

@@ -13,6 +13,7 @@ import './App.css';
 import Login from './pages/user/components/Login';
 import Reset from './pages/user/components/Reset';
 import OpenBalances from './pages/openBalances/OpenBalances';
+import Letter from './pages/letter/Letter';
 
 const httpLink = createHttpLink({
   uri: '/graphql',
@@ -45,6 +46,14 @@ function App() {
             element={
               <PrivateRoute>
                 <OpenBalances />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/letter"
+            element={
+              <PrivateRoute>
+                <Letter />
               </PrivateRoute>
             }
           />

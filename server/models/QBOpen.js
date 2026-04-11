@@ -5,7 +5,9 @@ const qbOpenSchema = new Schema(
     {
         hofIts: {
             type: String,
-            required: true,
+        },
+        its: {
+            type: String,
         },
         user: {
             type: Schema.Types.ObjectId,
