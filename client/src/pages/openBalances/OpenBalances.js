@@ -94,7 +94,7 @@ const OpenBalances = () => {
 
                 <div style={{ marginTop: '32px', textAlign: 'center' }}>
                     <a
-                        href="https://www.billandpay.com/go/aeb"
+                        href="https://www.billandpay.com/web/login.php?m=17357"
                         target="_blank"
                         rel="noopener noreferrer"
                         className="btnAdaa"
