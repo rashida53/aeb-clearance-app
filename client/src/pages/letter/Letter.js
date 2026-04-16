@@ -241,7 +241,7 @@ export default function Letter() {
                                             openBalances={openBalances}
                                         />
                                     }
-                                    fileName={`clearance-letter-${hofIts || 'draft'}.pdf`}
+                                    fileName={`Clearance-${hofIts || 'draft'}.pdf`}
                                     className="letterGenerateBtn"
                                     onClick={handleGenerate}
                                 >

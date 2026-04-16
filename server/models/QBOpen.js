@@ -19,6 +19,9 @@ const qbOpenSchema = new Schema(
             required: true,
             unique: true,
         },
+        amount: {
+            type: Number,
+        },
         balance: {
             type: Number,
             required: true,

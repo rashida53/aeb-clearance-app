@@ -14,6 +14,8 @@ import Login from './pages/user/components/Login';
 import Reset from './pages/user/components/Reset';
 import OpenBalances from './pages/openBalances/OpenBalances';
 import Letter from './pages/letter/Letter';
+import Wajebaat from './pages/wajebaat/Wajebaat';
+import Admin from './pages/admin/Admin';
 
 const httpLink = createHttpLink({
   uri: '/graphql',
@@ -54,6 +56,22 @@ function App() {
             element={
               <PrivateRoute>
                 <Letter />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/wajebaat"
+            element={
+              <PrivateRoute>
+                <Wajebaat />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/admin"
+            element={
+              <PrivateRoute>
+                <Admin />
               </PrivateRoute>
             }
           />

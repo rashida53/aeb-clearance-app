@@ -32,6 +32,7 @@ type QBOpen {
     _id: ID
     hofIts: String
     qb_id: String
+    amount: Float
     balance: Float
     due: String
     customer: String

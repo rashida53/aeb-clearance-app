@@ -18,11 +18,11 @@ const BalanceCard = ({ balance }) => (
         <div className="customer">{balance.customer || 'Unknown'}</div>
         <div className="balanceMeta">
             <div className="metaRow">
-                <span className="metaLabel">Invoice ID</span>
+                <span className="metaLabel">Pledge</span>
                 <span className="metaValue">{balance.qb_id}</span>
             </div>
             <div className="metaRow">
-                <span className="metaLabel">Due Date</span>
+                <span className="metaLabel">Due</span>
                 <span className="metaValue">{formatDueDate(balance.due)}</span>
             </div>
         </div>

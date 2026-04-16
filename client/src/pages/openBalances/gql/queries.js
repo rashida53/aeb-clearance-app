@@ -5,6 +5,7 @@ export const GET_MY_QB_OPENS = gql`
         getMyQbOpens(userId: $userId) {
             _id
             qb_id
+            amount
             balance
         }
     }
@@ -15,6 +16,7 @@ export const GET_MY_OPEN_BALANCES = gql`
         getMyOpenBalances(hofIts: $hofIts) {
             _id
             qb_id
+            amount
             balance
             customer
             due

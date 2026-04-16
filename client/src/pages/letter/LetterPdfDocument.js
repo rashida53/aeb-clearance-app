@@ -132,7 +132,7 @@ const styles = StyleSheet.create({
         letterSpacing: 3,
     },
     statusDuesPending: {
-        fontSize: 44,
+        fontSize: 31,
         fontFamily: 'Helvetica-Bold',
         color: NAVY,
         letterSpacing: 3,
@@ -141,63 +141,62 @@ const styles = StyleSheet.create({
     // Balances table
     tableContainer: {
         marginTop: 8,
-        width: '100%',
     },
     tableHeaderRow: {
         flexDirection: 'row',
         backgroundColor: NAVY,
-        padding: 8,
     },
     tableRow: {
         flexDirection: 'row',
         borderBottomWidth: 1,
         borderBottomColor: '#eeeeee',
-        padding: 8,
         backgroundColor: '#f9f9f9',
+    },
+    tableRowDue: {
+        flexDirection: 'row',
+        borderBottomWidth: 1,
+        borderBottomColor: '#c04040',
+        backgroundColor: '#d15252',
     },
     tableTotalRow: {
         flexDirection: 'row',
-        padding: 8,
         backgroundColor: '#f0f0f0',
         borderTopWidth: 2,
         borderTopColor: NAVY,
     },
-    tableCellLeft: {
-        flex: 1,
-        fontSize: 11,
-        color: '#333333',
+    tableCol: {
+        width: '33.33%',
+        padding: 8,
+        textAlign: 'center',
     },
-    tableCellRight: {
-        width: 100,
-        fontSize: 11,
-        color: '#333333',
-        textAlign: 'right',
-    },
-    tableHeaderCellLeft: {
-        flex: 1,
+    tableHeaderText: {
         fontSize: 10,
         fontFamily: 'Helvetica-Bold',
         color: GOLD,
         textTransform: 'uppercase',
         letterSpacing: 0.5,
+        textAlign: 'center',
     },
-    tableHeaderCellRight: {
-        width: 100,
-        fontSize: 10,
-        fontFamily: 'Helvetica-Bold',
-        color: GOLD,
-        textTransform: 'uppercase',
-        letterSpacing: 0.5,
-        textAlign: 'right',
+    tableCellText: {
+        fontSize: 11,
+        color: '#333333',
+        textAlign: 'center',
+    },
+    tableCellTextDue: {
+        fontSize: 11,
+        color: '#ffffff',
+        textAlign: 'center',
     },
     tableTotalLabel: {
-        flex: 1,
+        width: '33.33%',
+        padding: 8,
         fontSize: 12,
         fontFamily: 'Helvetica-Bold',
         color: NAVY,
     },
     tableTotalValue: {
-        width: 100,
+        width: '66.67%',
+        padding: 8,
         fontSize: 12,
         fontFamily: 'Helvetica-Bold',
         color: NAVY,
@@ -264,22 +263,28 @@ const LetterPdfDocument = ({ hofIts, hofName, reason, description, date, showLaa
                     {clearStatus === 'CLEAR' ? (
                         <Text style={styles.statusClear}>CLEAR</Text>
                     ) : (
-                        <Text style={styles.statusDuesPending}>DUES PENDING</Text>
+                        <Text style={styles.statusDuesPending}>PENDING</Text>
                     )}
                 </View>
 
                 {openBalances.length > 0 && (
                     <View style={styles.tableContainer}>
                         <View style={styles.tableHeaderRow}>
-                            <Text style={styles.tableHeaderCellLeft}>Invoice</Text>
-                            <Text style={styles.tableHeaderCellRight}>Amount</Text>
+                            <Text style={[styles.tableCol, styles.tableHeaderText]}>Pledge</Text>
+                            <Text style={[styles.tableCol, styles.tableHeaderText]}>Amount</Text>
+                            <Text style={[styles.tableCol, styles.tableHeaderText]}>Balance</Text>
                         </View>
-                        {openBalances.map((b, i) => (
-                            <View key={i} style={styles.tableRow}>
-                                <Text style={styles.tableCellLeft}>{b.qb_id}</Text>
-                                <Text style={styles.tableCellRight}>{formatCurrency(b.balance)}</Text>
-                            </View>
-                        ))}
+                        {openBalances.map((b, i) => {
+                            const isDue = b.balance === b.amount;
+                            const cellStyle = isDue ? styles.tableCellTextDue : styles.tableCellText;
+                            return (
+                                <View key={i} style={isDue ? styles.tableRowDue : styles.tableRow}>
+                                    <Text style={[styles.tableCol, cellStyle]}>{b.qb_id}</Text>
+                                    <Text style={[styles.tableCol, cellStyle]}>{b.amount != null ? formatCurrency(b.amount) : '—'}</Text>
+                                    <Text style={[styles.tableCol, cellStyle]}>{formatCurrency(b.balance)}</Text>
+                                </View>
+                            );
+                        })}
                         <View style={styles.tableTotalRow}>
                             <Text style={styles.tableTotalLabel}>Total</Text>
                             <Text style={styles.tableTotalValue}>{formatCurrency(total)}</Text>

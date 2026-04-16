@@ -31,6 +31,12 @@ export default function Nav() {
                             <Link to="/letter" onClick={closeMenu}>Letter</Link>
                         </li>
                         <li>
+                            <Link to="/wajebaat" onClick={closeMenu}>Wajebaat</Link>
+                        </li>
+                        <li>
+                            <Link to="/admin" onClick={closeMenu}>Admin</Link>
+                        </li>
+                        <li>
                             <button onClick={handleLogout}>Sign Out</button>
                         </li>
                     </ul>
@@ -41,6 +47,8 @@ export default function Nav() {
 
                     <div className={`navMobileMenu ${menuOpen ? 'open' : ''}`}>
                         <Link to="/letter" onClick={closeMenu}>Letter</Link>
+                        <Link to="/wajebaat" onClick={closeMenu}>Wajebaat</Link>
+                        <Link to="/admin" onClick={closeMenu}>Admin</Link>
                         <button onClick={() => { handleLogout(); closeMenu(); }}>
                             Sign Out
                         </button>
