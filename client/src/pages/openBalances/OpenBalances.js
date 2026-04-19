@@ -15,12 +15,8 @@ const formatDueDate = (dateStr) => {
 
 const BalanceCard = ({ balance }) => (
     <div className="balanceCard">
-        <div className="customer">{balance.customer || 'Unknown'}</div>
+        <div className="customer">{balance.qb_id}</div>
         <div className="balanceMeta">
-            <div className="metaRow">
-                <span className="metaLabel">Pledge</span>
-                <span className="metaValue">{balance.qb_id}</span>
-            </div>
             <div className="metaRow">
                 <span className="metaLabel">Amount</span>
                 <span className="metaValue">{formatCurrency(balance.amount)}</span>
@@ -44,6 +40,7 @@ const OpenBalances = () => {
     });
 
     const balances = data?.getMyOpenBalances || [];
+    const customerName = balances[0]?.customer || '';
     const totalBalance = balances.reduce((sum, b) => sum + (b.balance || 0), 0);
 
     if (meLoading || loading) {
@@ -75,7 +72,7 @@ const OpenBalances = () => {
             <Nav />
             <div className="pageContainer">
                 <div className="openBalancesHeader">
-                    <h1>Open Balances</h1>
+                    <h1>Open Balances{customerName ? ` — ${customerName}` : ''}</h1>
                     {balances.length > 0 && (
                         <p style={{ marginTop: '8px', fontWeight: 'bold', color: 'var(--color-navy)', fontSize: '18px' }}>
                             Total due: {formatCurrency(totalBalance)}
