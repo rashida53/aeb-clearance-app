@@ -22,6 +22,10 @@ const BalanceCard = ({ balance }) => (
                 <span className="metaValue">{balance.qb_id}</span>
             </div>
             <div className="metaRow">
+                <span className="metaLabel">Amount</span>
+                <span className="metaValue">{formatCurrency(balance.amount)}</span>
+            </div>
+            <div className="metaRow">
                 <span className="metaLabel">Due</span>
                 <span className="metaValue">{formatDueDate(balance.due)}</span>
             </div>
