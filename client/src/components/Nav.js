@@ -5,9 +5,12 @@ import Auth from '../utils/auth';
 import { GET_ME } from '../pages/user/gql/queries';
 import Hamburger from './Hamburger';
 
+const showWajebaat = process.env.REACT_APP_SHOW_WAJEBAAT === 'true';
+
 export default function Nav() {
     const [menuOpen, setMenuOpen] = useState(false);
     const { data } = useQuery(GET_ME, { skip: !Auth.loggedIn() });
+    const isLetterAdmin = data?.me?.roles?.includes('LETTER_ADMIN');
 
     const toggleMenu = () => setMenuOpen(!menuOpen);
     const closeMenu = () => setMenuOpen(false);
@@ -30,12 +33,21 @@ export default function Nav() {
                         <li>
                             <Link to="/letter" onClick={closeMenu}>Letter</Link>
                         </li>
-                        <li>
-                            <Link to="/wajebaat" onClick={closeMenu}>Wajebaat</Link>
-                        </li>
-                        <li>
-                            <Link to="/admin" onClick={closeMenu}>Admin</Link>
-                        </li>
+                        {showWajebaat && (
+                            <li>
+                                <Link to="/wajebaat" onClick={closeMenu}>Wajebaat</Link>
+                            </li>
+                        )}
+                        {showWajebaat && (
+                            <li>
+                                <Link to="/admin" onClick={closeMenu}>Admin</Link>
+                            </li>
+                        )}
+                        {isLetterAdmin && (
+                            <li>
+                                <Link to="/review" onClick={closeMenu}>Review</Link>
+                            </li>
+                        )}
                         <li>
                             <button onClick={handleLogout}>Sign Out</button>
                         </li>
@@ -47,8 +59,15 @@ export default function Nav() {
 
                     <div className={`navMobileMenu ${menuOpen ? 'open' : ''}`}>
                         <Link to="/letter" onClick={closeMenu}>Letter</Link>
-                        <Link to="/wajebaat" onClick={closeMenu}>Wajebaat</Link>
-                        <Link to="/admin" onClick={closeMenu}>Admin</Link>
+                        {showWajebaat && (
+                            <Link to="/wajebaat" onClick={closeMenu}>Wajebaat</Link>
+                        )}
+                        {showWajebaat && (
+                            <Link to="/admin" onClick={closeMenu}>Admin</Link>
+                        )}
+                        {isLetterAdmin && (
+                            <Link to="/review" onClick={closeMenu}>Review</Link>
+                        )}
                         <button onClick={() => { handleLogout(); closeMenu(); }}>
                             Sign Out
                         </button>

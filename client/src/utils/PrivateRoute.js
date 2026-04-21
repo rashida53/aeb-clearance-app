@@ -18,6 +18,7 @@ const PrivateRoute = ({ children, requiredRole, redirectPath = '/' }) => {
     if (requiredRole) {
         const roleChecks = {
             CLEARANCE_ADMIN: Auth.isClearanceAdmin(),
+            LETTER_ADMIN: Auth.isLetterAdmin(),
         };
 
         if (!roleChecks[requiredRole]) {

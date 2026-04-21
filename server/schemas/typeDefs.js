@@ -38,10 +38,18 @@ type QBOpen {
     customer: String
 }
 
+type ActiveUser {
+    _id: ID
+    fullName: String!
+    hofIts: String!
+    zone: String
+}
+
 type Query {
     me: LoggedInUser
     getMyOpenBalances(hofIts: String!): [QBOpen]
     getMyQbOpens(userId: ID!): [QBOpen]
+    getAllActiveUsers: [ActiveUser]
 }
 
 type Mutation {

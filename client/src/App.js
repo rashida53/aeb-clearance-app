@@ -16,6 +16,7 @@ import OpenBalances from './pages/openBalances/OpenBalances';
 import Letter from './pages/letter/Letter';
 import Wajebaat from './pages/wajebaat/Wajebaat';
 import Admin from './pages/admin/Admin';
+import Review from './pages/review/Review';
 
 const httpLink = createHttpLink({
   uri: '/graphql',
@@ -72,6 +73,14 @@ function App() {
             element={
               <PrivateRoute>
                 <Admin />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/review"
+            element={
+              <PrivateRoute requiredRole="LETTER_ADMIN">
+                <Review />
               </PrivateRoute>
             }
           />

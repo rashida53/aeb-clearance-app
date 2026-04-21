@@ -43,6 +43,16 @@ const resolvers = {
         getMyQbOpens: async (parent, { userId }) => {
             return QBOpen.find({ user: userId }).sort({ due: 1 });
         },
+
+        getAllActiveUsers: async (parent, args, context) => {
+            if (!context.user) {
+                throw new AuthenticationError('You must be logged in');
+            }
+            if (!context.user.roles || !context.user.roles.includes('LETTER_ADMIN')) {
+                throw new AuthenticationError('Not authorized');
+            }
+            return User.find({ isActive: { $ne: false } }).sort({ fullName: 1 });
+        },
     },
 
     Mutation: {

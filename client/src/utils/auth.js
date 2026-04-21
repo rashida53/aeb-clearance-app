@@ -23,6 +23,11 @@ class AuthService {
         return token && decode(token).data.roles.includes('CLEARANCE_ADMIN');
     }
 
+    isLetterAdmin() {
+        const token = this.getToken();
+        return token && decode(token).data.roles.includes('LETTER_ADMIN');
+    }
+
     isTokenExpired(token) {
         try {
             const decoded = decode(token);
