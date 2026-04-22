@@ -204,7 +204,7 @@ const styles = StyleSheet.create({
     },
 });
 
-const LetterPdfDocument = ({ hofIts, hofName, reason, description, date, showLaagat, clearStatus, openBalances = [] }) => {
+const LetterPdfDocument = ({ hofIts, hofName, reason, description, date, showLaagat, laagatAmount, sarkaariLaagat, jamaatLaagat, clearStatus, openBalances = [] }) => {
     const formattedDate = formatPdfDate(date);
     const total = openBalances.reduce((sum, b) => sum + (b.balance || 0), 0);
 
@@ -247,10 +247,21 @@ const LetterPdfDocument = ({ hofIts, hofName, reason, description, date, showLaa
                     </View>
                 ) : null}
 
-                {showLaagat ? (
+                {showLaagat && sarkaariLaagat != null ? (
+                    <>
+                        <View style={styles.fieldRow}>
+                            <Text style={styles.fieldLabel}>Sarkaari</Text>
+                            <Text style={styles.laagatlNote}>${sarkaariLaagat}</Text>
+                        </View>
+                        <View style={styles.fieldRow}>
+                            <Text style={styles.fieldLabel}>Jamaat</Text>
+                            <Text style={styles.laagatlNote}>${jamaatLaagat}</Text>
+                        </View>
+                    </>
+                ) : showLaagat && laagatAmount != null ? (
                     <View style={styles.fieldRow}>
                         <Text style={styles.fieldLabel}>Laagat</Text>
-                        <Text style={styles.laagatlNote}>Contact M Taaha bhai Bhora for Laagat</Text>
+                        <Text style={styles.laagatlNote}>${laagatAmount}</Text>
                     </View>
                 ) : null}
 

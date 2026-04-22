@@ -13,7 +13,7 @@ const SUB_OPTIONS = {
     'Family Function': ['Markaz', 'Outside Markaz'],
     'Life Event': ['Aqiqa', 'Chhatti', 'Misaaq', 'Nikaah'],
     'Travel': ['Hajj', 'Umrah', 'Kun', 'Misr', 'India'],
-    '12 Umoor': ['Qardan Hasanah', 'Moasaat', 'FMB'],
+    '12 Umoor': ['Iqtesadiyah - Qardan Hasanah', 'Marafiq Burhaniyah - Moasaat', 'FMB - Niyaaz/Thaali'],
 };
 
 const FMB_OPTIONS = ['Item in Thaali', 'Full Thaali', 'Item in Niyaaz'];
@@ -21,13 +21,25 @@ const EVENT_TYPE_OPTIONS = ['Darees', 'Majlis', 'Tasbeeh', 'Shitabi'];
 
 const STEP_REASON = 'reason';
 const STEP_SUB_OPTION = 'sub_option';
+const STEP_LAAGAT = 'laagat';
+const STEP_LAAGAT_LIFE = 'laagat_life';
 const STEP_EVENT_TYPE = 'event_type';
 const STEP_FMB = 'fmb';
 const STEP_DESCRIPTION = 'description';
 
+const LAAGAT_AMOUNT_MARKAZ = 110;
+
+const LAAGAT_LIFE_AMOUNTS = {
+    'Aqiqa':  { sarkaari: 21,  jamaat: 21  },
+    'Misaaq': { sarkaari: 53,  jamaat: 53  },
+    'Nikaah': { sarkaari: 110, jamaat: 110 },
+};
+
 const STEP_LABELS = {
     [STEP_REASON]: 'Reason',
     [STEP_SUB_OPTION]: 'Category',
+    [STEP_LAAGAT]: 'Laagat',
+    [STEP_LAAGAT_LIFE]: 'Laagat',
     [STEP_EVENT_TYPE]: 'Event Type',
     [STEP_FMB]: 'FMB Type',
     [STEP_DESCRIPTION]: 'Description',
@@ -42,7 +54,11 @@ export default function Letter() {
         fmbOption: '',
         description: '',
         date: '',
+        laagatAmount: null,
+        sarkaariLaagat: null,
+        jamaatLaagat: null,
     });
+    const [laagatOpen, setLaagatOpen] = useState(false);
     const navigate = useNavigate();
 
     const { data: meData, loading: meLoading } = useQuery(GET_ME);
@@ -64,19 +80,34 @@ export default function Letter() {
     const goBack = () => setStepHistory(prev => prev.slice(0, -1));
 
     const handleReasonSelect = (reason) => {
-        setSelections({ reason, subOption: '', eventType: '', fmbOption: '', description: '', date: '' });
+        setSelections({ reason, subOption: '', eventType: '', fmbOption: '', description: '', date: '', laagatAmount: null, sarkaariLaagat: null, jamaatLaagat: null });
         goToStep(STEP_SUB_OPTION);
     };
 
     const handleSubOptionSelect = (option) => {
-        setSelections(prev => ({ ...prev, subOption: option, eventType: '', fmbOption: '' }));
-        if (selections.reason === 'Family Function') {
+        setSelections(prev => ({ ...prev, subOption: option, eventType: '', fmbOption: '', laagatAmount: null, sarkaariLaagat: null, jamaatLaagat: null }));
+        if (option === 'Markaz') {
+            goToStep(STEP_LAAGAT);
+        } else if (['Aqiqa', 'Misaaq', 'Nikaah'].includes(option)) {
+            goToStep(STEP_LAAGAT_LIFE);
+        } else if (selections.reason === 'Family Function') {
             goToStep(STEP_EVENT_TYPE);
         } else if (selections.reason === '12 Umoor' && option === 'FMB') {
             goToStep(STEP_FMB);
         } else {
             goToStep(STEP_DESCRIPTION);
         }
+    };
+
+    const handleLaagatAgree = () => {
+        setSelections(prev => ({ ...prev, laagatAmount: LAAGAT_AMOUNT_MARKAZ }));
+        goToStep(STEP_EVENT_TYPE);
+    };
+
+    const handleLaagatLifeAgree = () => {
+        const amounts = LAAGAT_LIFE_AMOUNTS[selections.subOption] || {};
+        setSelections(prev => ({ ...prev, sarkaariLaagat: amounts.sarkaari, jamaatLaagat: amounts.jamaat }));
+        goToStep(STEP_DESCRIPTION);
     };
 
     const handleEventTypeSelect = (option) => {
@@ -91,9 +122,7 @@ export default function Letter() {
 
     const leafReason = selections.fmbOption || selections.eventType || selections.subOption || selections.reason;
 
-    const showLaagat =
-        selections.reason === 'Life Event' ||
-        (selections.reason === 'Family Function' && selections.subOption === 'Markaz');
+    const showLaagat = ['Markaz', 'Aqiqa', 'Misaaq', 'Nikaah'].includes(selections.subOption);
 
     const handleGenerate = () => {
         setTimeout(() => navigate('/'), 500);
@@ -111,7 +140,7 @@ export default function Letter() {
             <Nav />
             <div className="pageContainer">
                 <div className="letterHeader">
-                    <h1>Jamaat Clearance Letter</h1>
+                    <h1>Safaai Chitthi</h1>
                 </div>
 
                 <div className="letterForm">
@@ -149,6 +178,74 @@ export default function Letter() {
                             <button className="letterBackBtn" onClick={goBack}>Back</button>
                         </div>
                     )}
+
+                    {currentStep === STEP_LAAGAT && (
+                        <div className="letterStep">
+                            <div className="laagatWarning">
+                                <span className="laagatWarningIcon">⚠</span>
+                                <p>
+                                    Events at Markaz will require a Laagat contribution of{' '}
+                                    <strong>$110</strong>. You will receive a pledge via the Bill Pay portal.
+                                </p>
+                            </div>
+
+                            <button
+                                className="laagatCollapsibleBtn"
+                                onClick={() => setLaagatOpen(prev => !prev)}
+                            >
+                                <span>What is the difference between Sabeel and Laagat?</span>
+                                <span className="laagatChevron">{laagatOpen ? '▲' : '▼'}</span>
+                            </button>
+                            {laagatOpen && (
+                                <div className="laagatCollapsibleBody">
+                                    Sabeel budgets are based on regular usage like Miqaats, Madrasah, FMB, etc.
+                                    Laagat helps us cover usage and cleaning costs for personal events.
+                                </div>
+                            )}
+
+                            <div className="laagatActions">
+                                <button className="letterBackBtn" onClick={goBack}>Back</button>
+                                <button className="letterGenerateBtn" onClick={handleLaagatAgree}>Agree</button>
+                            </div>
+                        </div>
+                    )}
+
+                    {currentStep === STEP_LAAGAT_LIFE && (() => {
+                        const amounts = LAAGAT_LIFE_AMOUNTS[selections.subOption] || {};
+                        return (
+                        <div className="letterStep">
+                            <div className="laagatWarning">
+                                <span className="laagatWarningIcon">⚠</span>
+                                <div>
+                                    <p>This event will require the following Laagat contributions. You will receive pledges via the Bill Pay portal.</p>
+                                    <ul className="laagatAmountList">
+                                        <li><strong>Sarkaari Laagat:</strong> ${amounts.sarkaari}</li>
+                                        <li><strong>Jamaat Laagat:</strong> ${amounts.jamaat}</li>
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <button
+                                className="laagatCollapsibleBtn"
+                                onClick={() => setLaagatOpen(prev => !prev)}
+                            >
+                                <span>What is the difference between Sabeel and Laagat?</span>
+                                <span className="laagatChevron">{laagatOpen ? '▲' : '▼'}</span>
+                            </button>
+                            {laagatOpen && (
+                                <div className="laagatCollapsibleBody">
+                                    Sabeel budgets are based on regular usage like Miqaats, Madrasah, FMB, etc.
+                                    Laagat helps us cover usage and cleaning costs for personal events.
+                                </div>
+                            )}
+
+                            <div className="laagatActions">
+                                <button className="letterBackBtn" onClick={goBack}>Back</button>
+                                <button className="letterGenerateBtn" onClick={handleLaagatLifeAgree}>Agree</button>
+                            </div>
+                        </div>
+                        );
+                    })()}
 
                     {currentStep === STEP_EVENT_TYPE && (
                         <div className="letterStep">
@@ -237,6 +334,9 @@ export default function Letter() {
                                             description={selections.description}
                                             date={selections.date || null}
                                             showLaagat={showLaagat}
+                                            laagatAmount={selections.laagatAmount}
+                                            sarkaariLaagat={selections.sarkaariLaagat}
+                                            jamaatLaagat={selections.jamaatLaagat}
                                             clearStatus={clearStatus}
                                             openBalances={openBalances}
                                         />

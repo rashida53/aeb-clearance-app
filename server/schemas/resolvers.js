@@ -161,7 +161,7 @@ const resolvers = {
                     <div class="container">
                         <div class="header">
                             <h1>Anjuman e Burhani</h1>
-                            <p>Jamaat Clearance Letter</p>
+                            <p>Clearance Letter</p>
                         </div>
                         <div class="body">
                             <table>
