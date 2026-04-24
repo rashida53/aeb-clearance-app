@@ -169,8 +169,16 @@ label {
     display: none;
   }
 
+  .navBrand {
+    font-size: 19px;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+  }
+
   .navHamburger {
     display: flex;
+    order: -1;
+    margin-right: 8px;
   }
 }
 

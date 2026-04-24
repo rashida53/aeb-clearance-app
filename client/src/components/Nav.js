@@ -53,9 +53,7 @@ export default function Nav() {
                         </li>
                     </ul>
 
-                    <div onClick={toggleMenu}>
-                        <Hamburger isOpen={menuOpen} />
-                    </div>
+                    <Hamburger isOpen={menuOpen} onClick={toggleMenu} />
 
                     <div className={`navMobileMenu ${menuOpen ? 'open' : ''}`}>
                         <Link to="/letter" onClick={closeMenu}>Letter</Link>

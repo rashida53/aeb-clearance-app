@@ -1,16 +1,16 @@
 import React, { useState } from 'react';
 import { useQuery } from '@apollo/client';
 import { useNavigate } from 'react-router-dom';
-import { PDFDownloadLink } from '@react-pdf/renderer';
+import { pdf } from '@react-pdf/renderer';
 import Nav from '../../components/Nav';
 import LetterPdfDocument from './LetterPdfDocument';
 import { GET_ME } from '../user/gql/queries';
 import { GET_MY_QB_OPENS } from '../openBalances/gql/queries';
 
-const REASONS = ['Family Function', 'Travel', 'Life Event', '12 Umoor'];
+const REASONS = ['Personal Function', 'Travel', 'Life Event', '12 Umoor'];
 
 const SUB_OPTIONS = {
-    'Family Function': ['Markaz', 'Outside Markaz'],
+    'Personal Function': ['Markaz', 'Outside Markaz'],
     'Life Event': ['Aqiqa', 'Chhatti', 'Misaaq', 'Nikaah'],
     'Travel': ['Hajj', 'Umrah', 'Kun', 'Misr', 'India'],
     '12 Umoor': ['Iqtesadiyah - Qardan Hasanah', 'Marafiq Burhaniyah - Moasaat', 'FMB - Niyaaz/Thaali'],
@@ -59,6 +59,7 @@ export default function Letter() {
         jamaatLaagat: null,
     });
     const [laagatOpen, setLaagatOpen] = useState(false);
+    const [generating, setGenerating] = useState(false);
     const navigate = useNavigate();
 
     const { data: meData, loading: meLoading } = useQuery(GET_ME);
@@ -90,7 +91,7 @@ export default function Letter() {
             goToStep(STEP_LAAGAT);
         } else if (['Aqiqa', 'Misaaq', 'Nikaah'].includes(option)) {
             goToStep(STEP_LAAGAT_LIFE);
-        } else if (selections.reason === 'Family Function') {
+        } else if (selections.reason === 'Personal Function') {
             goToStep(STEP_EVENT_TYPE);
         } else if (selections.reason === '12 Umoor' && option === 'FMB') {
             goToStep(STEP_FMB);
@@ -124,12 +125,35 @@ export default function Letter() {
 
     const showLaagat = ['Markaz', 'Aqiqa', 'Misaaq', 'Nikaah'].includes(selections.subOption);
 
-    const handleGenerate = () => {
+    const handleGenerate = async () => {
+        setGenerating(true);
+        const blob = await pdf(
+            <LetterPdfDocument
+                hofIts={hofIts}
+                hofName={hofName}
+                reason={leafReason}
+                description={selections.description}
+                date={selections.date || null}
+                showLaagat={showLaagat}
+                laagatAmount={selections.laagatAmount}
+                sarkaariLaagat={selections.sarkaariLaagat}
+                jamaatLaagat={selections.jamaatLaagat}
+                clearStatus={clearStatus}
+                openBalances={openBalances}
+            />
+        ).toBlob();
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `Clearance-${hofIts || 'draft'}.pdf`;
+        link.click();
+        URL.revokeObjectURL(url);
+        setGenerating(false);
         setTimeout(() => navigate('/'), 500);
     };
 
     const getSubOptionQuestion = () => {
-        if (selections.reason === 'Family Function') return 'Event Venue';
+        if (selections.reason === 'Personal Function') return 'Event Venue';
         if (selections.reason === 'Travel') return 'Travel Destination';
         if (selections.reason === '12 Umoor') return 'Choose Umoor';
         return 'Select an option';
@@ -285,7 +309,7 @@ export default function Letter() {
 
                     {currentStep === STEP_DESCRIPTION && (
                         <div className="letterStep">
-                            {selections.reason === 'Family Function' && (
+                            {selections.reason === 'Personal Function' && (
                                 <div className="formGroup">
                                     <p className="letterCalendarNote">
                                         Please review the{' '}
@@ -322,32 +346,13 @@ export default function Letter() {
                                 />
                             </div>
 
-                            {!dataReady ? (
-                                <button className="letterGenerateBtn" disabled>Loading...</button>
-                            ) : (
-                                <PDFDownloadLink
-                                    document={
-                                        <LetterPdfDocument
-                                            hofIts={hofIts}
-                                            hofName={hofName}
-                                            reason={leafReason}
-                                            description={selections.description}
-                                            date={selections.date || null}
-                                            showLaagat={showLaagat}
-                                            laagatAmount={selections.laagatAmount}
-                                            sarkaariLaagat={selections.sarkaariLaagat}
-                                            jamaatLaagat={selections.jamaatLaagat}
-                                            clearStatus={clearStatus}
-                                            openBalances={openBalances}
-                                        />
-                                    }
-                                    fileName={`Clearance-${hofIts || 'draft'}.pdf`}
-                                    className="letterGenerateBtn"
-                                    onClick={handleGenerate}
-                                >
-                                    {({ loading }) => loading ? 'Preparing...' : 'Generate Letter'}
-                                </PDFDownloadLink>
-                            )}
+                            <button
+                                className="letterGenerateBtn"
+                                disabled={!dataReady || generating}
+                                onClick={handleGenerate}
+                            >
+                                {!dataReady ? 'Loading...' : generating ? 'Preparing...' : 'Generate Letter'}
+                            </button>
 
                             <button className="letterBackBtn" onClick={goBack}>Back</button>
                         </div>

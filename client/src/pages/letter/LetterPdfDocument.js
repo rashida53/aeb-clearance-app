@@ -1,6 +1,8 @@
-import { Page, Text, View, Document, StyleSheet, Image } from '@react-pdf/renderer';
+import { Page, Text, View, Document, StyleSheet, Image, Font } from '@react-pdf/renderer';
 import leftLogo from '../../assets/letterhead.png';
 import rightLogo from '../../assets/maaliyah.png';
+
+Font.registerHyphenationCallback(word => [word]);
 
 const NAVY = '#00203D';
 const GOLD = '#CE9C01';

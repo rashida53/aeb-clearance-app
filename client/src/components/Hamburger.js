@@ -1,15 +1,16 @@
 import React from 'react';
 
-export default function Hamburger({ isOpen }) {
+export default function Hamburger({ isOpen, onClick }) {
     return (
         <button
             className="navHamburger"
             aria-label={isOpen ? 'Close menu' : 'Open menu'}
             aria-expanded={isOpen}
+            onClick={onClick}
         >
             <span
                 style={{
-                    transform: isOpen ? 'rotate(45deg) translate(5px, 6px)' : 'rotate(0)',
+                    transform: isOpen ? 'translateY(8px) rotate(45deg)' : 'none',
                     transition: 'transform 0.3s ease',
                 }}
             />
@@ -21,7 +22,7 @@ export default function Hamburger({ isOpen }) {
             />
             <span
                 style={{
-                    transform: isOpen ? 'rotate(-45deg) translate(5px, -6px)' : 'rotate(0)',
+                    transform: isOpen ? 'translateY(-8px) rotate(-45deg)' : 'none',
                     transition: 'transform 0.3s ease',
                 }}
             />
