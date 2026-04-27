@@ -100,6 +100,15 @@ const styles = StyleSheet.create({
     tableContainer: {
         marginTop: 8,
     },
+    pledgesHeader: {
+        fontSize: 14,
+        fontFamily: 'Helvetica-Bold',
+        color: NAVY,
+        textTransform: 'uppercase',
+        letterSpacing: 1,
+        marginBottom: 6,
+        textAlign: 'center',
+    },
     tableHeaderRow: {
         flexDirection: 'row',
         backgroundColor: NAVY,
@@ -262,6 +271,7 @@ const LetterPdfDocument = ({ hofIts, hofName, reason, description, date, showLaa
 
                 {openBalances.length > 0 && (
                     <View style={styles.tableContainer}>
+                        <Text style={styles.pledgesHeader}>PLEDGES</Text>
                         <View style={styles.tableHeaderRow}>
                             <Text style={[styles.tableCol, styles.tableHeaderText]}>Pledge</Text>
                             <Text style={[styles.tableCol, styles.tableHeaderText]}>Amount</Text>
