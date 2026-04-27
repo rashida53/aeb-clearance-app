@@ -5,7 +5,7 @@ import { pdf } from '@react-pdf/renderer';
 import Nav from '../../components/Nav';
 import LetterPdfDocument from './LetterPdfDocument';
 import { GET_ME } from '../user/gql/queries';
-import { GET_MY_QB_OPENS } from '../openBalances/gql/queries';
+import { GET_MY_QB_OPENS, GET_APPROVAL_STATUS } from '../openBalances/gql/queries';
 
 const REASONS = ['Personal Function', 'Travel', 'Life Event', '12 Umoor'];
 
@@ -71,9 +71,16 @@ export default function Letter() {
         variables: { userId },
         skip: !userId,
     });
+    const { data: approvalData, loading: approvalLoading } = useQuery(GET_APPROVAL_STATUS, {
+        variables: { hofIts, userId },
+        skip: !hofIts || !userId,
+    });
+
     const openBalances = qbOpensData?.getMyQbOpens || [];
-    const clearStatus = openBalances.length > 0 ? 'DUES_PENDING' : 'CLEAR';
-    const dataReady = !meLoading && !qbLoading && !!userId;
+    const approved = approvalData?.getApprovalStatus?.approved === true;
+    const approvalRemarks = approvalData?.getApprovalStatus?.remarks || '';
+    const approverName = approvalData?.getApprovalStatus?.approverName || '';
+    const dataReady = !meLoading && !qbLoading && !approvalLoading && !!userId;
 
     const currentStep = stepHistory[stepHistory.length - 1];
 
@@ -138,8 +145,10 @@ export default function Letter() {
                 laagatAmount={selections.laagatAmount}
                 sarkaariLaagat={selections.sarkaariLaagat}
                 jamaatLaagat={selections.jamaatLaagat}
-                clearStatus={clearStatus}
                 openBalances={openBalances}
+                approved={approved}
+                approvalRemarks={approvalRemarks}
+                approverName={approverName}
             />
         ).toBlob();
         const url = URL.createObjectURL(blob);
@@ -163,6 +172,12 @@ export default function Letter() {
         <>
             <Nav />
             <div className="pageContainer">
+                {dataReady && openBalances.length > 0 && !approved && (
+                    <div className="letterPledgeWarning">
+                        Please contact <strong>M Taaha bhai Bhora</strong> or <strong>Shk Murtaza bhai Rawat</strong> regarding your open pledges before generating your letter.
+                    </div>
+                )}
+
                 <div className="letterHeader">
                     <h1>Safaai Chitthi</h1>
                 </div>

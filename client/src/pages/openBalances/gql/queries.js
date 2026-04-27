@@ -20,6 +20,17 @@ export const GET_MY_OPEN_BALANCES = gql`
             balance
             customer
             due
+            pp
+        }
+    }
+`;
+
+export const GET_APPROVAL_STATUS = gql`
+    query getApprovalStatus($hofIts: String!, $userId: ID!) {
+        getApprovalStatus(hofIts: $hofIts, userId: $userId) {
+            approved
+            remarks
+            approverName
         }
     }
 `;

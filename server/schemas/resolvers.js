@@ -1,4 +1,4 @@
-const { Member, User, QBOpen } = require('../models');
+const { Member, User, QBOpen, Approval } = require('../models');
 const { signToken } = require('../utils/auth');
 const { AuthenticationError } = require('apollo-server-express');
 const { SendHtmlEmail } = require('../utils/email');
@@ -42,6 +42,29 @@ const resolvers = {
 
         getMyQbOpens: async (parent, { userId }) => {
             return QBOpen.find({ user: userId }).sort({ due: 1 });
+        },
+
+        getApprovalStatus: async (parent, { hofIts, userId }, context) => {
+            if (!context.user) {
+                throw new AuthenticationError('You must be logged in');
+            }
+            const openCount = await QBOpen.countDocuments({ user: userId });
+            if (openCount === 0) return { approved: true, remarks: null, approverName: null };
+
+            const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
+            const recentApproval = await Approval.findOne(
+                { hofIts, approvedAt: { $gte: thirtyDaysAgo } },
+                null,
+                { sort: { approvedAt: -1 } }
+            );
+            if (recentApproval) {
+                return {
+                    approved: true,
+                    remarks: recentApproval.remarks,
+                    approverName: recentApproval.approver,
+                };
+            }
+            return { approved: false, remarks: null, approverName: null };
         },
 
         getAllActiveUsers: async (parent, args, context) => {
@@ -195,6 +218,23 @@ const resolvers = {
             }
 
             return true;
+        },
+
+        createApproval: async (parent, { hofIts, requester, remarks }, context) => {
+            if (!context.user) {
+                throw new AuthenticationError('You must be logged in');
+            }
+            if (!context.user.roles || !context.user.roles.includes('LETTER_ADMIN')) {
+                throw new AuthenticationError('Not authorized');
+            }
+
+            return Approval.create({
+                hofIts,
+                requester,
+                approver: context.user.userFullName,
+                remarks,
+                approvedAt: Date.now(),
+            });
         },
 
         resetPassword: async (parent, { its, hofIts, password }) => {

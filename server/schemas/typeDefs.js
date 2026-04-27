@@ -36,6 +36,7 @@ type QBOpen {
     balance: Float
     due: String
     customer: String
+    pp: String
 }
 
 type ActiveUser {
@@ -45,11 +46,27 @@ type ActiveUser {
     zone: String
 }
 
+type Approval {
+    _id: ID
+    hofIts: String!
+    requester: String!
+    approver: String!
+    remarks: String!
+    approvedAt: Float!
+}
+
+type ApprovalStatus {
+    approved: Boolean!
+    remarks: String
+    approverName: String
+}
+
 type Query {
     me: LoggedInUser
     getMyOpenBalances(hofIts: String!): [QBOpen]
     getMyQbOpens(userId: ID!): [QBOpen]
     getAllActiveUsers: [ActiveUser]
+    getApprovalStatus(hofIts: String!, userId: ID!): ApprovalStatus
 }
 
 type Mutation {
@@ -57,6 +74,7 @@ type Mutation {
     addMember(email: String!, password: String!, fullName: String!, its: String!, hofIts: String!): Auth
     resetPassword(password: String!, its: String!, hofIts: String!): Member
     generateLetter(hofIts: String!, hofName: String!, reason: String!, description: String!): Boolean
+    createApproval(hofIts: String!, requester: String!, remarks: String!): Approval
 }
 `;
 

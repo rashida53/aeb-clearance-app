@@ -32,6 +32,9 @@ const qbOpenSchema = new Schema(
         customer: {
             type: String,
         },
+        pp: {
+            type: String,
+        },
     },
     {
         collection: 'qbopens',

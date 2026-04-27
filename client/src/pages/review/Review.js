@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { useQuery } from '@apollo/client';
+import { useQuery, useMutation } from '@apollo/client';
 import Nav from '../../components/Nav';
 import { GET_ALL_ACTIVE_USERS } from './gql/queries';
+import { CREATE_APPROVAL } from './gql/mutations';
 import { GET_MY_OPEN_BALANCES } from '../openBalances/gql/queries';
 
 const formatCurrency = (amount) =>
@@ -17,6 +18,10 @@ const Review = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedUser, setSelectedUser] = useState(null);
     const [showDropdown, setShowDropdown] = useState(false);
+    const [remarks, setRemarks] = useState('');
+    const [approveSuccess, setApproveSuccess] = useState(false);
+
+    const [createApproval, { loading: approving }] = useMutation(CREATE_APPROVAL);
 
     const { data: usersData, loading: usersLoading } = useQuery(GET_ALL_ACTIVE_USERS);
     const activeUsers = usersData?.getAllActiveUsers || [];
@@ -45,6 +50,20 @@ const Review = () => {
         setSelectedUser(user);
         setSearchTerm(user.fullName);
         setShowDropdown(false);
+        setRemarks('');
+        setApproveSuccess(false);
+    };
+
+    const handleApprove = async () => {
+        await createApproval({
+            variables: {
+                hofIts: selectedUser.hofIts,
+                requester: selectedUser._id,
+                remarks: remarks.trim(),
+            },
+        });
+        setApproveSuccess(true);
+        setRemarks('');
     };
 
     const handleBlur = () => {
@@ -121,6 +140,7 @@ const Review = () => {
                                                     <th>Amount</th>
                                                     <th>Balance</th>
                                                     <th>Due</th>
+                                                    <th>Plan</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
@@ -135,6 +155,7 @@ const Review = () => {
                                                             <td>{b.amount != null ? formatCurrency(b.amount) : '—'}</td>
                                                             <td>{formatCurrency(b.balance)}</td>
                                                             <td>{formatDueDate(b.due)}</td>
+                                                            <td>{b.pp === 'Likely' ? 'LIKELY' : 'UNKNOWN'}</td>
                                                         </tr>
                                                     );
                                                 })}
@@ -142,13 +163,42 @@ const Review = () => {
                                             <tfoot>
                                                 <tr className="reviewTotalRow">
                                                     <td colSpan="2">Total</td>
-                                                    <td colSpan="2">{formatCurrency(total)}</td>
+                                                    <td colSpan="3">{formatCurrency(total)}</td>
                                                 </tr>
                                             </tfoot>
                                         </table>
                                     </div>
                                 </>
                             )}
+
+                            <div className="reviewApprovalSection">
+                                {approveSuccess ? (
+                                    <div className="letterSuccessMsg">
+                                        Approved. Please regenerate the letter.
+                                    </div>
+                                ) : (
+                                    <>
+                                        <div className="formGroup">
+                                            <label htmlFor="remarks">Remarks</label>
+                                            <textarea
+                                                id="remarks"
+                                                className="reviewRemarksTextarea"
+                                                value={remarks}
+                                                onChange={e => setRemarks(e.target.value)}
+                                                placeholder="Explain the approval..."
+                                                rows={4}
+                                            />
+                                        </div>
+                                        <button
+                                            className="reviewApproveBtn"
+                                            disabled={!remarks.trim() || approving}
+                                            onClick={handleApprove}
+                                        >
+                                            {approving ? 'Saving...' : 'Approve'}
+                                        </button>
+                                    </>
+                                )}
+                            </div>
                         </div>
                     )}
                 </div>

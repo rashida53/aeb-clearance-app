@@ -1,6 +1,8 @@
 import { Page, Text, View, Document, StyleSheet, Image, Font } from '@react-pdf/renderer';
 import leftLogo from '../../assets/letterhead.png';
 import rightLogo from '../../assets/maaliyah.png';
+import signBhora from '../../assets/aeb-bhora.png';
+import signRawat from '../../assets/aeb-rawat.png';
 
 Font.registerHyphenationCallback(word => [word]);
 
@@ -94,52 +96,6 @@ const styles = StyleSheet.create({
         flex: 1,
     },
 
-    divider: {
-        borderBottomWidth: 1,
-        borderBottomColor: '#dddddd',
-        marginVertical: 20,
-    },
-
-    // Description
-    descriptionLabel: {
-        fontSize: 11,
-        fontFamily: 'Helvetica-Bold',
-        color: GOLD,
-        textTransform: 'uppercase',
-        letterSpacing: 0.8,
-        marginBottom: 8,
-    },
-    descriptionValue: {
-        fontSize: 13,
-        color: '#333333',
-        lineHeight: 1.7,
-        borderLeftWidth: 3,
-        borderLeftColor: GOLD,
-        paddingLeft: 12,
-    },
-
-    // Status
-    statusContainer: {
-        marginTop: 36,
-        alignItems: 'center',
-        borderTopWidth: 1,
-        borderTopColor: '#dddddd',
-        paddingTop: 24,
-        marginBottom: 24,
-    },
-    statusClear: {
-        fontSize: 44,
-        fontFamily: 'Helvetica-Bold',
-        color: NAVY,
-        letterSpacing: 3,
-    },
-    statusDuesPending: {
-        fontSize: 31,
-        fontFamily: 'Helvetica-Bold',
-        color: NAVY,
-        letterSpacing: 3,
-    },
-
     // Balances table
     tableContainer: {
         marginTop: 8,
@@ -204,11 +160,43 @@ const styles = StyleSheet.create({
         color: NAVY,
         textAlign: 'right',
     },
+
+    // Approval remarks
+    approvalRemarksRow: {
+        flexDirection: 'row',
+        marginTop: 16,
+        alignItems: 'flex-start',
+    },
+
+    // Signature
+    signatureContainer: {
+        position: 'absolute',
+        bottom: 40,
+        right: 52,
+        alignItems: 'flex-end',
+    },
+    signatureImage: {
+        width: 183,
+        height: 183,
+        objectFit: 'contain',
+    },
 });
 
-const LetterPdfDocument = ({ hofIts, hofName, reason, description, date, showLaagat, laagatAmount, sarkaariLaagat, jamaatLaagat, clearStatus, openBalances = [] }) => {
+const APPROVER_RAWAT = 'Shk Murtaza Rawat';
+const APPROVER_BHORA = 'M Taaha Bhora';
+
+const getSignatureImage = (approved, approverName, hasOpenBalances) => {
+    if (!approved) return null;
+    if (!hasOpenBalances) return signBhora;
+    if (approverName === APPROVER_RAWAT) return signRawat;
+    if (approverName === APPROVER_BHORA) return signBhora;
+    return null;
+};
+
+const LetterPdfDocument = ({ hofIts, hofName, reason, description, date, showLaagat, laagatAmount, sarkaariLaagat, jamaatLaagat, openBalances = [], approved, approvalRemarks, approverName }) => {
     const formattedDate = formatPdfDate(date);
     const total = openBalances.reduce((sum, b) => sum + (b.balance || 0), 0);
+    const signatureImg = getSignatureImage(approved, approverName, openBalances.length > 0);
 
     return (
         <Document>
@@ -267,17 +255,9 @@ const LetterPdfDocument = ({ hofIts, hofName, reason, description, date, showLaa
                     </View>
                 ) : null}
 
-                <View style={styles.divider} />
-
-                <Text style={styles.descriptionLabel}>Description</Text>
-                <Text style={styles.descriptionValue}>{description || '—'}</Text>
-
-                <View style={styles.statusContainer}>
-                    {clearStatus === 'CLEAR' ? (
-                        <Text style={styles.statusClear}>CLEAR</Text>
-                    ) : (
-                        <Text style={styles.statusDuesPending}>PENDING</Text>
-                    )}
+                <View style={styles.fieldRow}>
+                    <Text style={styles.fieldLabel}>Description</Text>
+                    <Text style={styles.fieldValue}>{description || '—'}</Text>
                 </View>
 
                 {openBalances.length > 0 && (
@@ -302,6 +282,19 @@ const LetterPdfDocument = ({ hofIts, hofName, reason, description, date, showLaa
                             <Text style={styles.tableTotalLabel}>Total</Text>
                             <Text style={styles.tableTotalValue}>{formatCurrency(total)}</Text>
                         </View>
+                    </View>
+                )}
+
+                {approved && approvalRemarks ? (
+                    <View style={styles.approvalRemarksRow}>
+                        <Text style={styles.fieldLabel}>Approval Remarks</Text>
+                        <Text style={styles.fieldValue}>{approvalRemarks}</Text>
+                    </View>
+                ) : null}
+
+                {signatureImg && (
+                    <View style={styles.signatureContainer}>
+                        <Image src={signatureImg} style={styles.signatureImage} />
                     </View>
                 )}
 
