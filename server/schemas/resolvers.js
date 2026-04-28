@@ -167,7 +167,7 @@ const resolvers = {
                 );
                 if (recentApproval) {
                     await Letter.create({
-                        requester: context.user.userId,
+                        requester: context.user.userFullName,
                         approver: recentApproval.approver,
                         reason,
                     });

@@ -4,7 +4,7 @@ const { Schema } = require('mongoose');
 const letterSchema = new Schema(
     {
         requester: {
-            type: Schema.Types.ObjectId,
+            type: String,
             required: true,
         },
         approver: {
@@ -18,7 +18,6 @@ const letterSchema = new Schema(
     },
     {
         collection: 'letters',
-        timestamps: true,
     }
 );
 
