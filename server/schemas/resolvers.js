@@ -1,7 +1,7 @@
 const { Member, User, QBOpen, Approval, Letter } = require('../models');
 const { signToken } = require('../utils/auth');
 const { AuthenticationError } = require('apollo-server-express');
-const { SendHtmlEmail } = require('../utils/email');
+
 
 const resolvers = {
     Query: {
@@ -178,65 +178,6 @@ const resolvers = {
                 }
             } catch (err) {
                 console.error('Failed to log letter:', err.message);
-            }
-
-            const emailAccount = process.env.EMAIL_SENDER;
-            const emailPassword = process.env.EMAIL_APP_PASSWORD;
-            const recipients = process.env.LETTER_RECIPIENTS || emailAccount;
-
-            const emailHtml = `
-                <!DOCTYPE html>
-                <html>
-                <head>
-                    <style>
-                        body { font-family: Arial, sans-serif; background-color: #f5f5f5; margin: 0; padding: 0; }
-                        .container { max-width: 560px; margin: 0 auto; background: #ffffff; }
-                        .header { background-color: #00203D; padding: 24px 32px; text-align: center; }
-                        .header h1 { color: #CE9C01; font-size: 20px; margin: 0; letter-spacing: 1px; }
-                        .header p { color: #ffffff; font-size: 12px; margin: 6px 0 0 0; }
-                        .body { padding: 28px 32px; }
-                        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-                        th { background-color: #00203D; color: #CE9C01; padding: 10px 14px; text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.8px; width: 120px; }
-                        td { background-color: #f9f9f9; padding: 10px 14px; font-size: 13px; color: #333333; border-bottom: 1px solid #eeeeee; }
-                        .description-box { background: #f9f9f9; border-left: 4px solid #CE9C01; padding: 14px 16px; font-size: 13px; color: #333333; line-height: 1.6; margin-top: 8px; }
-                        .footer { background-color: #f0f0f0; padding: 14px 32px; text-align: center; font-size: 11px; color: #999999; margin-top: 24px; }
-                    </style>
-                </head>
-                <body>
-                    <div class="container">
-                        <div class="header">
-                            <h1>Anjuman e Burhani</h1>
-                            <p>Clearance Letter</p>
-                        </div>
-                        <div class="body">
-                            <table>
-                                <tr><th>HOF ITS</th><td>${hofIts}</td></tr>
-                                <tr><th>HOF Name</th><td>${hofName}</td></tr>
-                                <tr><th>Reason</th><td>${reason}</td></tr>
-                                <tr><th>Laagat</th><td>&nbsp;</td></tr>
-                                <tr><th>Date</th><td>&nbsp;</td></tr>
-                            </table>
-                            <p style="font-size: 11px; color: #CE9C01; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 6px; font-weight: bold;">Description</p>
-                            <div class="description-box">${description || '—'}</div>
-                        </div>
-                        <div class="footer">Anjuman e Burhani &mdash; Clearance Portal</div>
-                    </div>
-                </body>
-                </html>
-            `;
-
-            if (emailPassword) {
-                try {
-                    SendHtmlEmail(
-                        emailAccount,
-                        emailPassword,
-                        recipients,
-                        `Clearance Letter Request — ${hofName}`,
-                        emailHtml
-                    );
-                } catch (err) {
-                    console.error('Failed to send letter email:', err.message);
-                }
             }
 
             return true;

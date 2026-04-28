@@ -28,7 +28,7 @@ const STEP_EVENT_TYPE = 'event_type';
 const STEP_FMB = 'fmb';
 const STEP_DESCRIPTION = 'description';
 
-const LAAGAT_AMOUNT_MARKAZ = 110;
+const LAAGAT_AMOUNT_MARKAZ = 153;
 
 const LAAGAT_LIFE_AMOUNTS = {
     'Aqiqa':  { sarkaari: 21,  jamaat: 21  },
@@ -240,7 +240,7 @@ export default function Letter() {
                                 <span className="laagatWarningIcon">⚠</span>
                                 <p>
                                     Events at Markaz will require a Laagat contribution of{' '}
-                                    <strong>$110</strong>. You will receive a pledge via the Bill Pay portal.
+                                    <strong>$153</strong>. You will receive a pledge via the Bill Pay portal.
                                 </p>
                             </div>
 
@@ -272,7 +272,7 @@ export default function Letter() {
                             <div className="laagatWarning">
                                 <span className="laagatWarningIcon">⚠</span>
                                 <div>
-                                    <p>This event will require the following Laagat contributions. You will receive pledges via the Bill Pay portal.</p>
+                                    <p>It is a Nehej (tradition) for all Mumineen to araz Laagat during important life milestones to the local jamaat and Dawat-e-Hadiyah reflecting administrative expenses.</p>
                                     <ul className="laagatAmountList">
                                         <li><strong>Sarkaari Laagat:</strong> ${amounts.sarkaari}</li>
                                         <li><strong>Jamaat Laagat:</strong> ${amounts.jamaat}</li>

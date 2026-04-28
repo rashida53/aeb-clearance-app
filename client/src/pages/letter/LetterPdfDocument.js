@@ -189,6 +189,17 @@ const styles = StyleSheet.create({
         height: 183,
         objectFit: 'contain',
     },
+
+    approvalContainer: {
+        position: 'absolute',
+        bottom: 40,
+        left: 52,
+    },
+    approvalText: {
+        fontSize: 11,
+        color: NAVY,
+        marginBottom: 4,
+    },
 });
 
 const APPROVER_RAWAT = 'Shk Murtaza Rawat';
@@ -301,6 +312,13 @@ const LetterPdfDocument = ({ hofIts, hofName, reason, description, date, showLaa
                         <Text style={styles.fieldValue}>{approvalRemarks}</Text>
                     </View>
                 ) : null}
+
+                {approved && (
+                    <View style={styles.approvalContainer}>
+                        <Text style={styles.approvalText}>Approver: Abd e Syedna TUS {approverName}</Text>
+                        <Text style={styles.approvalText}>Date: {new Date().toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })}</Text>
+                    </View>
+                )}
 
                 {signatureImg && (
                     <View style={styles.signatureContainer}>
