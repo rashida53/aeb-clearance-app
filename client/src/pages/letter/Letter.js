@@ -280,20 +280,6 @@ export default function Letter() {
                                 </div>
                             </div>
 
-                            <button
-                                className="laagatCollapsibleBtn"
-                                onClick={() => setLaagatOpen(prev => !prev)}
-                            >
-                                <span>What is the difference between Sabeel and Laagat?</span>
-                                <span className="laagatChevron">{laagatOpen ? '▲' : '▼'}</span>
-                            </button>
-                            {laagatOpen && (
-                                <div className="laagatCollapsibleBody">
-                                    Sabeel budgets are based on regular usage like Miqaats, Madrasah, FMB, etc.
-                                    Laagat helps us cover usage and cleaning costs for personal events.
-                                </div>
-                            )}
-
                             <div className="laagatActions">
                                 <button className="letterBackBtn" onClick={goBack}>Back</button>
                                 <button className="letterGenerateBtn" onClick={handleLaagatLifeAgree}>Agree</button>
