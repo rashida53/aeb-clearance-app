@@ -32,23 +32,9 @@ const startApolloServer = async (typeDefs, resolvers) => {
         });
     }
 
-    Promise.all([
-        new Promise((resolve, reject) => {
-            clearanceDb.once('open', resolve);
-            clearanceDb.once('error', reject);
-        }),
-        new Promise((resolve, reject) => {
-            fmbDb.once('open', resolve);
-            fmbDb.once('error', reject);
-        }),
-    ]).then(() => {
-        app.listen(PORT, () => {
-            console.log(`API server running on port ${PORT}!`);
-            console.log(`Use GraphQL at http://localhost:${PORT}${server.graphqlPath}`);
-        });
-    }).catch((err) => {
-        console.error('Database connection error:', err);
-        process.exit(1);
+    app.listen(PORT, () => {
+        console.log(`API server running on port ${PORT}!`);
+        console.log(`Use GraphQL at http://localhost:${PORT}${server.graphqlPath}`);
     });
 };
 

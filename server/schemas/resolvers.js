@@ -1,4 +1,4 @@
-const { Member, User, QBOpen, Approval } = require('../models');
+const { Member, User, QBOpen, Approval, Letter } = require('../models');
 const { signToken } = require('../utils/auth');
 const { AuthenticationError } = require('apollo-server-express');
 const { SendHtmlEmail } = require('../utils/email');
@@ -156,6 +156,24 @@ const resolvers = {
         generateLetter: async (parent, { hofIts, hofName, reason, description }, context) => {
             if (!context.user) {
                 throw new AuthenticationError('You must be logged in');
+            }
+
+            try {
+                const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
+                const recentApproval = await Approval.findOne(
+                    { hofIts, approvedAt: { $gte: thirtyDaysAgo } },
+                    null,
+                    { sort: { approvedAt: -1 } }
+                );
+                if (recentApproval) {
+                    await Letter.create({
+                        requester: context.user.userId,
+                        approver: recentApproval.approver,
+                        reason,
+                    });
+                }
+            } catch (err) {
+                console.error('Failed to log letter:', err.message);
             }
 
             const emailAccount = process.env.EMAIL_SENDER;

@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { useQuery } from '@apollo/client';
+import { useQuery, useMutation } from '@apollo/client';
 import { useNavigate } from 'react-router-dom';
 import { pdf } from '@react-pdf/renderer';
 import Nav from '../../components/Nav';
 import LetterPdfDocument from './LetterPdfDocument';
 import { GET_ME } from '../user/gql/queries';
 import { GET_MY_QB_OPENS, GET_APPROVAL_STATUS } from '../openBalances/gql/queries';
+import { GENERATE_LETTER } from './gql/mutations';
 
 const REASONS = ['Personal Function', 'Travel', 'Life Event', '12 Umoor'];
 
@@ -80,6 +81,7 @@ export default function Letter() {
     const approved = approvalData?.getApprovalStatus?.approved === true;
     const approvalRemarks = approvalData?.getApprovalStatus?.remarks || '';
     const approverName = approvalData?.getApprovalStatus?.approverName || '';
+    const [generateLetter] = useMutation(GENERATE_LETTER);
     const dataReady = !meLoading && !qbLoading && !approvalLoading && !!userId;
 
     const currentStep = stepHistory[stepHistory.length - 1];
@@ -151,6 +153,20 @@ export default function Letter() {
                 approverName={approverName}
             />
         ).toBlob();
+
+        try {
+            await generateLetter({
+                variables: {
+                    hofIts,
+                    hofName,
+                    reason: leafReason,
+                    description: selections.description || '',
+                },
+            });
+        } catch (err) {
+            console.error('Failed to log letter:', err.message);
+        }
+
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
