@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import PrivateRoute from './utils/PrivateRoute';
 import {
@@ -10,13 +10,13 @@ import {
 import { setContext } from '@apollo/client/link/context';
 import './App.css';
 
-import Login from './pages/user/components/Login';
-import Reset from './pages/user/components/Reset';
-import OpenBalances from './pages/openBalances/OpenBalances';
-import Letter from './pages/letter/Letter';
-import Wajebaat from './pages/wajebaat/Wajebaat';
-import Admin from './pages/admin/Admin';
-import Review from './pages/review/Review';
+const Login = lazy(() => import('./pages/user/components/Login'));
+const Reset = lazy(() => import('./pages/user/components/Reset'));
+const OpenBalances = lazy(() => import('./pages/openBalances/OpenBalances'));
+const Letter = lazy(() => import('./pages/letter/Letter'));
+const Wajebaat = lazy(() => import('./pages/wajebaat/Wajebaat'));
+const Admin = lazy(() => import('./pages/admin/Admin'));
+const Review = lazy(() => import('./pages/review/Review'));
 
 const httpLink = createHttpLink({
   uri: '/graphql',
@@ -41,6 +41,7 @@ function App() {
   return (
     <ApolloProvider client={client}>
       <Router>
+        <Suspense fallback={<div className="pageContainer"><p>Loading...</p></div>}>
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/reset" element={<Reset />} />
@@ -85,6 +86,7 @@ function App() {
             }
           />
         </Routes>
+        </Suspense>
       </Router>
     </ApolloProvider>
   );

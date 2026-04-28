@@ -127,6 +127,10 @@ const resolvers = {
                 throw new Error('No community profile found for that HOF ITS. Please contact an admin.');
             }
 
+            if (user.isActive === false) {
+                throw new Error('This account is not active. Please contact an admin.');
+            }
+
             const member = await Member.create({
                 email: email.toLowerCase(),
                 password,
