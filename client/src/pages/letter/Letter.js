@@ -139,7 +139,10 @@ export default function Letter() {
 
     const showLaagat = ['Markaz', 'Aqiqa', 'Misaaq', 'Nikaah'].includes(selections.subOption);
 
+    const needsApproval = openBalances.length > 0 && !approved;
+
     const handleGenerate = async () => {
+        if (needsApproval) return;
         setGenerating(true);
         const blob = await pdf(
             <LetterPdfDocument
@@ -258,7 +261,7 @@ export default function Letter() {
                             {laagatOpen && (
                                 <div className="laagatCollapsibleBody">
                                     Sabeel budgets are based on regular usage like Miqaats, Madrasah, FMB, etc.
-                                    Laagat helps us cover usage and cleaning costs for personal events.
+                                    Laagat helps us cover costs for personal events.
                                 </div>
                             )}
 
@@ -276,7 +279,7 @@ export default function Letter() {
                             <div className="laagatWarning">
                                 <span className="laagatWarningIcon">⚠</span>
                                 <div>
-                                    <p>It is a Nehej (tradition) for all Mumineen to araz Laagat during important life milestones to the local jamaat and Dawat-e-Hadiyah reflecting administrative expenses.</p>
+                                    <p>It is a Nehej (tradition) for all Mumineen to araz Laagat during important life milestones to the local jamaat and Dawat-e-Hadiyah reflecting administrative expenses. You will receive a pledge via the Bill Pay portal. </p>
                                     <ul className="laagatAmountList">
                                         <li><strong>Sarkaari Laagat:</strong> ${amounts.sarkaari}</li>
                                         <li><strong>Jamaat Laagat:</strong> ${amounts.jamaat}</li>
@@ -369,7 +372,7 @@ export default function Letter() {
 
                             <button
                                 className="letterGenerateBtn"
-                                disabled={!dataReady || generating || (openBalances.length > 0 && !approved)}
+                                disabled={!dataReady || generating || needsApproval}
                                 onClick={handleGenerate}
                             >
                                 {!dataReady ? 'Loading...' : generating ? 'Preparing...' : 'Generate Letter'}

@@ -585,9 +585,15 @@ label {
   align-self: center;
 }
 
-.letterGenerateBtn:hover {
+.letterGenerateBtn:hover:not(:disabled) {
   background-color: var(--color-gold);
   color: var(--color-navy);
+}
+
+.letterGenerateBtn:disabled {
+  background-color: #999999;
+  color: #cccccc;
+  cursor: not-allowed;
 }
 
 .letterCalendarNote {
