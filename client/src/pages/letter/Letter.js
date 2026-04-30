@@ -369,7 +369,7 @@ export default function Letter() {
 
                             <button
                                 className="letterGenerateBtn"
-                                disabled={!dataReady || generating}
+                                disabled={!dataReady || generating || (openBalances.length > 0 && !approved)}
                                 onClick={handleGenerate}
                             >
                                 {!dataReady ? 'Loading...' : generating ? 'Preparing...' : 'Generate Letter'}
