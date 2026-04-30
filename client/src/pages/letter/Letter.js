@@ -179,7 +179,7 @@ export default function Letter() {
         link.click();
         URL.revokeObjectURL(url);
         setGenerating(false);
-        setTimeout(() => navigate('/'), 500);
+        setTimeout(() => navigate('/pledges'), 500);
     };
 
     const getSubOptionQuestion = () => {

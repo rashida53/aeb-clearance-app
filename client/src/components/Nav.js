@@ -23,7 +23,7 @@ export default function Nav() {
 
     return (
         <nav className="nav">
-            <Link to="/" className="navBrand" onClick={closeMenu}>
+            <Link to="/pledges" className="navBrand" onClick={closeMenu}>
                 Anjuman e Burhani Clearance
             </Link>
 

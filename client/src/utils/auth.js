@@ -6,7 +6,7 @@ class AuthService {
     }
 
     getReferrer() {
-        return localStorage.getItem('login_referrer') || '/';
+        return localStorage.getItem('login_referrer') || '/pledges';
     }
 
     clearReferrer() {
@@ -57,7 +57,7 @@ class AuthService {
 
     logout() {
         localStorage.removeItem('id_token');
-        window.location.assign('/');
+        window.location.assign('/login');
     }
 }
 

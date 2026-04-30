@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import Auth from './auth';
 
-const PrivateRoute = ({ children, requiredRole, redirectPath = '/' }) => {
+const PrivateRoute = ({ children, requiredRole, redirectPath = '/pledges' }) => {
     const location = useLocation();
 
     useEffect(() => {

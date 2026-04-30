@@ -213,26 +213,21 @@ const styles = StyleSheet.create({
 const APPROVER_RAWAT = 'Shk Murtaza Rawat';
 const APPROVER_BHORA = 'M Taaha Bhora';
 
-const getApproverSignature = (approved, approverName) => {
-    if (!approved) return null;
-    if (approverName === APPROVER_RAWAT) return sigRawat;
-    if (approverName === APPROVER_BHORA) return sigBhora;
-    return null;
+const APPROVER_SIGNATURES = {
+    [APPROVER_RAWAT]: { stamp: signRawat, signature: sigRawat },
+    [APPROVER_BHORA]: { stamp: signBhora, signature: sigBhora },
 };
 
-const getSignatureImage = (approved, approverName, hasOpenBalances) => {
-    if (!approved) return null;
-    if (!hasOpenBalances) return signBhora;
-    if (approverName === APPROVER_RAWAT) return signRawat;
-    if (approverName === APPROVER_BHORA) return signBhora;
-    return null;
+const getApproverAssets = (approved, approverName, hasOpenBalances) => {
+    if (!approved) return { stamp: null, signature: null };
+    if (!hasOpenBalances) return { stamp: signBhora, signature: sigBhora };
+    return APPROVER_SIGNATURES[approverName] || { stamp: null, signature: null };
 };
 
 const LetterPdfDocument = ({ hofIts, hofName, reason, description, date, showLaagat, laagatAmount, sarkaariLaagat, jamaatLaagat, openBalances = [], approved, approvalRemarks, approverName }) => {
     const formattedDate = formatPdfDate(date);
     const total = openBalances.reduce((sum, b) => sum + (b.balance || 0), 0);
-    const signatureImg = getSignatureImage(approved, approverName, openBalances.length > 0);
-    const approverSigImg = getApproverSignature(approved, approverName);
+    const { stamp: signatureImg, signature: approverSigImg } = getApproverAssets(approved, approverName, openBalances.length > 0);
 
     return (
         <Document>

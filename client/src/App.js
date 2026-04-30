@@ -43,10 +43,11 @@ function App() {
       <Router>
         <Suspense fallback={<div className="pageContainer"><p>Loading...</p></div>}>
         <Routes>
+          <Route path="/" element={<Login />} />
           <Route path="/login" element={<Login />} />
           <Route path="/reset" element={<Reset />} />
           <Route
-            path="/"
+            path="/pledges"
             element={
               <PrivateRoute>
                 <OpenBalances />
