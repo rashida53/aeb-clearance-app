@@ -28,12 +28,17 @@ const STEP_EVENT_TYPE = 'event_type';
 const STEP_FMB = 'fmb';
 const STEP_DESCRIPTION = 'description';
 
-const LAAGAT_AMOUNT_MARKAZ = 153;
+const LAAGAT_AMOUNTS_MARKAZ = {
+    'Darees': 110,
+    'Majlis': 72,
+    'Tasbeeh': 72,
+    'Shitabi': 110,
+};
 
 const LAAGAT_LIFE_AMOUNTS = {
-    'Aqiqa':  { sarkaari: 21,  jamaat: 21  },
-    'Misaaq': { sarkaari: 53,  jamaat: 53  },
-    'Nikaah': { sarkaari: 110, jamaat: 110 },
+    'Aqiqa':  { sarkaari: 72,  jamaat: 72  },
+    'Misaaq': { sarkaari: 110, jamaat: 110 },
+    'Nikaah': { sarkaari: 353, jamaat: 353 },
 };
 
 const STEP_LABELS = {
@@ -110,7 +115,6 @@ export default function Letter() {
     };
 
     const handleLaagatAgree = () => {
-        setSelections(prev => ({ ...prev, laagatAmount: LAAGAT_AMOUNT_MARKAZ }));
         goToStep(STEP_EVENT_TYPE);
     };
 
@@ -121,7 +125,8 @@ export default function Letter() {
     };
 
     const handleEventTypeSelect = (option) => {
-        setSelections(prev => ({ ...prev, eventType: option }));
+        const laagatAmount = selections.subOption === 'Markaz' ? (LAAGAT_AMOUNTS_MARKAZ[option] || 72) : null;
+        setSelections(prev => ({ ...prev, eventType: option, laagatAmount }));
         goToStep(STEP_DESCRIPTION);
     };
 
@@ -239,8 +244,7 @@ export default function Letter() {
                             <div className="laagatWarning">
                                 <span className="laagatWarningIcon">⚠</span>
                                 <p>
-                                    Events at Markaz will require a Laagat contribution of{' '}
-                                    <strong>$153</strong>. You will receive a pledge via the Bill Pay portal.
+                                    Events at Markaz will require a Laagat contribution. You will receive a pledge via the Bill Pay portal.
                                 </p>
                             </div>
 
