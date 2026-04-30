@@ -1,8 +1,10 @@
 import { Page, Text, View, Document, StyleSheet, Image, Font } from '@react-pdf/renderer';
 import leftLogo from '../../assets/letterhead.png';
 import rightLogo from '../../assets/maaliyah.png';
-import signBhora from '../../assets/aeb-bhora.png';
-import signRawat from '../../assets/aeb-rawat.png';
+import signBhora from '../../assets/aeb-treasurer.png';
+import signRawat from '../../assets/aeb-secretary.png';
+import sigRawat from '../../assets/rawat.png';
+import sigBhora from '../../assets/bhora.png';
 
 Font.registerHyphenationCallback(word => [word]);
 
@@ -92,7 +94,7 @@ const styles = StyleSheet.create({
     },
     laagatlNote: {
         fontSize: 13,
-        color: '#555555',
+        color: '#222222',
         flex: 1,
     },
 
@@ -197,13 +199,26 @@ const styles = StyleSheet.create({
     },
     approvalText: {
         fontSize: 11,
-        color: NAVY,
+        color: '#000000',
+        marginBottom: 4,
+    },
+    approvalSignatureImage: {
+        width: 192,
+        height: 96,
+        objectFit: 'contain',
         marginBottom: 4,
     },
 });
 
 const APPROVER_RAWAT = 'Shk Murtaza Rawat';
 const APPROVER_BHORA = 'M Taaha Bhora';
+
+const getApproverSignature = (approved, approverName) => {
+    if (!approved) return null;
+    if (approverName === APPROVER_RAWAT) return sigRawat;
+    if (approverName === APPROVER_BHORA) return sigBhora;
+    return null;
+};
 
 const getSignatureImage = (approved, approverName, hasOpenBalances) => {
     if (!approved) return null;
@@ -217,6 +232,7 @@ const LetterPdfDocument = ({ hofIts, hofName, reason, description, date, showLaa
     const formattedDate = formatPdfDate(date);
     const total = openBalances.reduce((sum, b) => sum + (b.balance || 0), 0);
     const signatureImg = getSignatureImage(approved, approverName, openBalances.length > 0);
+    const approverSigImg = getApproverSignature(approved, approverName);
 
     return (
         <Document>
@@ -315,6 +331,9 @@ const LetterPdfDocument = ({ hofIts, hofName, reason, description, date, showLaa
 
                 {approved && (
                     <View style={styles.approvalContainer}>
+                        {approverSigImg && (
+                            <Image src={approverSigImg} style={styles.approvalSignatureImage} />
+                        )}
                         <Text style={styles.approvalText}>Approver: Abd e Syedna TUS {approverName}</Text>
                         <Text style={styles.approvalText}>Date: {new Date().toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })}</Text>
                     </View>
