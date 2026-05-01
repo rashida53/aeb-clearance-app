@@ -14,7 +14,7 @@ const SUB_OPTIONS = {
     'Personal Function': ['Markaz', 'Outside Markaz'],
     'Life Event': ['Aqiqa', 'Chhatti', 'Misaaq', 'Nikaah'],
     'Travel': ['Hajj', 'Umrah', 'Kun', 'Misr', 'India'],
-    '12 Umoor': ['Iqtesadiyah - Qardan Hasanah', 'Marafiq Burhaniyah - Moasaat', 'FMB - Niyaaz/Thaali'],
+    '12 Umoor': ['Iqtesadiyah - Qardan Hasanah', 'Marafiq Burhaniyah - Moasaat', 'FMB - Niyaaz/Thaali', 'Daakhiliyah - Waraqat ut Tarkhees'],
 };
 
 const FMB_OPTIONS = ['Item in Thaali', 'Full Thaali', 'Item in Niyaaz'];
