@@ -102,7 +102,7 @@ export default function Letter() {
     const handleSubOptionSelect = (option) => {
         setSelections(prev => ({ ...prev, subOption: option, eventType: '', fmbOption: '', laagatAmount: null, sarkaariLaagat: null, jamaatLaagat: null }));
         if (option === 'Markaz') {
-            goToStep(STEP_LAAGAT);
+            goToStep(STEP_EVENT_TYPE);
         } else if (['Aqiqa', 'Misaaq', 'Nikaah'].includes(option)) {
             goToStep(STEP_LAAGAT_LIFE);
         } else if (selections.reason === 'Personal Function') {
@@ -115,7 +115,7 @@ export default function Letter() {
     };
 
     const handleLaagatAgree = () => {
-        goToStep(STEP_EVENT_TYPE);
+        goToStep(STEP_DESCRIPTION);
     };
 
     const handleLaagatLifeAgree = () => {
@@ -127,7 +127,11 @@ export default function Letter() {
     const handleEventTypeSelect = (option) => {
         const laagatAmount = selections.subOption === 'Markaz' ? (LAAGAT_AMOUNTS_MARKAZ[option] || 72) : null;
         setSelections(prev => ({ ...prev, eventType: option, laagatAmount }));
-        goToStep(STEP_DESCRIPTION);
+        if (selections.subOption === 'Markaz') {
+            goToStep(STEP_LAAGAT);
+        } else {
+            goToStep(STEP_DESCRIPTION);
+        }
     };
 
     const handleFmbOptionSelect = (option) => {
@@ -198,12 +202,12 @@ export default function Letter() {
             <div className="pageContainer">
                 {dataReady && openBalances.length > 0 && !approved && (
                     <div className="letterPledgeWarning">
-                        Please contact <strong>M Taaha bhai Bhora</strong> or <strong>Shk Murtaza bhai Rawat</strong> regarding your open pledges before generating your letter.
+                        Please contact <strong>M Taaha bhai Bhora</strong> or <strong>Shk Murtaza bhai Rawat</strong> regarding your open pledges
                     </div>
                 )}
 
                 <div className="letterHeader">
-                    <h1>Safaai Chitthi</h1>
+                    <h1>Jamaat Clearance</h1>
                 </div>
 
                 <div className="letterForm">
@@ -246,9 +250,14 @@ export default function Letter() {
                         <div className="letterStep">
                             <div className="laagatWarning">
                                 <span className="laagatWarningIcon">⚠</span>
-                                <p>
-                                    Events at Markaz will require a Laagat contribution. You will receive a pledge via the Bill Pay portal.
-                                </p>
+                                <div>
+                                    <p>
+                                        Events at Markaz require a Laagat contribution. You will receive a pledge via the Bill Pay portal.
+                                    </p>
+                                    <ul className="laagatAmountList">
+                                        <li><strong>Laagat:</strong> ${selections.laagatAmount}</li>
+                                    </ul>
+                                </div>
                             </div>
 
                             <button
@@ -279,13 +288,26 @@ export default function Letter() {
                             <div className="laagatWarning">
                                 <span className="laagatWarningIcon">⚠</span>
                                 <div>
-                                    <p>It is a Nehej (tradition) for all Mumineen to araz Laagat during important life milestones to the local jamaat and Dawat-e-Hadiyah reflecting administrative expenses. You will receive a pledge via the Bill Pay portal. </p>
+                                    <p>Milestone events require a Laagat contribution. You will receive a pledge via the Bill Pay portal.</p>
                                     <ul className="laagatAmountList">
                                         <li><strong>Sarkaari Laagat:</strong> ${amounts.sarkaari}</li>
                                         <li><strong>Jamaat Laagat:</strong> ${amounts.jamaat}</li>
                                     </ul>
                                 </div>
                             </div>
+
+                            <button
+                                className="laagatCollapsibleBtn"
+                                onClick={() => setLaagatOpen(prev => !prev)}
+                            >
+                                <span>Why do we have Laagat for these milestones?</span>
+                                <span className="laagatChevron">{laagatOpen ? '▲' : '▼'}</span>
+                            </button>
+                            {laagatOpen && (
+                                <div className="laagatCollapsibleBody">
+                                    It is a Nehej (tradition) for all Mumineen to araz Laagat during important life milestones to the local jamaat and Dawat-e-Hadiyah reflecting administrative expenses.
+                                </div>
+                            )}
 
                             <div className="laagatActions">
                                 <button className="letterBackBtn" onClick={goBack}>Back</button>
