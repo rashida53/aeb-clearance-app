@@ -19,20 +19,22 @@ const SUB_OPTIONS = {
 
 const FMB_OPTIONS = ['Item in Thaali', 'Full Thaali', 'Item in Niyaaz'];
 const EVENT_TYPE_OPTIONS = ['Darees', 'Majlis', 'Tasbeeh', 'Shitabi'];
+const THAAL_OPTIONS = ['No Thaals', 'Less than 10 Thaals', '10 to 20 Thaals', 'More than 20 Thaals'];
 
 const STEP_REASON = 'reason';
 const STEP_SUB_OPTION = 'sub_option';
 const STEP_LAAGAT = 'laagat';
 const STEP_LAAGAT_LIFE = 'laagat_life';
 const STEP_EVENT_TYPE = 'event_type';
+const STEP_THAALS = 'thaals';
 const STEP_FMB = 'fmb';
 const STEP_DESCRIPTION = 'description';
 
-const LAAGAT_AMOUNTS_MARKAZ = {
-    'Darees': 110,
-    'Majlis': 72,
-    'Tasbeeh': 72,
-    'Shitabi': 110,
+const LAAGAT_AMOUNTS_THAALS = {
+    'No Thaals': 53,
+    'Less than 10 Thaals': 72,
+    '10 to 20 Thaals': 110,
+    'More than 20 Thaals': 153,
 };
 
 const LAAGAT_LIFE_AMOUNTS = {
@@ -47,6 +49,7 @@ const STEP_LABELS = {
     [STEP_LAAGAT]: 'Laagat',
     [STEP_LAAGAT_LIFE]: 'Laagat',
     [STEP_EVENT_TYPE]: 'Event Type',
+    [STEP_THAALS]: 'Approximate Thaals',
     [STEP_FMB]: 'FMB Type',
     [STEP_DESCRIPTION]: 'Description',
 };
@@ -57,6 +60,7 @@ export default function Letter() {
         reason: '',
         subOption: '',
         eventType: '',
+        thaalOption: '',
         fmbOption: '',
         description: '',
         date: '',
@@ -95,12 +99,12 @@ export default function Letter() {
     const goBack = () => setStepHistory(prev => prev.slice(0, -1));
 
     const handleReasonSelect = (reason) => {
-        setSelections({ reason, subOption: '', eventType: '', fmbOption: '', description: '', date: '', laagatAmount: null, sarkaariLaagat: null, jamaatLaagat: null });
+        setSelections({ reason, subOption: '', eventType: '', thaalOption: '', fmbOption: '', description: '', date: '', laagatAmount: null, sarkaariLaagat: null, jamaatLaagat: null });
         goToStep(STEP_SUB_OPTION);
     };
 
     const handleSubOptionSelect = (option) => {
-        setSelections(prev => ({ ...prev, subOption: option, eventType: '', fmbOption: '', laagatAmount: null, sarkaariLaagat: null, jamaatLaagat: null }));
+        setSelections(prev => ({ ...prev, subOption: option, eventType: '', thaalOption: '', fmbOption: '', laagatAmount: null, sarkaariLaagat: null, jamaatLaagat: null }));
         if (option === 'Markaz') {
             goToStep(STEP_EVENT_TYPE);
         } else if (['Aqiqa', 'Misaaq', 'Nikaah'].includes(option)) {
@@ -125,13 +129,18 @@ export default function Letter() {
     };
 
     const handleEventTypeSelect = (option) => {
-        const laagatAmount = selections.subOption === 'Markaz' ? (LAAGAT_AMOUNTS_MARKAZ[option] || 72) : null;
-        setSelections(prev => ({ ...prev, eventType: option, laagatAmount }));
+        setSelections(prev => ({ ...prev, eventType: option, laagatAmount: null }));
         if (selections.subOption === 'Markaz') {
-            goToStep(STEP_LAAGAT);
+            goToStep(STEP_THAALS);
         } else {
             goToStep(STEP_DESCRIPTION);
         }
+    };
+
+    const handleThaalOptionSelect = (option) => {
+        const laagatAmount = LAAGAT_AMOUNTS_THAALS[option];
+        setSelections(prev => ({ ...prev, thaalOption: option, laagatAmount }));
+        goToStep(STEP_LAAGAT);
     };
 
     const handleFmbOptionSelect = (option) => {
@@ -252,7 +261,7 @@ export default function Letter() {
                                 <span className="laagatWarningIcon">⚠</span>
                                 <div>
                                     <p>
-                                        Events at Markaz require a Laagat contribution. You will receive a pledge via the Bill Pay portal.
+                                        Events at Markaz require a Laagat contribution determined by Thaal count. You will receive a pledge via the Bill Pay portal.
                                     </p>
                                     <ul className="laagatAmountList">
                                         <li><strong>Laagat:</strong> ${selections.laagatAmount}</li>
@@ -316,6 +325,24 @@ export default function Letter() {
                         </div>
                         );
                     })()}
+
+                    {currentStep === STEP_THAALS && (
+                        <div className="letterStep">
+                            <h3 className="letterQuestion">Approximate Thaals</h3>
+                            <div className="letterOptions">
+                                {THAAL_OPTIONS.map(option => (
+                                    <button
+                                        key={option}
+                                        className="letterOptionBtn"
+                                        onClick={() => handleThaalOptionSelect(option)}
+                                    >
+                                        {option}
+                                    </button>
+                                ))}
+                            </div>
+                            <button className="letterBackBtn" onClick={goBack}>Back</button>
+                        </div>
+                    )}
 
                     {currentStep === STEP_EVENT_TYPE && (
                         <div className="letterStep">
