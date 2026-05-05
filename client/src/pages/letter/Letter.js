@@ -1,9 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation } from '@apollo/client';
 import { useNavigate } from 'react-router-dom';
-import { pdf } from '@react-pdf/renderer';
 import Nav from '../../components/Nav';
-import LetterPdfDocument from './LetterPdfDocument';
 import { GET_ME } from '../user/gql/queries';
 import { GET_MY_QB_OPENS, GET_APPROVAL_STATUS } from '../openBalances/gql/queries';
 import { GENERATE_LETTER } from './gql/mutations';
@@ -157,6 +155,10 @@ export default function Letter() {
     const handleGenerate = async () => {
         if (needsApproval) return;
         setGenerating(true);
+        const [{ pdf }, { default: LetterPdfDocument }] = await Promise.all([
+            import('@react-pdf/renderer'),
+            import('./LetterPdfDocument'),
+        ]);
         const blob = await pdf(
             <LetterPdfDocument
                 hofIts={hofIts}
