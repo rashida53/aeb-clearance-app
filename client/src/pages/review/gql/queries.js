@@ -10,3 +10,14 @@ export const GET_ALL_ACTIVE_USERS = gql`
         }
     }
 `;
+
+export const GET_APPROVALS_BY_REQUESTER = gql`
+    query getApprovalsByRequester($userId: ID!) {
+        getApprovalsByRequester(userId: $userId) {
+            _id
+            remarks
+            approvedAt
+            approver
+        }
+    }
+`;

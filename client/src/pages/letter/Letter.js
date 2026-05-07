@@ -213,7 +213,7 @@ export default function Letter() {
             <div className="pageContainer">
                 {dataReady && openBalances.length > 0 && !approved && (
                     <div className="letterPledgeWarning">
-                        Please contact a member of Umoor Maaliyah regarding your open pledges:
+                        Please contact a member of Umoor Maaliyah regarding your open pledges as they require a payment plan:
                         <ul className="letterPledgeWarningList">
                             <li><strong>M Murtaza bhai Kutianawala</strong> — (512) 658-5643</li>
                             <li><strong>M Taaha bhai Bhora</strong> — (682) 365-3910</li>

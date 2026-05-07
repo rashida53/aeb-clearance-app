@@ -67,6 +67,16 @@ const resolvers = {
             return { approved: false, remarks: null, approverName: null };
         },
 
+        getApprovalsByRequester: async (parent, { userId }, context) => {
+            if (!context.user) {
+                throw new AuthenticationError('You must be logged in');
+            }
+            if (!context.user.roles || !context.user.roles.includes('LETTER_ADMIN')) {
+                throw new AuthenticationError('Not authorized');
+            }
+            return Approval.find({ requester: userId }).sort({ approvedAt: -1 });
+        },
+
         getAllActiveUsers: async (parent, args, context) => {
             if (!context.user) {
                 throw new AuthenticationError('You must be logged in');

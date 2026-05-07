@@ -67,6 +67,7 @@ type Query {
     getMyQbOpens(userId: ID!): [QBOpen]
     getAllActiveUsers: [ActiveUser]
     getApprovalStatus(hofIts: String!, userId: ID!): ApprovalStatus
+    getApprovalsByRequester(userId: ID!): [Approval]
 }
 
 type Mutation {

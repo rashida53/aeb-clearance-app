@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation } from '@apollo/client';
 import Nav from '../../components/Nav';
-import { GET_ALL_ACTIVE_USERS } from './gql/queries';
+import { GET_ALL_ACTIVE_USERS, GET_APPROVALS_BY_REQUESTER } from './gql/queries';
 import { CREATE_APPROVAL } from './gql/mutations';
 import { GET_MY_OPEN_BALANCES } from '../openBalances/gql/queries';
 
@@ -36,6 +36,13 @@ const Review = () => {
         variables: { hofIts: selectedUser?.hofIts || '' },
         skip: !selectedUser,
     });
+
+    const { data: approvalsData, loading: approvalsLoading } = useQuery(GET_APPROVALS_BY_REQUESTER, {
+        variables: { userId: selectedUser?._id || '' },
+        skip: !selectedUser,
+    });
+
+    const pastApprovals = approvalsData?.getApprovalsByRequester || [];
 
     const balances = balancesData?.getMyOpenBalances || [];
     const total = balances.reduce((sum, b) => sum + (b.balance || 0), 0);
@@ -171,10 +178,46 @@ const Review = () => {
                                 </>
                             )}
 
+                            <div className="reviewPastApprovalsSection">
+                                <h3 className="reviewPastApprovalsTitle">Past Approvals</h3>
+                                {approvalsLoading ? (
+                                    <div className="loadingState">Loading past approvals…</div>
+                                ) : pastApprovals.length === 0 ? (
+                                    <div className="reviewNoPastApprovals">No past approvals found.</div>
+                                ) : (
+                                    <div className="reviewTableWrapper">
+                                        <table className="reviewTable">
+                                            <thead>
+                                                <tr>
+                                                    <th>Date</th>
+                                                    <th>Approver</th>
+                                                    <th>Remarks</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {pastApprovals.map((a) => (
+                                                    <tr key={a._id}>
+                                                        <td>
+                                                            {new Date(a.approvedAt).toLocaleDateString('en-US', {
+                                                                year: 'numeric',
+                                                                month: 'short',
+                                                                day: 'numeric',
+                                                            })}
+                                                        </td>
+                                                        <td>{a.approver}</td>
+                                                        <td>{a.remarks}</td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                )}
+                            </div>
+
                             <div className="reviewApprovalSection">
                                 {approveSuccess ? (
                                     <div className="letterSuccessMsg">
-                                        Approved. Please regenerate the letter.
+                                        Approved. Requester can now generate the letter.
                                     </div>
                                 ) : (
                                     <>
