@@ -162,7 +162,7 @@ const Review = () => {
                                                             <td>{b.amount != null ? formatCurrency(b.amount) : '—'}</td>
                                                             <td>{formatCurrency(b.balance)}</td>
                                                             <td>{formatDueDate(b.due)}</td>
-                                                            <td>{b.pp === 'Likely' ? 'LIKELY' : 'UNKNOWN'}</td>
+                                                            <td>{b.pp?.toUpperCase() === 'LIKELY' ? 'LIKELY' : 'UNKNOWN'}</td>
                                                         </tr>
                                                     );
                                                 })}
