@@ -320,17 +320,17 @@ const LetterPdfDocument = ({ hofIts, hofName, reason, description, date, showLaa
 
                 {approved && (
                     <View style={styles.approvalContainer}>
-                        {approverSigImg && (
-                            <Image src={approverSigImg} style={styles.approvalSignatureImage} />
+                        {signatureImg && (
+                            <Image src={signatureImg} style={styles.approvalSignatureImage} />
                         )}
-                        <Text style={styles.approvalText}>Approver: Abd e Syedna TUS {approverName}</Text>
+                        <Text style={styles.approvalText}>Approver: Abd e Syedna TUS {approverName === APPROVER_RAWAT ? APPROVER_RAWAT : 'M Taaha Bhora'}</Text>
                         <Text style={styles.approvalText}>Date: {new Date().toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })}</Text>
                     </View>
                 )}
 
-                {signatureImg && (
+                {approverSigImg && (
                     <View style={styles.signatureContainer}>
-                        <Image src={signatureImg} style={styles.signatureImage} />
+                        <Image src={approverSigImg} style={styles.signatureImage} />
                     </View>
                 )}
 
