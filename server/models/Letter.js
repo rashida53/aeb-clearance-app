@@ -15,6 +15,12 @@ const letterSchema = new Schema(
             type: String,
             required: true,
         },
+        hofIts: {
+            type: String,
+        },
+        generatedOn: {
+            type: Number,
+        },
     },
     {
         collection: 'letters',

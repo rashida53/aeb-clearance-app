@@ -191,10 +191,18 @@ const resolvers = {
                     Masjid.findOne({ its: hofIts }),
                 ]);
 
+                const thirtyDaysAgoForLetter = Date.now() - 30 * 24 * 60 * 60 * 1000;
+                const recentLetter = await Letter.findOne({
+                    hofIts,
+                    generatedOn: { $gte: thirtyDaysAgoForLetter },
+                });
+
                 await Letter.create({
                     requester: context.user.userFullName,
                     approver: recentApproval ? recentApproval.approver : 'AUTO',
                     reason,
+                    hofIts,
+                    generatedOn: Date.now(),
                 });
 
                 let masjidNote;
@@ -210,7 +218,7 @@ const resolvers = {
                 const emailPassword = process.env.EMAIL_APP_PASSWORD;
                 const recipients = process.env.LETTER_RECIPIENTS;
 
-                if (senderEmail && emailPassword && recipients) {
+                if (!recentLetter && senderEmail && emailPassword && recipients) {
                     const emailHtml = `
                         <!DOCTYPE html>
                         <html lang="en">
