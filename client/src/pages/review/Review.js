@@ -19,6 +19,7 @@ const Review = () => {
     const [selectedUser, setSelectedUser] = useState(null);
     const [showDropdown, setShowDropdown] = useState(false);
     const [remarks, setRemarks] = useState('');
+    const [masjid, setMasjid] = useState('');
     const [approveSuccess, setApproveSuccess] = useState(false);
 
     const [createApproval, { loading: approving }] = useMutation(CREATE_APPROVAL);
@@ -58,6 +59,7 @@ const Review = () => {
         setSearchTerm(user.fullName);
         setShowDropdown(false);
         setRemarks('');
+        setMasjid('');
         setApproveSuccess(false);
     };
 
@@ -67,10 +69,12 @@ const Review = () => {
                 hofIts: selectedUser.hofIts,
                 requester: selectedUser._id,
                 remarks: remarks.trim(),
+                masjid: masjid.trim(),
             },
         });
         setApproveSuccess(true);
         setRemarks('');
+        setMasjid('');
     };
 
     const handleBlur = () => {
@@ -232,9 +236,20 @@ const Review = () => {
                                                 rows={4}
                                             />
                                         </div>
+                                        <div className="formGroup">
+                                            <label htmlFor="masjid">MASJID</label>
+                                            <textarea
+                                                id="masjid"
+                                                className="reviewRemarksTextarea"
+                                                value={masjid}
+                                                onChange={e => setMasjid(e.target.value)}
+                                                placeholder="Enter Masjid notes here..."
+                                                rows={4}
+                                            />
+                                        </div>
                                         <button
                                             className="reviewApproveBtn"
-                                            disabled={!remarks.trim() || approving}
+                                            disabled={!remarks.trim() || !masjid.trim() || approving}
                                             onClick={handleApprove}
                                         >
                                             {approving ? 'Saving...' : 'Approve'}

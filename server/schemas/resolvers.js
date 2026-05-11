@@ -1,6 +1,7 @@
-const { Member, User, QBOpen, Approval, Letter } = require('../models');
+const { Member, User, QBOpen, Approval, Letter, Masjid } = require('../models');
 const { signToken } = require('../utils/auth');
 const { AuthenticationError } = require('apollo-server-express');
+const { SendHtmlEmail } = require('../utils/email');
 
 
 const resolvers = {
@@ -48,8 +49,16 @@ const resolvers = {
             if (!context.user) {
                 throw new AuthenticationError('You must be logged in');
             }
-            const openCount = await QBOpen.countDocuments({ user: userId });
-            if (openCount === 0) return { approved: true, remarks: null, approverName: null };
+
+            const [openCount, masjidRecord] = await Promise.all([
+                QBOpen.countDocuments({ user: userId }),
+                Masjid.findOne({ its: hofIts }),
+            ]);
+
+            const masjidStatus = masjidRecord?.status;
+            const needsApproval = openCount > 0 || masjidStatus === 'DISCUSS' || !masjidRecord;
+
+            if (!needsApproval) return { approved: true, remarks: null, approverName: null };
 
             const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
             const recentApproval = await Approval.findOne(
@@ -174,17 +183,98 @@ const resolvers = {
 
             try {
                 const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
-                const recentApproval = await Approval.findOne(
-                    { hofIts, approvedAt: { $gte: thirtyDaysAgo } },
-                    null,
-                    { sort: { approvedAt: -1 } }
-                );
+                const [recentApproval, masjidRecord] = await Promise.all([
+                    Approval.findOne(
+                        { hofIts, approvedAt: { $gte: thirtyDaysAgo } },
+                        null,
+                        { sort: { approvedAt: -1 } }
+                    ),
+                    Masjid.findOne({ its: hofIts }),
+                ]);
+
+                await Letter.create({
+                    requester: context.user.userFullName,
+                    approver: recentApproval ? recentApproval.approver : 'AUTO',
+                    reason,
+                });
+
+                let masjidNote;
                 if (recentApproval) {
-                    await Letter.create({
-                        requester: context.user.userFullName,
-                        approver: recentApproval.approver,
-                        reason,
-                    });
+                    masjidNote = recentApproval.masjid;
+                } else if (masjidRecord?.status === 'CLEAR') {
+                    masjidNote = 'No Masjid conversation needed';
+                } else if (masjidRecord?.status === 'OPTIONAL_DISCUSS') {
+                    masjidNote = 'Masjid khidmat is on track. There is potential to increase Takhmeen or speed up timeline to Adaa';
+                }
+
+                const senderEmail = process.env.EMAIL_SENDER;
+                const emailPassword = process.env.EMAIL_APP_PASSWORD;
+                const recipients = process.env.LETTER_RECIPIENTS;
+
+                if (senderEmail && emailPassword && recipients) {
+                    const emailHtml = `
+                        <!DOCTYPE html>
+                        <html lang="en">
+                        <head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" /></head>
+                        <body style="margin:0;padding:0;background-color:#f5f5f5;font-family:'PT Sans',Arial,sans-serif;">
+                            <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f5f5f5;padding:32px 16px;">
+                                <tr>
+                                    <td align="center">
+                                        <table width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;">
+
+                                            <tr>
+                                                <td style="background-color:#00203D;border-radius:12px 12px 0 0;padding:24px 32px;text-align:center;">
+                                                    <h1 style="margin:0;font-family:Georgia,serif;font-size:22px;font-weight:bold;color:#CE9C01;letter-spacing:1px;">Anjuman-e-Burhani Austin</h1>
+                                                    <p style="margin:6px 0 0;font-size:13px;color:#ffffff;letter-spacing:0.5px;">Clearance Letter Notification</p>
+                                                </td>
+                                            </tr>
+
+                                            <tr>
+                                                <td style="background-color:#ffffff;padding:32px;border-radius:0 0 12px 12px;box-shadow:0 2px 12px rgba(0,0,0,0.08);">
+
+                                                    <p style="margin:0 0 24px;font-size:15px;color:#333;line-height:1.6;">
+                                                        A clearance letter has been generated. Details are below.
+                                                    </p>
+
+                                                    <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f5f5f5;border-left:4px solid #CE9C01;border-radius:4px;padding:0;margin-bottom:24px;">
+                                                        <tr>
+                                                            <td style="padding:16px 20px;">
+                                                                <p style="margin:0 0 12px;font-size:11px;font-weight:bold;color:#CE9C01;text-transform:uppercase;letter-spacing:1px;">Name</p>
+                                                                <p style="margin:0 0 16px;font-size:17px;font-weight:bold;color:#00203D;">${hofName}</p>
+
+                                                                <p style="margin:0 0 12px;font-size:11px;font-weight:bold;color:#CE9C01;text-transform:uppercase;letter-spacing:1px;">ITS</p>
+                                                                <p style="margin:0 0 16px;font-size:17px;font-weight:bold;color:#00203D;">${hofIts}</p>
+
+                                                                <p style="margin:0 0 12px;font-size:11px;font-weight:bold;color:#CE9C01;text-transform:uppercase;letter-spacing:1px;">Reason</p>
+                                                                <p style="margin:0 0 16px;font-size:17px;font-weight:bold;color:#00203D;">${reason}</p>
+
+                                                                <p style="margin:0 0 12px;font-size:11px;font-weight:bold;color:#CE9C01;text-transform:uppercase;letter-spacing:1px;">Masjid Notes</p>
+                                                                <p style="margin:0;font-size:15px;color:#00203D;line-height:1.6;">${masjidNote || '—'}</p>
+                                                            </td>
+                                                        </tr>
+                                                    </table>
+
+                                                    <p style="margin:0;font-size:13px;color:#888;text-align:center;">
+                                                        Generated on ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+                                                    </p>
+
+                                                </td>
+                                            </tr>
+
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+                        </body>
+                        </html>
+                    `;
+                    SendHtmlEmail(
+                        senderEmail,
+                        emailPassword,
+                        recipients,
+                        'Clearance Letter Generated for Raza',
+                        emailHtml
+                    );
                 }
             } catch (err) {
                 console.error('Failed to log letter:', err.message);
@@ -193,7 +283,7 @@ const resolvers = {
             return true;
         },
 
-        createApproval: async (parent, { hofIts, requester, remarks }, context) => {
+        createApproval: async (parent, { hofIts, requester, remarks, masjid }, context) => {
             if (!context.user) {
                 throw new AuthenticationError('You must be logged in');
             }
@@ -206,6 +296,7 @@ const resolvers = {
                 requester,
                 approver: context.user.userFullName,
                 remarks,
+                masjid,
                 approvedAt: Date.now(),
             });
         },

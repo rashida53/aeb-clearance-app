@@ -19,6 +19,10 @@ const approvalSchema = new Schema(
             type: String,
             required: true,
         },
+        masjid: {
+            type: String,
+            required: true,
+        },
         approvedAt: {
             type: Number,
             required: true,

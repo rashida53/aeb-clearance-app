@@ -52,6 +52,7 @@ type Approval {
     requester: String!
     approver: String!
     remarks: String!
+    masjid: String!
     approvedAt: Float!
 }
 
@@ -75,7 +76,7 @@ type Mutation {
     addMember(email: String!, password: String!, fullName: String!, its: String!, hofIts: String!): Auth
     resetPassword(password: String!, its: String!, hofIts: String!): Member
     generateLetter(hofIts: String!, hofName: String!, reason: String!, description: String!): Boolean
-    createApproval(hofIts: String!, requester: String!, remarks: String!): Approval
+    createApproval(hofIts: String!, requester: String!, remarks: String!, masjid: String!): Approval
 }
 `;
 

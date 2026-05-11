@@ -3,5 +3,6 @@ const User = require('./User');
 const QBOpen = require('./QBOpen');
 const Approval = require('./Approval');
 const Letter = require('./Letter');
+const Masjid = require('./Masjid');
 
-module.exports = { Member, User, QBOpen, Approval, Letter };
+module.exports = { Member, User, QBOpen, Approval, Letter, Masjid };
