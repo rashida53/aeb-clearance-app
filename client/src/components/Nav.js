@@ -5,8 +5,6 @@ import Auth from '../utils/auth';
 import { GET_ME } from '../pages/user/gql/queries';
 import Hamburger from './Hamburger';
 
-const showWajebaat = process.env.REACT_APP_SHOW_WAJEBAAT === 'true';
-
 export default function Nav() {
     const [menuOpen, setMenuOpen] = useState(false);
     const { data } = useQuery(GET_ME, { skip: !Auth.loggedIn() });
@@ -18,8 +16,6 @@ export default function Nav() {
     const handleLogout = () => {
         Auth.logout();
     };
-
-    const userName = data?.me?.memberFullName || data?.me?.userFullName || '';
 
     return (
         <nav className="nav">
@@ -33,16 +29,9 @@ export default function Nav() {
                         <li>
                             <Link to="/letter" onClick={closeMenu}>Letter</Link>
                         </li>
-                        {showWajebaat && (
-                            <li>
-                                <Link to="/wajebaat" onClick={closeMenu}>Wajebaat</Link>
-                            </li>
-                        )}
-                        {showWajebaat && (
-                            <li>
-                                <Link to="/admin" onClick={closeMenu}>Admin</Link>
-                            </li>
-                        )}
+                        <li>
+                            <Link to="/wajebaat" onClick={closeMenu}>Waajebaat</Link>
+                        </li>
                         {isLetterAdmin && (
                             <li>
                                 <Link to="/review" onClick={closeMenu}>Review</Link>
@@ -57,12 +46,7 @@ export default function Nav() {
 
                     <div className={`navMobileMenu ${menuOpen ? 'open' : ''}`}>
                         <Link to="/letter" onClick={closeMenu}>Letter</Link>
-                        {showWajebaat && (
-                            <Link to="/wajebaat" onClick={closeMenu}>Wajebaat</Link>
-                        )}
-                        {showWajebaat && (
-                            <Link to="/admin" onClick={closeMenu}>Admin</Link>
-                        )}
+                        <Link to="/wajebaat" onClick={closeMenu}>Waajebaat</Link>
                         {isLetterAdmin && (
                             <Link to="/review" onClick={closeMenu}>Review</Link>
                         )}
