@@ -10,7 +10,7 @@ const masjidSchema = new Schema(
         },
         status: {
             type: String,
-            enum: ['CLEAR', 'OPTIONAL_DISCUSS', 'DISCUSS'],
+            enum: ['CLEAR'],
             required: true,
         },
     },

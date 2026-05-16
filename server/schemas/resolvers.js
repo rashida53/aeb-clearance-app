@@ -54,10 +54,9 @@ const resolvers = {
                 Masjid.findOne({ its: hofIts }),
             ]);
 
-            const masjidStatus = masjidRecord?.status;
-            const needsApproval = openCount > 0 || masjidStatus === 'DISCUSS' || !masjidRecord;
+            const isAutoApproved = openCount === 0 && masjidRecord?.status === 'CLEAR';
 
-            if (!needsApproval) return { approved: true, remarks: null, approverName: null };
+            if (isAutoApproved) return { approved: true, remarks: null, approverName: null };
 
             const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
             const recentApproval = await Approval.findOne(
@@ -205,14 +204,7 @@ const resolvers = {
                     generatedOn: Date.now(),
                 });
 
-                let masjidNote;
-                if (recentApproval) {
-                    masjidNote = recentApproval.masjid;
-                } else if (masjidRecord?.status === 'CLEAR') {
-                    masjidNote = 'No Masjid conversation needed';
-                } else if (masjidRecord?.status === 'OPTIONAL_DISCUSS') {
-                    masjidNote = 'Masjid khidmat is on track. There is potential to increase Takhmeen or speed up timeline to Adaa';
-                }
+                const masjidNote = recentApproval ? recentApproval.masjid : 'Masjid discussion is not required at this time';
 
                 const senderEmail = process.env.EMAIL_SENDER;
                 const emailPassword = process.env.EMAIL_APP_PASSWORD;

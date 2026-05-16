@@ -150,7 +150,7 @@ export default function Letter() {
 
     const showLaagat = ['Markaz', 'Aqiqa', 'Misaaq', 'Nikaah'].includes(selections.subOption);
 
-    const needsApproval = openBalances.length > 0 && !approved;
+    const needsApproval = !approved;
 
     const handleGenerate = async () => {
         if (needsApproval) return;
