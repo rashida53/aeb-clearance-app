@@ -14,6 +14,10 @@ const resolvers = {
                     throw new AuthenticationError('User not found');
                 }
 
+                if (user.isActive === false) {
+                    throw new AuthenticationError('This account is not active');
+                }
+
                 const myRoles = [].concat(member.roles).concat(user.roles);
 
                 return {

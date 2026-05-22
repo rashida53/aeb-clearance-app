@@ -7,7 +7,13 @@ import Hamburger from './Hamburger';
 
 export default function Nav() {
     const [menuOpen, setMenuOpen] = useState(false);
-    const { data } = useQuery(GET_ME, { skip: !Auth.loggedIn() });
+    const { data, error } = useQuery(GET_ME, { skip: !Auth.loggedIn() });
+
+    if (error?.graphQLErrors?.some(e => e.extensions?.code === 'UNAUTHENTICATED')) {
+        Auth.logout();
+        return null;
+    }
+
     const isLetterAdmin = data?.me?.roles?.includes('LETTER_ADMIN');
 
     const toggleMenu = () => setMenuOpen(!menuOpen);
