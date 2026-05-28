@@ -11,7 +11,7 @@ const REASONS = ['Personal Function', 'Travel', 'Life Event', '12 Umoor'];
 const SUB_OPTIONS = {
     'Personal Function': ['Markaz', 'Outside Markaz'],
     'Life Event': ['Aqiqa', 'Chhatti', 'Misaaq', 'Nikaah'],
-    'Travel': ['Hajj', 'Umrah', 'Kun', 'Misr', 'India'],
+    'Travel': ['Hajj', 'Umrah', 'Ashara Mubaraka', 'Kun', 'Misr', 'India'],
     '12 Umoor': ['Iqtesadiyah - Qardan Hasanah', 'Marafiq Burhaniyah - Moasaat', 'FMB - Niyaaz/Thaali', 'Daakhiliyah - Waraqat ut Tarkhees'],
 };
 
