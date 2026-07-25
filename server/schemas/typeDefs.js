@@ -62,6 +62,61 @@ type ApprovalStatus {
     approverName: String
 }
 
+type Slot {
+    _id: ID
+    date: String
+    startTime: String
+    endTime: String
+    bookedBy: ActiveUser
+}
+
+type Commitment {
+    _id: ID
+    user: ActiveUser
+    year: String
+    kr: Float
+    ut: Float
+    schedule: String
+}
+
+type ACHInfo {
+    _id: ID
+    user: ActiveUser
+    accountNumber: String
+    routingNumber: String
+}
+
+type SlotWithDetails {
+    _id: ID
+    date: String
+    startTime: String
+    endTime: String
+    bookedBy: ActiveUser
+    commitment: Commitment
+    openPledges: [QBOpen]
+}
+
+type HOFSlotStatus {
+    user: ActiveUser
+    slot: Slot
+}
+
+type Miqaat {
+    _id: ID
+    title: String
+    date: String
+    hijriDate: String
+}
+
+type MyWajebaatStatus {
+    commitment: Commitment
+    lastYearCommitment: Commitment
+    ach: ACHInfo
+    bookedSlot: Slot
+    hostingMiqaats: [Miqaat]
+    fmbPledgeAmount: Float
+}
+
 type Query {
     me: LoggedInUser
     getMyOpenBalances(hofIts: String!): [QBOpen]
@@ -69,6 +124,12 @@ type Query {
     getAllActiveUsers: [ActiveUser]
     getApprovalStatus(hofIts: String!, userId: ID!): ApprovalStatus
     getApprovalsByRequester(userId: ID!): [Approval]
+    getSlots: [Slot]
+    getSlotsByDate(date: String!): [SlotWithDetails]
+    getHOFSlotStatuses: [HOFSlotStatus]
+    lookupACH(userId: ID!): ACHInfo
+    getMyWajebaatStatus: MyWajebaatStatus
+    getAvailableSlots: [Slot]
 }
 
 type Mutation {
@@ -77,6 +138,13 @@ type Mutation {
     resetPassword(password: String!, its: String!, hofIts: String!): Member
     generateLetter(hofIts: String!, hofName: String!, reason: String!, description: String!): Boolean
     createApproval(hofIts: String!, requester: String!, remarks: String!, masjid: String!): Approval
+    createSlots(startDate: String!, endDate: String!, startTime: String!, endTime: String!, duration: Int!): [Slot]
+    deleteSlot(slotId: ID!): Boolean
+    cancelSignup(slotId: ID!): Slot
+    submitCommitments(kr: Float, ut: Float, year: String!): Commitment
+    submitACH(accountNumber: String!, routingNumber: String!, schedule: String!): Boolean
+    bookSlot(slotId: ID!): Slot
+    cancelMySlot: Slot
 }
 `;
 

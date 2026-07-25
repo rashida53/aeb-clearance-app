@@ -1,7 +1,8 @@
-const { Member, User, QBOpen, Approval, Letter, Masjid } = require('../models');
+const { Member, User, QBOpen, Approval, Letter, Masjid, Slot, Commitment, ACH, Miqaat, Pledge } = require('../models');
 const { signToken } = require('../utils/auth');
 const { AuthenticationError } = require('apollo-server-express');
 const { SendHtmlEmail } = require('../utils/email');
+const { encrypt, decrypt } = require('../utils/encryption');
 
 const resolvers = {
     Query: {
@@ -95,7 +96,219 @@ const resolvers = {
             if (!context.user.roles || !context.user.roles.includes('LETTER_ADMIN')) {
                 throw new AuthenticationError('Not authorized');
             }
-            return User.find({ isActive: { $ne: false } }).sort({ fullName: 1 });
+            return User.find({ isActive: { $ne: false }, zone: { $ne: '9' } }).sort({ fullName: 1 });
+        },
+
+        getSlots: async (parent, args, context) => {
+            if (!context.user) {
+                throw new AuthenticationError('You must be logged in');
+            }
+            if (!context.user.roles || !context.user.roles.includes('LETTER_ADMIN')) {
+                throw new AuthenticationError('Not authorized');
+            }
+            const slots = await Slot.find().sort({ date: 1, startTime: 1 });
+            const userIds = slots.filter(s => s.bookedBy).map(s => s.bookedBy);
+            const users = await User.find({ _id: { $in: userIds } });
+            const userMap = {};
+            users.forEach(u => { userMap[u._id.toString()] = u; });
+
+            return slots.map(slot => ({
+                _id: slot._id,
+                date: slot.date.toISOString(),
+                startTime: slot.startTime,
+                endTime: slot.endTime,
+                bookedBy: slot.bookedBy ? userMap[slot.bookedBy.toString()] || null : null,
+            }));
+        },
+
+        getSlotsByDate: async (parent, { date }, context) => {
+            if (!context.user) {
+                throw new AuthenticationError('You must be logged in');
+            }
+            if (!context.user.roles || !context.user.roles.includes('LETTER_ADMIN')) {
+                throw new AuthenticationError('Not authorized');
+            }
+
+            const queryDate = new Date(date);
+            const nextDay = new Date(date);
+            nextDay.setDate(nextDay.getDate() + 1);
+
+            const slots = await Slot.find({
+                date: { $gte: queryDate, $lt: nextDay },
+            }).sort({ startTime: 1 });
+
+            const userIds = slots.filter(s => s.bookedBy).map(s => s.bookedBy);
+            const [users, commitments, qbOpens] = await Promise.all([
+                User.find({ _id: { $in: userIds } }),
+                Commitment.find({ user: { $in: userIds } }),
+                QBOpen.find({ user: { $in: userIds } }),
+            ]);
+
+            const userMap = {};
+            users.forEach(u => { userMap[u._id.toString()] = u; });
+            const commitmentMap = {};
+            commitments.forEach(c => { commitmentMap[c.user.toString()] = c; });
+            const pledgeMap = {};
+            qbOpens.forEach(q => {
+                const uid = q.user.toString();
+                if (!pledgeMap[uid]) pledgeMap[uid] = [];
+                pledgeMap[uid].push(q);
+            });
+
+            return slots.map(slot => {
+                const uid = slot.bookedBy ? slot.bookedBy.toString() : null;
+                const user = uid ? userMap[uid] || null : null;
+                const commitment = uid ? commitmentMap[uid] || null : null;
+                const openPledges = uid ? (pledgeMap[uid] || []).filter(p => !p.pp) : [];
+
+                return {
+                    _id: slot._id,
+                    date: slot.date.toISOString(),
+                    startTime: slot.startTime,
+                    endTime: slot.endTime,
+                    bookedBy: user,
+                    commitment: commitment ? {
+                        _id: commitment._id,
+                        user,
+                        year: commitment.year,
+                        kr: commitment.kr,
+                        ut: commitment.ut,
+                        schedule: commitment.schedule,
+                    } : null,
+                    openPledges,
+                };
+            });
+        },
+
+        getHOFSlotStatuses: async (parent, args, context) => {
+            if (!context.user) {
+                throw new AuthenticationError('You must be logged in');
+            }
+            if (!context.user.roles || !context.user.roles.includes('LETTER_ADMIN')) {
+                throw new AuthenticationError('Not authorized');
+            }
+
+            const [allUsers, bookedSlots] = await Promise.all([
+                User.find({ isActive: { $ne: false }, zone: { $ne: '9' } }).sort({ fullName: 1 }),
+                Slot.find({ bookedBy: { $ne: null } }),
+            ]);
+
+            const slotByUser = {};
+            bookedSlots.forEach(slot => {
+                slotByUser[slot.bookedBy.toString()] = {
+                    _id: slot._id,
+                    date: slot.date.toISOString(),
+                    startTime: slot.startTime,
+                    endTime: slot.endTime,
+                };
+            });
+
+            return allUsers.map(user => ({
+                user,
+                slot: slotByUser[user._id.toString()] || null,
+            }));
+        },
+
+        lookupACH: async (parent, { userId }, context) => {
+            if (!context.user) {
+                throw new AuthenticationError('You must be logged in');
+            }
+            if (!context.user.roles || !context.user.roles.includes('LETTER_ADMIN')) {
+                throw new AuthenticationError('Not authorized');
+            }
+
+            const achRecord = await ACH.findOne({ user: userId });
+            if (!achRecord) return null;
+
+            const user = await User.findById(userId);
+
+            return {
+                _id: achRecord._id,
+                user,
+                accountNumber: decrypt(achRecord.accountNumber),
+                routingNumber: decrypt(achRecord.routingNumber),
+            };
+        },
+
+        getMyWajebaatStatus: async (parent, args, context) => {
+            if (!context.user) {
+                throw new AuthenticationError('You must be logged in');
+            }
+
+            const userId = context.user.userId;
+            const [commitment, lastYearCommitment, achRecord, bookedSlot, hostingMiqaats, fmbPledge] = await Promise.all([
+                Commitment.findOne({ user: userId, year: '1448' }),
+                Commitment.findOne({ user: userId, year: '1447-48' }),
+                ACH.findOne({ user: userId }),
+                Slot.findOne({ bookedBy: userId }),
+                Miqaat.find({
+                    date: { $gte: new Date('2027-02-04'), $lte: new Date('2027-03-09') },
+                    hosts: userId,
+                }).sort({ date: 1 }),
+                Pledge.findOne({ user: userId, period: '1448-49' }),
+            ]);
+
+            return {
+                commitment: commitment ? {
+                    _id: commitment._id,
+                    user: await User.findById(userId),
+                    year: commitment.year,
+                    kr: commitment.kr,
+                    ut: commitment.ut,
+                    schedule: commitment.schedule,
+                } : null,
+                lastYearCommitment: lastYearCommitment ? {
+                    _id: lastYearCommitment._id,
+                    user: await User.findById(userId),
+                    year: lastYearCommitment.year,
+                    kr: lastYearCommitment.kr,
+                    ut: lastYearCommitment.ut,
+                    schedule: lastYearCommitment.schedule,
+                } : null,
+                ach: achRecord ? {
+                    _id: achRecord._id,
+                    user: await User.findById(userId),
+                    accountNumber: null,
+                    routingNumber: null,
+                } : null,
+                bookedSlot: bookedSlot ? {
+                    _id: bookedSlot._id,
+                    date: bookedSlot.date.toISOString(),
+                    startTime: bookedSlot.startTime,
+                    endTime: bookedSlot.endTime,
+                    bookedBy: null,
+                } : null,
+                hostingMiqaats: hostingMiqaats.map(m => ({
+                    _id: m._id,
+                    title: m.title,
+                    date: m.date.toISOString(),
+                    hijriDate: m.hijriDate,
+                })),
+                fmbPledgeAmount: fmbPledge ? fmbPledge.amount : null,
+            };
+        },
+
+        getAvailableSlots: async (parent, args, context) => {
+            if (!context.user) {
+                throw new AuthenticationError('You must be logged in');
+            }
+
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            tomorrow.setHours(0, 0, 0, 0);
+
+            const slots = await Slot.find({
+                bookedBy: null,
+                date: { $gte: tomorrow },
+            }).sort({ date: 1, startTime: 1 });
+
+            return slots.map(slot => ({
+                _id: slot._id,
+                date: slot.date.toISOString(),
+                startTime: slot.startTime,
+                endTime: slot.endTime,
+                bookedBy: null,
+            }));
         },
     },
 
@@ -312,6 +525,250 @@ const resolvers = {
             await member.save();
 
             return member;
+        },
+
+        createSlots: async (parent, { startDate, endDate, startTime, endTime, duration }, context) => {
+            if (!context.user) {
+                throw new AuthenticationError('You must be logged in');
+            }
+            if (!context.user.roles || !context.user.roles.includes('LETTER_ADMIN')) {
+                throw new AuthenticationError('Not authorized');
+            }
+
+            const minDate = new Date('2027-02-07');
+            const maxDate = new Date('2027-03-05');
+            const start = new Date(startDate);
+            const end = new Date(endDate);
+
+            if (start < minDate || end > maxDate || start > end) {
+                throw new Error('Date range must be within Feb 7 - Mar 5, 2027');
+            }
+
+            const parseTime = (timeStr) => {
+                const [h, m] = timeStr.split(':').map(Number);
+                return h * 60 + m;
+            };
+
+            const startMinutes = parseTime(startTime);
+            const endMinutes = parseTime(endTime);
+
+            if (startMinutes >= endMinutes) {
+                throw new Error('Start time must be before end time');
+            }
+
+            const dates = [];
+            const current = new Date(start);
+            while (current <= end) {
+                dates.push(new Date(current));
+                current.setDate(current.getDate() + 1);
+            }
+
+            const existing = await Slot.find({
+                date: { $gte: start, $lte: end },
+                startTime: { $gte: startTime, $lte: endTime },
+            });
+
+            if (existing.length > 0) {
+                throw new Error('Slots are conflicting, please delete existing slots');
+            }
+
+            const slots = [];
+            for (const date of dates) {
+                let currentMinute = startMinutes;
+                while (currentMinute <= endMinutes) {
+                    const slotEndMinute = currentMinute + duration;
+                    const sh = String(Math.floor(currentMinute / 60)).padStart(2, '0');
+                    const sm = String(currentMinute % 60).padStart(2, '0');
+                    const eh = String(Math.floor(slotEndMinute / 60)).padStart(2, '0');
+                    const em = String(slotEndMinute % 60).padStart(2, '0');
+
+                    slots.push({
+                        date,
+                        startTime: `${sh}:${sm}`,
+                        endTime: `${eh}:${em}`,
+                        bookedBy: null,
+                    });
+                    currentMinute += duration;
+                }
+            }
+
+            const created = await Slot.insertMany(slots);
+            return created.map(slot => ({
+                _id: slot._id,
+                date: slot.date.toISOString(),
+                startTime: slot.startTime,
+                endTime: slot.endTime,
+                bookedBy: null,
+            }));
+        },
+
+        deleteSlot: async (parent, { slotId }, context) => {
+            if (!context.user) {
+                throw new AuthenticationError('You must be logged in');
+            }
+            if (!context.user.roles || !context.user.roles.includes('LETTER_ADMIN')) {
+                throw new AuthenticationError('Not authorized');
+            }
+
+            const slot = await Slot.findById(slotId);
+            if (!slot) {
+                throw new Error('Slot not found');
+            }
+            if (slot.bookedBy) {
+                throw new Error('Cannot delete a booked slot. Cancel the signup first.');
+            }
+
+            await Slot.findByIdAndDelete(slotId);
+            return true;
+        },
+
+        cancelSignup: async (parent, { slotId }, context) => {
+            if (!context.user) {
+                throw new AuthenticationError('You must be logged in');
+            }
+            if (!context.user.roles || !context.user.roles.includes('LETTER_ADMIN')) {
+                throw new AuthenticationError('Not authorized');
+            }
+
+            const slot = await Slot.findByIdAndUpdate(
+                slotId,
+                { bookedBy: null },
+                { new: true }
+            );
+            if (!slot) {
+                throw new Error('Slot not found');
+            }
+
+            return {
+                _id: slot._id,
+                date: slot.date.toISOString(),
+                startTime: slot.startTime,
+                endTime: slot.endTime,
+                bookedBy: null,
+            };
+        },
+
+        submitCommitments: async (parent, { kr, ut, year }, context) => {
+            if (!context.user) {
+                throw new AuthenticationError('You must be logged in');
+            }
+
+            const userId = context.user.userId;
+            const existing = await Commitment.findOne({ user: userId, year });
+            if (existing) {
+                throw new Error('Commitments already submitted');
+            }
+
+            const commitment = await Commitment.create({
+                user: userId,
+                year,
+                kr,
+                ut,
+            });
+
+            const user = await User.findById(userId);
+            return {
+                _id: commitment._id,
+                user,
+                year: commitment.year,
+                kr: commitment.kr,
+                ut: commitment.ut,
+                schedule: commitment.schedule,
+            };
+        },
+
+        submitACH: async (parent, { accountNumber, routingNumber, schedule }, context) => {
+            if (!context.user) {
+                throw new AuthenticationError('You must be logged in');
+            }
+
+            const userId = context.user.userId;
+            const existingACH = await ACH.findOne({ user: userId });
+            if (existingACH) {
+                throw new Error('ACH details already submitted');
+            }
+
+            try {
+                await ACH.create({
+                    user: userId,
+                    accountNumber: encrypt(accountNumber),
+                    routingNumber: encrypt(routingNumber),
+                });
+            } catch (err) {
+                console.error('ACH save error:', err.message);
+                throw new Error('ACH could not be saved');
+            }
+
+            await Commitment.findOneAndUpdate(
+                { user: userId },
+                { schedule },
+            );
+
+            return true;
+        },
+
+        bookSlot: async (parent, { slotId }, context) => {
+            if (!context.user) {
+                throw new AuthenticationError('You must be logged in');
+            }
+
+            const userId = context.user.userId;
+
+            const existingBooking = await Slot.findOne({ bookedBy: userId });
+            if (existingBooking) {
+                throw new Error('You already have a booked slot. Cancel it first.');
+            }
+
+            const slot = await Slot.findById(slotId);
+            if (!slot) {
+                throw new Error('Slot not found');
+            }
+            if (slot.bookedBy) {
+                throw new Error('This slot is already booked');
+            }
+
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            tomorrow.setHours(0, 0, 0, 0);
+            if (slot.date < tomorrow) {
+                throw new Error('Cannot book a slot in the past');
+            }
+
+            slot.bookedBy = userId;
+            await slot.save();
+
+            return {
+                _id: slot._id,
+                date: slot.date.toISOString(),
+                startTime: slot.startTime,
+                endTime: slot.endTime,
+                bookedBy: await User.findById(userId),
+            };
+        },
+
+        cancelMySlot: async (parent, args, context) => {
+            if (!context.user) {
+                throw new AuthenticationError('You must be logged in');
+            }
+
+            const userId = context.user.userId;
+            const slot = await Slot.findOneAndUpdate(
+                { bookedBy: userId },
+                { bookedBy: null },
+                { new: true }
+            );
+
+            if (!slot) {
+                throw new Error('No booked slot found');
+            }
+
+            return {
+                _id: slot._id,
+                date: slot.date.toISOString(),
+                startTime: slot.startTime,
+                endTime: slot.endTime,
+                bookedBy: null,
+            };
         },
     },
 };

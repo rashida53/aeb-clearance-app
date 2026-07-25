@@ -43,6 +43,11 @@ export default function Nav() {
                                 <Link to="/review" onClick={closeMenu}>Review</Link>
                             </li>
                         )}
+                        {isLetterAdmin && (
+                            <li>
+                                <Link to="/admin" onClick={closeMenu}>Admin</Link>
+                            </li>
+                        )}
                         <li>
                             <button onClick={handleLogout}>Sign Out</button>
                         </li>
@@ -55,6 +60,9 @@ export default function Nav() {
                         <Link to="/wajebaat" onClick={closeMenu}>Waajebaat</Link>
                         {isLetterAdmin && (
                             <Link to="/review" onClick={closeMenu}>Review</Link>
+                        )}
+                        {isLetterAdmin && (
+                            <Link to="/admin" onClick={closeMenu}>Admin</Link>
                         )}
                         <button onClick={() => { handleLogout(); closeMenu(); }}>
                             Sign Out
