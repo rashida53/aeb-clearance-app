@@ -524,6 +524,13 @@ export default function Wajebaat() {
     const status = statusData?.getMyWajebaatStatus;
     const hofIts = meData?.me?.memberHof;
 
+    const { data: balancesData } = useQuery(GET_MY_OPEN_BALANCES, {
+        variables: { hofIts: hofIts || '' },
+        skip: !hofIts,
+    });
+    const openBalances = (balancesData?.getMyOpenBalances || []).filter((b) => !b.pp);
+    const hasOpenPledges = openBalances.length > 0;
+
     if (!isLetterAdmin) {
         return (
             <>
@@ -586,7 +593,7 @@ export default function Wajebaat() {
             await submitACH({
                 variables: { accountNumber, routingNumber, schedule },
             });
-            goToStep(STEP_PLEDGES);
+            goToStep(hasOpenPledges ? STEP_PLEDGES : STEP_SCHEDULER);
             refetchStatus();
         } catch (err) {
             setError(err.message);
@@ -615,6 +622,7 @@ export default function Wajebaat() {
 
     const determineInitialStep = () => {
         if (hasBookedSlot) return 'BOOKED';
+        if (hasCommitment && hasACH) return STEP_SCHEDULER;
         if (hasCommitment) return STEP_ACH;
         return null;
     };
@@ -633,6 +641,10 @@ export default function Wajebaat() {
                     cancelling={cancelling}
                 />
             );
+        }
+
+        if (resumeState === STEP_SCHEDULER && currentStep === STEP_INTRO) {
+            return <SlotScheduler onBook={handleBookSlot} />;
         }
 
         if (resumeState === STEP_ACH && currentStep === STEP_INTRO) {

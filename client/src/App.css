@@ -173,6 +173,8 @@ label {
     font-size: 19px;
     letter-spacing: 0.5px;
     white-space: nowrap;
+    flex: 1;
+    text-align: center;
   }
 
   .navHamburger {
