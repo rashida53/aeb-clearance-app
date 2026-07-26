@@ -72,7 +72,7 @@ const OpenBalances = () => {
             <Nav />
             <div className="pageContainer">
                 <div className="openBalancesHeader">
-                    <h1>Open Balances{customerName ? ` — ${customerName}` : ''}</h1>
+                    <h1>{customerName || ''}</h1>
                     {balances.length > 0 && (
                         <p style={{ marginTop: '8px', fontWeight: 'bold', color: 'var(--color-navy)', fontSize: '18px' }}>
                             Total due: {formatCurrency(totalBalance)}

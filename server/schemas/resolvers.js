@@ -237,7 +237,7 @@ const resolvers = {
 
             const userId = context.user.userId;
             const [commitment, lastYearCommitment, achRecord, bookedSlot, hostingMiqaats, fmbPledge] = await Promise.all([
-                Commitment.findOne({ user: userId, year: '1448' }),
+                Commitment.findOne({ user: userId, year: '1448-49' }),
                 Commitment.findOne({ user: userId, year: '1447-48' }),
                 ACH.findOne({ user: userId }),
                 Slot.findOne({ bookedBy: userId }),

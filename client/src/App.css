@@ -1614,6 +1614,51 @@ label {
   margin-bottom: 4px;
 }
 
+/* Intro Step */
+
+.wjContactGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin: 0 0 28px 0;
+}
+
+.wjContactCard {
+  background: #f9f9f9;
+  border-radius: 10px;
+  padding: 16px;
+  text-align: center;
+}
+
+.wjContactName {
+  font-family: var(--font-heading);
+  font-size: 15px;
+  color: var(--color-navy);
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.wjContactDesignation {
+  font-family: var(--font-body);
+  font-size: 13px;
+  color: #777;
+  margin-bottom: 8px;
+}
+
+.wjContactPhone {
+  font-family: var(--font-body);
+  font-size: 16.8px;
+  color: var(--color-gold);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+@media (max-width: 480px) {
+  .wjContactGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* Steps */
 
 .wjStep {
@@ -1682,6 +1727,14 @@ label {
 
 .wjValidation {
   color: #d15252;
+  font-family: var(--font-body);
+  font-size: 14px;
+  text-align: center;
+  margin: -12px 0 16px 0;
+}
+
+.wjUnitHint {
+  color: #000;
   font-family: var(--font-body);
   font-size: 14px;
   text-align: center;

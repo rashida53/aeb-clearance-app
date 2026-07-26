@@ -26,7 +26,7 @@ export default function Nav() {
     return (
         <nav className="nav">
             <Link to="/pledges" className="navBrand" onClick={closeMenu}>
-                Anjuman e Burhani Clearance
+                AeB Umoor Maaliyah
             </Link>
 
             {Auth.loggedIn() && (

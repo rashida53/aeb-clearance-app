@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useQuery, useMutation } from '@apollo/client';
 import Nav from '../../components/Nav';
 import Auth from '../../utils/auth';
@@ -23,6 +23,7 @@ const formatTime12 = (time24) => {
 const formatCurrency = (amount) =>
     new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
 
+const STEP_INTRO = 'INTRO';
 const STEP_KR = 'KR';
 const STEP_UT = 'UT';
 const STEP_ACH = 'ACH';
@@ -37,6 +38,45 @@ const CHECKLIST_ITEMS = [
     'Voided Check',
     'Printout of this page',
 ];
+
+// ── Intro Step ──
+
+function IntroStep({ onNext }) {
+    return (
+        <div className="wjStep">
+            <p className="wjStepDesc">
+                The system will guide you through the prerequisites for your Waajebaat. Please contact a member from Umoor Maaliyah if you have any questions.
+            </p>
+            <div className="wjContactGrid">
+                <div className="wjContactCard">
+                    <div className="wjContactName">M Taaha bhai Bhora</div>
+                    <div className="wjContactDesignation">Treasurer</div>
+                    <a href="tel:6823653910" className="wjContactPhone">682-365-3910</a>
+                </div>
+                <div className="wjContactCard">
+                    <div className="wjContactName">M Murtaza bhai Kutianawala</div>
+                    <div className="wjContactDesignation">Masjid Committee</div>
+                    <a href="tel:5126585643" className="wjContactPhone">512-658-5643</a>
+                </div>
+                <div className="wjContactCard">
+                    <div className="wjContactName">M Murtaza bhai Malbari</div>
+                    <div className="wjContactDesignation">Taalimiyah Coordinator</div>
+                    <a href="tel:6318381740" className="wjContactPhone">631-838-1740</a>
+                </div>
+                <div className="wjContactCard">
+                    <div className="wjContactName">M Hamza bhai Karachiwala</div>
+                    <div className="wjContactDesignation">FMB Coordinator</div>
+                    <a href="tel:6143776967" className="wjContactPhone">614-377-6967</a>
+                </div>
+            </div>
+            <div className="wjStepActions">
+                <button className="wjBtnPrimary" onClick={onNext}>
+                    Begin
+                </button>
+            </div>
+        </div>
+    );
+}
 
 // ── Miqaat Info Box ──
 
@@ -92,10 +132,18 @@ function MaskedInput({ value, onChange, placeholder, label }) {
 
 // ── Commitment Step ──
 
-function CommitmentStep({ title, description, amount, onAmountChange, onDefer, onNext, deferred, lastYearAmount, minAmount = 53 }) {
+function CommitmentStep({ title, description, amount, onAmountChange, onDefer, onNext, deferred, lastYearAmount, minAmount = 353, unitHint }) {
     const parsedAmount = amount ? parseFloat(amount) : 0;
     const belowMin = minAmount > 0 && amount && parsedAmount < minAmount;
     const isValid = deferred || (amount && parsedAmount > 0 && (!minAmount || parsedAmount >= minAmount));
+    const [showHint, setShowHint] = useState(false);
+
+    useEffect(() => {
+        setShowHint(false);
+        if (!amount || !belowMin) return;
+        const timer = setTimeout(() => setShowHint(true), 3000);
+        return () => clearTimeout(timer);
+    }, [amount, belowMin]);
 
     return (
         <div className="wjStep">
@@ -104,7 +152,7 @@ function CommitmentStep({ title, description, amount, onAmountChange, onDefer, o
 
             {lastYearAmount != null && (
                 <div className="wjLastYear">
-                    Last year, you committed {formatCurrency(lastYearAmount)} towards this cause
+                    Last year, you committed ${Math.round(lastYearAmount)} towards this cause
                 </div>
             )}
 
@@ -127,7 +175,7 @@ function CommitmentStep({ title, description, amount, onAmountChange, onDefer, o
                             placeholder=""
                         />
                     </div>
-                    {belowMin && <p className="wjValidation">The minimum unit is ${minAmount}</p>}
+                    {showHint && unitHint && <p className="wjUnitHint">{unitHint}</p>}
                 </>
             )}
 
@@ -152,7 +200,7 @@ function ACHStep({ onSubmit, submitting }) {
     const [routingNumber, setRoutingNumber] = useState('');
     const [schedule, setSchedule] = useState('');
 
-    const isValid = accountNumber.length >= 4 && routingNumber.length >= 9 && schedule;
+    const isValid = accountNumber.length >= 8 && routingNumber.length >= 9 && schedule;
 
     const handleSubmit = () => {
         onSubmit({ accountNumber, routingNumber, schedule });
@@ -167,17 +215,17 @@ function ACHStep({ onSubmit, submitting }) {
 
     return (
         <div className="wjStep">
-            <h2 className="wjStepTitle">ACH Authorization</h2>
-            <p className="wjStepDesc">Your bank details are encrypted and stored securely.</p>
+            <h2 className="wjStepTitle"><span style={{ color: 'var(--color-gold)' }}>ACH Authorization</span></h2>
+            <p className="wjStepDesc">Please provide your ACH details for the earlier commitments. This saves our teams the efforts to reach out to all families over the year for payments. <span style={{ fontWeight: 'bold', color: 'var(--color-gold)' }}>The information is encrypted and can only be accessed by the Jamaat Treasurer.</span></p>
 
             <MaskedInput
-                label="Bank Account Number"
+                label="Bank Account Number (8-17 digits)"
                 value={accountNumber}
                 onChange={setAccountNumber}
                 placeholder="Enter account number"
             />
             <MaskedInput
-                label="Routing Number"
+                label="Routing Number (9 digits)"
                 value={routingNumber}
                 onChange={setRoutingNumber}
                 placeholder="Enter routing number"
@@ -219,9 +267,9 @@ function OpenPledgesStep({ hofIts, onConfirm }) {
 
     return (
         <div className="wjStep">
-            <h2 className="wjStepTitle">Open Pledges</h2>
+            <h2 className="wjStepTitle"><span style={{ color: 'var(--color-gold)' }}>Open Pledges</span></h2>
             <p className="wjStepDesc">
-                Please clear your pending open pledges or make sure they are on a payment plan
+                Please make sure open pledges are cleared or have a payment plan
             </p>
 
             {loading ? (
@@ -275,7 +323,6 @@ function SlotScheduler({ onBook }) {
     const { data, loading } = useQuery(GET_AVAILABLE_SLOTS);
     const [pageStart, setPageStart] = useState(0);
     const [confirmSlot, setConfirmSlot] = useState(null);
-
     const slots = data?.getAvailableSlots || [];
 
     const slotsByDate = {};
@@ -312,14 +359,14 @@ function SlotScheduler({ onBook }) {
                     onClick={() => setPageStart(Math.max(0, pageStart - 5))}
                     disabled={!canPrev}
                 >
-                    &larr; Prev
+                    Previous
                 </button>
                 <button
                     className="wjCarouselBtn"
                     onClick={() => setPageStart(pageStart + 5)}
                     disabled={!canNext}
                 >
-                    Next &rarr;
+                    More
                 </button>
             </div>
 
@@ -345,10 +392,9 @@ function SlotScheduler({ onBook }) {
             {confirmSlot && (
                 <div className="wjModal">
                     <div className="wjModalContent">
-                        <h3>Confirm Booking</h3>
-                        <p>
-                            Book slot for <strong>{formatDate(confirmSlot.date)}</strong> at{' '}
-                            <strong>{formatTime12(confirmSlot.startTime)}</strong>?
+                        <h3>Confirm Appointment</h3>
+                        <p style={{ fontSize: '1.3em' }}>
+                            {formatDate(confirmSlot.date)} at {formatTime12(confirmSlot.startTime)}
                         </p>
                         <div className="wjModalActions">
                             <button className="wjBtnSecondary" onClick={() => setConfirmSlot(null)}>
@@ -460,7 +506,7 @@ export default function Wajebaat() {
         { skip: !isLetterAdmin }
     );
 
-    const [stepHistory, setStepHistory] = useState([STEP_KR]);
+    const [stepHistory, setStepHistory] = useState([STEP_INTRO]);
     const [krAmount, setKrAmount] = useState('');
     const [utAmount, setUtAmount] = useState('');
     const [krDeferred, setKrDeferred] = useState(false);
@@ -524,7 +570,7 @@ export default function Wajebaat() {
                 variables: {
                     kr: krDeferred ? null : parseFloat(krAmount),
                     ut: utDeferred ? null : parseFloat(utAmount),
-                    year: '1448',
+                    year: '1448-49',
                 },
             });
             goToStep(STEP_ACH);
@@ -569,7 +615,6 @@ export default function Wajebaat() {
 
     const determineInitialStep = () => {
         if (hasBookedSlot) return 'BOOKED';
-        if (hasACH) return STEP_PLEDGES;
         if (hasCommitment) return STEP_ACH;
         return null;
     };
@@ -590,20 +635,13 @@ export default function Wajebaat() {
             );
         }
 
-        if (resumeState === STEP_PLEDGES && currentStep === STEP_KR) {
-            return (
-                <OpenPledgesStep
-                    hofIts={hofIts}
-                    onConfirm={() => goToStep(STEP_SCHEDULER)}
-                />
-            );
-        }
-
-        if (resumeState === STEP_ACH && currentStep === STEP_KR) {
+        if (resumeState === STEP_ACH && currentStep === STEP_INTRO) {
             return <ACHStep onSubmit={handleACHSubmit} submitting={achSubmitting} />;
         }
 
         switch (currentStep) {
+            case STEP_INTRO:
+                return <IntroStep onNext={() => goToStep(STEP_KR)} />;
             case STEP_KR:
                 return (
                     <CommitmentStep
@@ -615,6 +653,7 @@ export default function Wajebaat() {
                         onDefer={setKrDeferred}
                         onNext={() => goToStep(STEP_UT)}
                         lastYearAmount={status?.lastYearCommitment?.kr}
+                        unitHint="Please consider units of $353 | $553 | $786 | $1100 to help us reach our collective goal"
                     />
                 );
             case STEP_UT:
@@ -628,7 +667,8 @@ export default function Wajebaat() {
                         onDefer={setUtDeferred}
                         onNext={handleCommitmentSubmit}
                         lastYearAmount={status?.lastYearCommitment?.ut}
-                        minAmount={0}
+                        minAmount={72}
+                        unitHint="Please consider units of $72 | $153 | $253 to help us reach our collective goal"
                     />
                 );
             case STEP_ACH:
