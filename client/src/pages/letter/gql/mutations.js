@@ -6,12 +6,18 @@ export const GENERATE_LETTER = gql`
         $hofName: String!
         $reason: String!
         $description: String!
+        $laagatAmount: Float
+        $sarkaariLaagat: Float
+        $jamaatLaagat: Float
     ) {
         generateLetter(
             hofIts: $hofIts
             hofName: $hofName
             reason: $reason
             description: $description
+            laagatAmount: $laagatAmount
+            sarkaariLaagat: $sarkaariLaagat
+            jamaatLaagat: $jamaatLaagat
         )
     }
 `;

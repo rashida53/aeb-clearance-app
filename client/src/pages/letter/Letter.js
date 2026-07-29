@@ -184,6 +184,9 @@ export default function Letter() {
                     hofName,
                     reason: leafReason,
                     description: selections.description || '',
+                    laagatAmount: selections.laagatAmount || null,
+                    sarkaariLaagat: selections.sarkaariLaagat || null,
+                    jamaatLaagat: selections.jamaatLaagat || null,
                 },
             });
         } catch (err) {

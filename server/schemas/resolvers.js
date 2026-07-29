@@ -495,7 +495,7 @@ const resolvers = {
             return { token, me: loggedInUser };
         },
 
-        generateLetter: async (parent, { hofIts, hofName, reason, description }, context) => {
+        generateLetter: async (parent, { hofIts, hofName, reason, description, laagatAmount, sarkaariLaagat, jamaatLaagat }, context) => {
             if (!context.user) {
                 throw new AuthenticationError('You must be logged in');
             }
@@ -532,6 +532,19 @@ const resolvers = {
                 const recipients = process.env.LETTER_RECIPIENTS;
 
                 if (!recentLetter && senderEmail && emailPassword && recipients) {
+                    let laagatHtml = '';
+                    if (sarkaariLaagat != null && jamaatLaagat != null) {
+                        laagatHtml = `
+                            <p style="margin:16px 0 12px;font-size:11px;font-weight:bold;color:#CE9C01;text-transform:uppercase;letter-spacing:1px;">Sarkaari Laagat</p>
+                            <p style="margin:0 0 16px;font-size:15px;color:#00203D;">$${sarkaariLaagat}</p>
+                            <p style="margin:0 0 12px;font-size:11px;font-weight:bold;color:#CE9C01;text-transform:uppercase;letter-spacing:1px;">Jamaat Laagat</p>
+                            <p style="margin:0;font-size:15px;color:#00203D;">$${jamaatLaagat}</p>`;
+                    } else if (laagatAmount != null) {
+                        laagatHtml = `
+                            <p style="margin:16px 0 12px;font-size:11px;font-weight:bold;color:#CE9C01;text-transform:uppercase;letter-spacing:1px;">Jamaat Laagat</p>
+                            <p style="margin:0;font-size:15px;color:#00203D;">$${laagatAmount}</p>`;
+                    }
+
                     const emailHtml = `
                         <!DOCTYPE html>
                         <html lang="en">
@@ -566,6 +579,7 @@ const resolvers = {
 
                                                                 <p style="margin:0 0 12px;font-size:11px;font-weight:bold;color:#CE9C01;text-transform:uppercase;letter-spacing:1px;">Masjid Notes</p>
                                                                 <p style="margin:0;font-size:15px;color:#00203D;line-height:1.6;">${masjidNote || '—'}</p>
+                                                                ${laagatHtml}
                                                             </td>
                                                         </tr>
                                                     </table>

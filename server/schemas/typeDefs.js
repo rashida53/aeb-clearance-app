@@ -168,7 +168,7 @@ type Mutation {
     login(email: String!, password: String!): Auth
     addMember(email: String!, password: String!, fullName: String!, its: String!, hofIts: String!): Auth
     resetPassword(password: String!, its: String!, hofIts: String!): Member
-    generateLetter(hofIts: String!, hofName: String!, reason: String!, description: String!): Boolean
+    generateLetter(hofIts: String!, hofName: String!, reason: String!, description: String!, laagatAmount: Float, sarkaariLaagat: Float, jamaatLaagat: Float): Boolean
     createApproval(hofIts: String!, requester: String!, remarks: String!, masjid: String!): Approval
     createSlots(startDate: String!, endDate: String!, startTime: String!, endTime: String!, duration: Int!): [Slot]
     deleteSlot(slotId: ID!): Boolean
