@@ -41,6 +41,7 @@ export const GET_AVAILABLE_SLOTS = gql`
             date
             startTime
             endTime
+            group
         }
     }
 `;

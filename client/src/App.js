@@ -15,6 +15,8 @@ const Reset = lazy(() => import('./pages/user/components/Reset'));
 const OpenBalances = lazy(() => import('./pages/openBalances/OpenBalances'));
 const Letter = lazy(() => import('./pages/letter/Letter'));
 const Wajebaat = lazy(() => import('./pages/wajebaat/Wajebaat'));
+const Volunteer = lazy(() => import('./pages/volunteer/Volunteer'));
+const Checkin = lazy(() => import('./pages/checkin/Checkin'));
 const Admin = lazy(() => import('./pages/admin/Admin'));
 const Review = lazy(() => import('./pages/review/Review'));
 
@@ -67,6 +69,22 @@ function App() {
             element={
               <PrivateRoute>
                 <Wajebaat />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/volunteer"
+            element={
+              <PrivateRoute requiredRole="MAALIYA_VOLUNTEER">
+                <Volunteer />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/checkin"
+            element={
+              <PrivateRoute requiredRole="MAALIYA_VOLUNTEER">
+                <Checkin />
               </PrivateRoute>
             }
           />

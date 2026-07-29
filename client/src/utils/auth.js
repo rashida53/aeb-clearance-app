@@ -28,6 +28,13 @@ class AuthService {
         return token && decode(token).data.roles.includes('LETTER_ADMIN');
     }
 
+    isMaaliyaVolunteer() {
+        const token = this.getToken();
+        if (!token) return false;
+        const roles = decode(token).data.roles;
+        return roles.includes('MAALIYA_VOLUNTEER') || roles.includes('LETTER_ADMIN');
+    }
+
     isTokenExpired(token) {
         try {
             const decoded = decode(token);

@@ -1983,6 +1983,22 @@ label {
   margin: 0 0 12px 0;
 }
 
+.wjSlotGroup {
+  margin-bottom: 12px;
+}
+
+.wjSlotGroupLabel {
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: bold;
+  color: var(--color-gold);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
 .wjSlotButtons {
   display: flex;
   flex-direction: column;
@@ -2253,5 +2269,163 @@ label {
 
   .wjMiqaatBox {
     padding: 12px 16px;
+  }
+}
+
+/* ── Volunteer Page ── */
+
+.volHeader {
+  margin-bottom: 32px;
+  text-align: center;
+}
+
+.volHeader h1 {
+  font-family: var(--font-heading);
+  color: var(--color-navy);
+  font-size: 28px;
+  margin: 0;
+}
+
+.volError {
+  color: #d15252;
+  font-weight: bold;
+  font-size: 14px;
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+.volEmpty {
+  text-align: center;
+  color: #777;
+  font-size: 16px;
+  margin-top: 32px;
+}
+
+.volDates {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.volDateSection {
+  margin-bottom: 32px;
+}
+
+.volSectionTitle {
+  font-family: var(--font-heading);
+  color: var(--color-navy);
+  font-size: 24px;
+  text-align: center;
+  margin-top: 40px;
+  margin-bottom: 20px;
+}
+
+.volDateTitle {
+  font-family: var(--font-heading);
+  color: var(--color-navy);
+  font-size: 20px;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--color-gold);
+}
+
+.volGroupCards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.volGroupCard {
+  background: var(--color-white);
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  padding: 16px;
+  text-align: center;
+  border: 2px solid transparent;
+}
+
+.volGroupCard.mine {
+  border-color: var(--color-gold);
+  background: #fffdf5;
+}
+
+.volGroupName {
+  font-family: var(--font-heading);
+  font-size: 14px;
+  color: var(--color-navy);
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.volGroupBookedList {
+  list-style: disc;
+  list-style-position: inside;
+  padding-left: 0;
+  margin: 6px 0 8px;
+  text-align: center;
+}
+
+.volGroupBookedList li {
+  font-family: var(--font-body);
+  font-size: 13px;
+  color: #555;
+  margin-bottom: 2px;
+}
+
+.volGroupNoSignups {
+  font-family: var(--font-body);
+  font-size: 13px;
+  color: #555;
+  margin: 6px 0 8px;
+}
+
+.volGroupStatus {
+  font-family: var(--font-body);
+  font-size: 13px;
+  color: #555;
+  margin-bottom: 12px;
+  font-weight: 600;
+}
+
+.volGroupAction {
+  min-height: 36px;
+}
+
+.volBtnClaim {
+  background: var(--color-navy);
+  color: var(--color-gold);
+  border: 2px solid var(--color-navy);
+  border-radius: 6px;
+  padding: 8px 20px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-standard);
+}
+
+.volBtnClaim:hover {
+  background: var(--color-gold);
+  color: var(--color-navy);
+}
+
+.volBtnUnclaim {
+  background: transparent;
+  color: #d15252;
+  border: 1px solid #d15252;
+  border-radius: 6px;
+  padding: 8px 20px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.volBtnUnclaim:hover {
+  background: #fdf0f0;
+}
+
+@media (max-width: 600px) {
+  .volGroupCards {
+    grid-template-columns: 1fr;
   }
 }

@@ -78,3 +78,12 @@ export const LOOKUP_ACH = gql`
         }
     }
 `;
+
+export const GET_MAALIYA_VOLUNTEERS = gql`
+    query getMaaliyaVolunteers {
+        getMaaliyaVolunteers {
+            _id
+            fullName
+        }
+    }
+`;

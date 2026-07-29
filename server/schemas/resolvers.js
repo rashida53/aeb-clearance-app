@@ -308,7 +308,62 @@ const resolvers = {
                 startTime: slot.startTime,
                 endTime: slot.endTime,
                 bookedBy: null,
+                group: slot.group || null,
             }));
+        },
+        getVolunteerSlotGroups: async (parent, args, context) => {
+            if (!context.user) {
+                throw new AuthenticationError('You must be logged in');
+            }
+            const roles = context.user.roles || [];
+            if (!roles.includes('MAALIYA_VOLUNTEER') && !roles.includes('LETTER_ADMIN')) {
+                throw new AuthenticationError('Not authorized');
+            }
+
+            const slots = await Slot.find({ group: { $ne: null } }).sort({ date: 1, startTime: 1 });
+
+            const groupMap = {};
+            slots.forEach(slot => {
+                const dateKey = slot.date.toISOString().split('T')[0];
+                const key = `${dateKey}|${slot.group}`;
+                if (!groupMap[key]) {
+                    groupMap[key] = { date: dateKey, group: slot.group, slotCount: 0, volunteerId: slot.volunteer, bookedByIds: [] };
+                }
+                groupMap[key].slotCount++;
+                if (slot.volunteer) groupMap[key].volunteerId = slot.volunteer;
+                if (slot.bookedBy) groupMap[key].bookedByIds.push(slot.bookedBy);
+            });
+
+            const allUserIds = [];
+            Object.values(groupMap).forEach(g => {
+                if (g.volunteerId) allUserIds.push(g.volunteerId.toString());
+                g.bookedByIds.forEach(id => allUserIds.push(id.toString()));
+            });
+            const uniqueUserIds = [...new Set(allUserIds)];
+            const users = await User.find({ _id: { $in: uniqueUserIds } });
+            const userMap = {};
+            users.forEach(u => { userMap[u._id.toString()] = u; });
+
+            return Object.values(groupMap).map(g => ({
+                date: g.date,
+                group: g.group,
+                slotCount: g.slotCount,
+                volunteer: g.volunteerId ? userMap[g.volunteerId.toString()] || null : null,
+                bookedUsers: g.bookedByIds.map(id => userMap[id.toString()]).filter(Boolean),
+            }));
+        },
+
+        getMaaliyaVolunteers: async (parent, args, context) => {
+            if (!context.user) {
+                throw new AuthenticationError('You must be logged in');
+            }
+            if (!context.user.roles || !context.user.roles.includes('LETTER_ADMIN')) {
+                throw new AuthenticationError('Not authorized');
+            }
+
+            const members = await Member.find({ roles: { $in: ['MAALIYA_VOLUNTEER', 'LETTER_ADMIN'] } });
+            const hofItsList = members.map(m => m.hofIts);
+            return User.find({ hofIts: { $in: hofItsList }, isActive: { $ne: false } }).sort({ fullName: 1 });
         },
     },
 
@@ -572,21 +627,31 @@ const resolvers = {
                 throw new Error('Slots are conflicting, please delete existing slots');
             }
 
+            const getSlotGroup = (timeStr) => {
+                const [h, m] = timeStr.split(':').map(Number);
+                const minutes = h * 60 + m;
+                if (minutes < 17 * 60) return 'After Zohr Asr';
+                if (minutes < 18 * 60 + 30) return 'Before Maghrib Isha';
+                return 'After Maghrib Isha';
+            };
+
             const slots = [];
             for (const date of dates) {
                 let currentMinute = startMinutes;
-                while (currentMinute <= endMinutes) {
+                while (currentMinute < endMinutes) {
                     const slotEndMinute = currentMinute + duration;
                     const sh = String(Math.floor(currentMinute / 60)).padStart(2, '0');
                     const sm = String(currentMinute % 60).padStart(2, '0');
                     const eh = String(Math.floor(slotEndMinute / 60)).padStart(2, '0');
                     const em = String(slotEndMinute % 60).padStart(2, '0');
+                    const slotStartTime = `${sh}:${sm}`;
 
                     slots.push({
                         date,
-                        startTime: `${sh}:${sm}`,
+                        startTime: slotStartTime,
                         endTime: `${eh}:${em}`,
                         bookedBy: null,
+                        group: getSlotGroup(slotStartTime),
                     });
                     currentMinute += duration;
                 }
@@ -744,6 +809,73 @@ const resolvers = {
                 endTime: slot.endTime,
                 bookedBy: await User.findById(userId),
             };
+        },
+
+        claimSlotGroup: async (parent, { date, group }, context) => {
+            if (!context.user) {
+                throw new AuthenticationError('You must be logged in');
+            }
+            const roles = context.user.roles || [];
+            if (!roles.includes('MAALIYA_VOLUNTEER') && !roles.includes('LETTER_ADMIN')) {
+                throw new AuthenticationError('Not authorized');
+            }
+
+            const queryDate = new Date(date);
+            const nextDay = new Date(date);
+            nextDay.setDate(nextDay.getDate() + 1);
+
+            const slots = await Slot.find({ date: { $gte: queryDate, $lt: nextDay }, group });
+            if (slots.length === 0) {
+                throw new Error('No slots found for this group and date');
+            }
+            if (slots.some(s => s.volunteer && s.volunteer.toString() !== context.user.userId)) {
+                throw new Error('This group is already claimed by another volunteer');
+            }
+
+            await Slot.updateMany(
+                { date: { $gte: queryDate, $lt: nextDay }, group },
+                { volunteer: context.user.userId }
+            );
+            return true;
+        },
+
+        unclaimSlotGroup: async (parent, { date, group }, context) => {
+            if (!context.user) {
+                throw new AuthenticationError('You must be logged in');
+            }
+            const roles = context.user.roles || [];
+            if (!roles.includes('MAALIYA_VOLUNTEER') && !roles.includes('LETTER_ADMIN')) {
+                throw new AuthenticationError('Not authorized');
+            }
+
+            const queryDate = new Date(date);
+            const nextDay = new Date(date);
+            nextDay.setDate(nextDay.getDate() + 1);
+
+            await Slot.updateMany(
+                { date: { $gte: queryDate, $lt: nextDay }, group, volunteer: context.user.userId },
+                { volunteer: null }
+            );
+            return true;
+        },
+
+        reassignSlotGroup: async (parent, { date, group, volunteerId }, context) => {
+            if (!context.user) {
+                throw new AuthenticationError('You must be logged in');
+            }
+            if (!context.user.roles || !context.user.roles.includes('LETTER_ADMIN')) {
+                throw new AuthenticationError('Not authorized');
+            }
+
+            const queryDate = new Date(date);
+            const nextDay = new Date(date);
+            nextDay.setDate(nextDay.getDate() + 1);
+
+            await Slot.updateMany(
+                { date: { $gte: queryDate, $lt: nextDay }, group },
+                { volunteer: volunteerId }
+            );
+            return true;
         },
 
         cancelMySlot: async (parent, args, context) => {

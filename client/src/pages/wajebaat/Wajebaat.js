@@ -325,11 +325,15 @@ function SlotScheduler({ onBook }) {
     const [confirmSlot, setConfirmSlot] = useState(null);
     const slots = data?.getAvailableSlots || [];
 
+    const GROUP_ORDER = ['After Zohr Asr', 'Before Maghrib Isha', 'After Maghrib Isha'];
+
     const slotsByDate = {};
     slots.forEach((slot) => {
         const dateKey = slot.date.split('T')[0];
-        if (!slotsByDate[dateKey]) slotsByDate[dateKey] = [];
-        slotsByDate[dateKey].push(slot);
+        if (!slotsByDate[dateKey]) slotsByDate[dateKey] = {};
+        const group = slot.group || 'Other';
+        if (!slotsByDate[dateKey][group]) slotsByDate[dateKey][group] = [];
+        slotsByDate[dateKey][group].push(slot);
     });
 
     const dateKeys = Object.keys(slotsByDate).sort();
@@ -371,22 +375,33 @@ function SlotScheduler({ onBook }) {
             </div>
 
             <div className="wjSlotCards">
-                {visibleDates.map((dateKey) => (
-                    <div key={dateKey} className="wjSlotCard">
-                        <h3 className="wjSlotCardDate">{formatDate(dateKey)}</h3>
-                        <div className="wjSlotButtons">
-                            {slotsByDate[dateKey].map((slot) => (
-                                <button
-                                    key={slot._id}
-                                    className="wjSlotBtn"
-                                    onClick={() => setConfirmSlot(slot)}
-                                >
-                                    {formatTime12(slot.startTime)}
-                                </button>
+                {visibleDates.map((dateKey) => {
+                    const groupsForDate = slotsByDate[dateKey];
+                    const sortedGroups = Object.keys(groupsForDate).sort(
+                        (a, b) => GROUP_ORDER.indexOf(a) - GROUP_ORDER.indexOf(b)
+                    );
+                    return (
+                        <div key={dateKey} className="wjSlotCard">
+                            <h3 className="wjSlotCardDate">{formatDate(dateKey)}</h3>
+                            {sortedGroups.map((group) => (
+                                <div key={group} className="wjSlotGroup">
+                                    <div className="wjSlotGroupLabel">{group}</div>
+                                    <div className="wjSlotButtons">
+                                        {groupsForDate[group].map((slot) => (
+                                            <button
+                                                key={slot._id}
+                                                className="wjSlotBtn"
+                                                onClick={() => setConfirmSlot(slot)}
+                                            >
+                                                {formatTime12(slot.startTime)}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
                             ))}
                         </div>
-                    </div>
-                ))}
+                    );
+                })}
             </div>
 
             {confirmSlot && (

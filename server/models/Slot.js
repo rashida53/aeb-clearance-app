@@ -20,6 +20,15 @@ const slotSchema = new Schema(
             ref: 'User',
             default: null,
         },
+        group: {
+            type: String,
+            default: null,
+        },
+        volunteer: {
+            type: Schema.Types.ObjectId,
+            ref: 'User',
+            default: null,
+        },
     },
     {
         collection: 'slots',

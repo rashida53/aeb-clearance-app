@@ -68,6 +68,16 @@ type Slot {
     startTime: String
     endTime: String
     bookedBy: ActiveUser
+    group: String
+    volunteer: ActiveUser
+}
+
+type SlotGroup {
+    date: String
+    group: String
+    slotCount: Int
+    volunteer: ActiveUser
+    bookedUsers: [ActiveUser]
 }
 
 type Commitment {
@@ -130,6 +140,8 @@ type Query {
     lookupACH(userId: ID!): ACHInfo
     getMyWajebaatStatus: MyWajebaatStatus
     getAvailableSlots: [Slot]
+    getVolunteerSlotGroups: [SlotGroup]
+    getMaaliyaVolunteers: [ActiveUser]
 }
 
 type Mutation {
@@ -145,6 +157,9 @@ type Mutation {
     submitACH(accountNumber: String!, routingNumber: String!, schedule: String!): Boolean
     bookSlot(slotId: ID!): Slot
     cancelMySlot: Slot
+    claimSlotGroup(date: String!, group: String!): Boolean
+    unclaimSlotGroup(date: String!, group: String!): Boolean
+    reassignSlotGroup(date: String!, group: String!, volunteerId: ID!): Boolean
 }
 `;
 

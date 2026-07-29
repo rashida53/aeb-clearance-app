@@ -15,6 +15,7 @@ export default function Nav() {
     }
 
     const isLetterAdmin = data?.me?.roles?.includes('LETTER_ADMIN');
+    const isMaaliyaVolunteer = isLetterAdmin || data?.me?.roles?.includes('MAALIYA_VOLUNTEER');
 
     const toggleMenu = () => setMenuOpen(!menuOpen);
     const closeMenu = () => setMenuOpen(false);
@@ -38,6 +39,16 @@ export default function Nav() {
                         <li>
                             <Link to="/wajebaat" onClick={closeMenu}>Waajebaat</Link>
                         </li>
+                        {isMaaliyaVolunteer && (
+                            <li>
+                                <Link to="/volunteer" onClick={closeMenu}>Volunteer</Link>
+                            </li>
+                        )}
+                        {isMaaliyaVolunteer && (
+                            <li>
+                                <Link to="/checkin" onClick={closeMenu}>Check-In</Link>
+                            </li>
+                        )}
                         {isLetterAdmin && (
                             <li>
                                 <Link to="/review" onClick={closeMenu}>Review</Link>
@@ -58,6 +69,12 @@ export default function Nav() {
                     <div className={`navMobileMenu ${menuOpen ? 'open' : ''}`}>
                         <Link to="/letter" onClick={closeMenu}>Letter</Link>
                         <Link to="/wajebaat" onClick={closeMenu}>Waajebaat</Link>
+                        {isMaaliyaVolunteer && (
+                            <Link to="/volunteer" onClick={closeMenu}>Volunteer</Link>
+                        )}
+                        {isMaaliyaVolunteer && (
+                            <Link to="/checkin" onClick={closeMenu}>Check-In</Link>
+                        )}
                         {isLetterAdmin && (
                             <Link to="/review" onClick={closeMenu}>Review</Link>
                         )}

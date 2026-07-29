@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useLazyQuery } from '@apollo/client';
 import Nav from '../../components/Nav';
-import { GET_SLOTS, GET_SLOTS_BY_DATE, GET_HOF_SLOT_STATUSES, LOOKUP_ACH } from './gql/queries';
-import { CREATE_SLOTS, DELETE_SLOT, CANCEL_SIGNUP } from './gql/mutations';
+import { GET_SLOTS, GET_HOF_SLOT_STATUSES, LOOKUP_ACH, GET_MAALIYA_VOLUNTEERS } from './gql/queries';
+import { CREATE_SLOTS, DELETE_SLOT, CANCEL_SIGNUP, REASSIGN_SLOT_GROUP } from './gql/mutations';
 import { GET_ALL_ACTIVE_USERS } from '../review/gql/queries';
+import { GET_VOLUNTEER_SLOT_GROUPS } from '../volunteer/gql/queries';
 
 const formatDate = (dateStr) => {
     const date = new Date(dateStr);
@@ -122,7 +123,7 @@ function SlotCreation() {
 
         let slotsPerDay = 0;
         let current = startMin;
-        while (current <= endMin) {
+        while (current < endMin) {
             slotsPerDay++;
             current += dur;
         }
@@ -341,9 +342,9 @@ function HOFDashboard() {
                             <tr>
                                 <th>Name</th>
                                 <th>Zone</th>
-                                <th>Slot Date</th>
-                                <th>Slot Time</th>
-                                <th>Action</th>
+                                <th>Date</th>
+                                <th>Time</th>
+                                <th>Status</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -364,79 +365,6 @@ function HOFDashboard() {
                                         ) : (
                                             <span className="adminNotSignedUp">Not signed up</span>
                                         )}
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-            )}
-        </div>
-    );
-}
-
-// ── Section 3: Daily Schedule ──
-
-function DailySchedule() {
-    const [selectedDate, setSelectedDate] = useState('');
-    const { data, loading } = useQuery(GET_SLOTS_BY_DATE, {
-        variables: { date: selectedDate },
-        skip: !selectedDate,
-    });
-
-    const slots = data?.getSlotsByDate || [];
-
-    return (
-        <div className="adminSection">
-            <h2 className="adminSectionTitle">Daily Schedule</h2>
-            <div className="adminFormGroup">
-                <label>Select Date</label>
-                <input
-                    type="date"
-                    value={selectedDate}
-                    onChange={(e) => setSelectedDate(e.target.value)}
-                    min="2027-02-07"
-                    max="2027-03-05"
-                />
-            </div>
-
-            {selectedDate && loading && <p>Loading…</p>}
-
-            {selectedDate && !loading && slots.length === 0 && (
-                <p className="adminEmpty">No slots for this date.</p>
-            )}
-
-            {selectedDate && !loading && slots.length > 0 && (
-                <div className="adminTableWrapper">
-                    <table className="adminTable">
-                        <thead>
-                            <tr>
-                                <th>Time</th>
-                                <th>Booked By</th>
-                                <th>KR</th>
-                                <th>UT</th>
-                                <th>Schedule</th>
-                                <th>Open Pledges</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {slots.map((slot) => (
-                                <tr key={slot._id} className={!slot.bookedBy ? 'adminRowAvailable' : ''}>
-                                    <td>{formatTime12(slot.startTime)}</td>
-                                    <td>{slot.bookedBy ? slot.bookedBy.fullName : 'Available'}</td>
-                                    <td>{slot.commitment ? formatCurrency(slot.commitment.kr) : '—'}</td>
-                                    <td>{slot.commitment ? formatCurrency(slot.commitment.ut) : '—'}</td>
-                                    <td>
-                                        {slot.commitment
-                                            ? SCHEDULE_LABELS[slot.commitment.schedule] || slot.commitment.schedule
-                                            : '—'}
-                                    </td>
-                                    <td>
-                                        {slot.openPledges && slot.openPledges.length > 0
-                                            ? `${slot.openPledges.length} (${formatCurrency(
-                                                  slot.openPledges.reduce((sum, p) => sum + (p.balance || 0), 0)
-                                              )})`
-                                            : '—'}
                                     </td>
                                 </tr>
                             ))}
@@ -542,6 +470,90 @@ function ACHLookup() {
     );
 }
 
+// ── Section 5: Volunteer Management ──
+
+function VolunteerManagement() {
+    const { data: groupsData, loading: groupsLoading, refetch: refetchGroups } = useQuery(GET_VOLUNTEER_SLOT_GROUPS);
+    const { data: volunteersData, loading: volunteersLoading } = useQuery(GET_MAALIYA_VOLUNTEERS);
+    const [reassignSlotGroup] = useMutation(REASSIGN_SLOT_GROUP);
+    const [error, setError] = useState('');
+
+    const groups = groupsData?.getVolunteerSlotGroups || [];
+    const volunteers = volunteersData?.getMaaliyaVolunteers || [];
+
+    const GROUP_ORDER = ['After Zohr Asr', 'Before Maghrib Isha', 'After Maghrib Isha'];
+
+    const groupsByDate = {};
+    groups.forEach((g) => {
+        if (!groupsByDate[g.date]) groupsByDate[g.date] = [];
+        groupsByDate[g.date].push(g);
+    });
+
+    const dateKeys = Object.keys(groupsByDate).sort();
+
+    const handleReassign = async (date, group, volunteerId) => {
+        setError('');
+        try {
+            await reassignSlotGroup({ variables: { date, group, volunteerId } });
+            refetchGroups();
+        } catch (err) {
+            setError(err.message);
+        }
+    };
+
+    if (groupsLoading || volunteersLoading) return <p>Loading...</p>;
+
+    return (
+        <div className="adminSection">
+            <h2 className="adminSectionTitle">Volunteer Assignments</h2>
+            {error && <p className="adminError">{error}</p>}
+
+            {dateKeys.length === 0 ? (
+                <p className="adminEmpty">No slot groups available.</p>
+            ) : (
+                <div className="adminTableWrapper">
+                    <table className="adminTable">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Group</th>
+                                <th>Volunteer</th>
+                                <th>Override</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {dateKeys.flatMap((dateKey) =>
+                                groupsByDate[dateKey]
+                                    .sort((a, b) => GROUP_ORDER.indexOf(a.group) - GROUP_ORDER.indexOf(b.group))
+                                    .map((g) => (
+                                        <tr key={`${g.date}-${g.group}`}>
+                                            <td>{formatDate(g.date)}</td>
+                                            <td>{g.group}</td>
+                                            <td>{g.volunteer?.fullName || 'Unassigned'}</td>
+                                            <td>
+                                                <select
+                                                    value={g.volunteer?._id || ''}
+                                                    onChange={(e) => handleReassign(g.date, g.group, e.target.value)}
+                                                >
+                                                    <option value="">Unassigned</option>
+                                                    {volunteers.map((v) => (
+                                                        <option key={v._id} value={v._id}>
+                                                            {v.fullName}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                            </td>
+                                        </tr>
+                                    ))
+                            )}
+                        </tbody>
+                    </table>
+                </div>
+            )}
+        </div>
+    );
+}
+
 // ── Main Admin Page ──
 
 export default function Admin() {
@@ -554,8 +566,8 @@ export default function Admin() {
                 </div>
                 <SlotCreation />
                 <HOFDashboard />
-                <DailySchedule />
                 <ACHLookup />
+                <VolunteerManagement />
             </div>
         </>
     );
