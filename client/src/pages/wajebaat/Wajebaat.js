@@ -319,7 +319,7 @@ function OpenPledgesStep({ hofIts, onConfirm }) {
 
 // ── Slot Scheduler ──
 
-function SlotScheduler({ onBook }) {
+function SlotScheduler({ onBook, hostingMiqaats }) {
     const { data, loading } = useQuery(GET_AVAILABLE_SLOTS);
     const [pageStart, setPageStart] = useState(0);
     const [confirmSlot, setConfirmSlot] = useState(null);
@@ -356,6 +356,16 @@ function SlotScheduler({ onBook }) {
     return (
         <div className="wjStep">
             <h2 className="wjStepTitle">Schedule Your Appointment</h2>
+
+            {hostingMiqaats && hostingMiqaats.length > 0 && (
+                <div className="wjNiyaazInfo">
+                    You are hosting Niyaaz on{' '}
+                    <strong>{formatDate(hostingMiqaats[0].date)}</strong>
+                    {hostingMiqaats.length > 1 && (
+                        <> and <strong>{formatDate(hostingMiqaats[1].date)}</strong></>
+                    )}
+                </div>
+            )}
 
             <div className="wjCarouselNav">
                 <button
@@ -659,7 +669,7 @@ export default function Wajebaat() {
         }
 
         if (resumeState === STEP_SCHEDULER && currentStep === STEP_INTRO) {
-            return <SlotScheduler onBook={handleBookSlot} />;
+            return <SlotScheduler onBook={handleBookSlot} hostingMiqaats={status?.hostingMiqaats} />;
         }
 
         if (resumeState === STEP_ACH && currentStep === STEP_INTRO) {
@@ -708,7 +718,7 @@ export default function Wajebaat() {
                     />
                 );
             case STEP_SCHEDULER:
-                return <SlotScheduler onBook={handleBookSlot} />;
+                return <SlotScheduler onBook={handleBookSlot} hostingMiqaats={status?.hostingMiqaats} />;
             default:
                 return null;
         }
@@ -721,8 +731,6 @@ export default function Wajebaat() {
                 <div className="wjHeader">
                     <h1>Waajebaat</h1>
                 </div>
-
-                <MiqaatInfoBox miqaats={status?.hostingMiqaats} />
 
                 {error && <p className="wjError">{error}</p>}
 

@@ -232,9 +232,9 @@ export default function Checkin() {
                                     </div>
                                 </div>
 
-                                <div className="ciSection">
-                                    <h3 className="ciSectionTitle">Open Pledges</h3>
-                                    {ciData?.openPledges && ciData.openPledges.length > 0 ? (
+                                {ciData?.openPledges && ciData.openPledges.length > 0 && (
+                                    <div className="ciSection">
+                                        <h3 className="ciSectionTitle">Open Pledges</h3>
                                         <ul className="ciPledgeList">
                                             {ciData.openPledges.map((p) => (
                                                 <li key={p._id} className="ciPledgeItem">
@@ -244,10 +244,8 @@ export default function Checkin() {
                                                 </li>
                                             ))}
                                         </ul>
-                                    ) : (
-                                        <p className="ciNoData">No open pledges</p>
-                                    )}
-                                </div>
+                                    </div>
+                                )}
 
                                 <div className="ciSaveRow">
                                     <button

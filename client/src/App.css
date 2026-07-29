@@ -1936,6 +1936,18 @@ label {
 
 /* Slot Scheduler */
 
+.wjNiyaazInfo {
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: var(--color-navy);
+  background: #fff8e1;
+  border: 1px solid var(--color-gold);
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  text-align: center;
+}
+
 .wjCarouselNav {
   display: flex;
   justify-content: space-between;
