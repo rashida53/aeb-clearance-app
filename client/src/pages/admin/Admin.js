@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { useQuery, useMutation, useLazyQuery } from '@apollo/client';
+import { useQuery, useMutation } from '@apollo/client';
 import Nav from '../../components/Nav';
-import { GET_SLOTS, GET_HOF_SLOT_STATUSES, LOOKUP_ACH, GET_MAALIYA_VOLUNTEERS } from './gql/queries';
+import { GET_SLOTS, GET_HOF_SLOT_STATUSES, GET_MAALIYA_VOLUNTEERS } from './gql/queries';
 import { CREATE_SLOTS, DELETE_SLOT, CANCEL_SIGNUP, REASSIGN_SLOT_GROUP } from './gql/mutations';
 import { GET_ALL_ACTIVE_USERS } from '../review/gql/queries';
 import { GET_VOLUNTEER_SLOT_GROUPS } from '../volunteer/gql/queries';
@@ -171,7 +171,7 @@ function SlotCreation() {
         <div className="adminSection">
             <h2 className="adminSectionTitle">Slots</h2>
             <form className="adminForm" onSubmit={handleCreate}>
-                <div className="adminFormRow">
+                <div className="adminFormRow adminDateRow">
                     <div className="adminFormGroup">
                         <label>Start Date</label>
                         <input
@@ -205,7 +205,7 @@ function SlotCreation() {
                         <TimePicker value={endTime} onChange={setEndTime} />
                     </div>
                     <div className="adminFormGroup">
-                        <label>Duration (min)</label>
+                        <label>Duration (mins)</label>
                         <input
                             type="number"
                             value={duration}
@@ -352,8 +352,8 @@ function HOFDashboard() {
                                 <tr key={s.user._id} className={!s.slot ? 'adminRowNoSlot' : ''}>
                                     <td>{s.user.fullName}</td>
                                     <td>{s.user.zone}</td>
-                                    <td>{s.slot ? formatDate(s.slot.date) : '—'}</td>
-                                    <td>{s.slot ? formatTime12(s.slot.startTime) : '—'}</td>
+                                    <td>{s.slot ? formatDate(s.slot.date) : ''}</td>
+                                    <td>{s.slot ? formatTime12(s.slot.startTime) : ''}</td>
                                     <td>
                                         {s.slot ? (
                                             <button
@@ -376,99 +376,6 @@ function HOFDashboard() {
     );
 }
 
-// ── Section 4: ACH Lookup ──
-
-function ACHLookup() {
-    const [searchTerm, setSearchTerm] = useState('');
-    const [selectedUser, setSelectedUser] = useState(null);
-    const [showDropdown, setShowDropdown] = useState(false);
-
-    const { data: usersData, loading: usersLoading } = useQuery(GET_ALL_ACTIVE_USERS);
-    const activeUsers = usersData?.getAllActiveUsers || [];
-
-    const [fetchACH, { data: achData, loading: achLoading }] = useLazyQuery(LOOKUP_ACH);
-
-    const filteredUsers = searchTerm
-        ? activeUsers.filter((u) => u.fullName.toLowerCase().includes(searchTerm.toLowerCase()))
-        : [];
-
-    const handleInputChange = (e) => {
-        setSearchTerm(e.target.value);
-        setSelectedUser(null);
-        setShowDropdown(true);
-    };
-
-    const handleSelectUser = (user) => {
-        setSelectedUser(user);
-        setSearchTerm(user.fullName);
-        setShowDropdown(false);
-        fetchACH({ variables: { userId: user._id } });
-    };
-
-    const handleBlur = () => {
-        setTimeout(() => setShowDropdown(false), 200);
-    };
-
-    const achInfo = achData?.lookupACH;
-
-    return (
-        <div className="adminSection">
-            <h2 className="adminSectionTitle">ACH Lookup</h2>
-            <div className="adminFormGroup">
-                <label>Search HOF Name</label>
-                <div className="reviewTypeahead">
-                    <input
-                        type="text"
-                        value={searchTerm}
-                        onChange={handleInputChange}
-                        onFocus={() => searchTerm && setShowDropdown(true)}
-                        onBlur={handleBlur}
-                        placeholder={usersLoading ? 'Loading members…' : 'Type to search…'}
-                        className="reviewSearchInput"
-                        autoComplete="off"
-                    />
-                    {showDropdown && searchTerm && (
-                        <div className="reviewDropdown">
-                            {filteredUsers.length > 0 ? (
-                                filteredUsers.map((u) => (
-                                    <div
-                                        key={u._id}
-                                        className="reviewDropdownOption"
-                                        onMouseDown={() => handleSelectUser(u)}
-                                    >
-                                        {u.fullName}
-                                    </div>
-                                ))
-                            ) : (
-                                <div className="reviewDropdownEmpty">No members found</div>
-                            )}
-                        </div>
-                    )}
-                </div>
-            </div>
-
-            {selectedUser && achLoading && <p>Loading ACH details…</p>}
-
-            {selectedUser && !achLoading && !achInfo && (
-                <p className="adminEmpty">No ACH record found for {selectedUser.fullName}.</p>
-            )}
-
-            {selectedUser && !achLoading && achInfo && (
-                <div className="adminACHCard">
-                    <h3>{achInfo.user.fullName}</h3>
-                    <div className="adminACHDetail">
-                        <label>Account Number</label>
-                        <span>{achInfo.accountNumber}</span>
-                    </div>
-                    <div className="adminACHDetail">
-                        <label>Routing Number</label>
-                        <span>{achInfo.routingNumber}</span>
-                    </div>
-                </div>
-            )}
-        </div>
-    );
-}
 
 // ── Section 5: Volunteer Management ──
 
@@ -566,7 +473,6 @@ export default function Admin() {
                 </div>
                 <SlotCreation />
                 <HOFDashboard />
-                <ACHLookup />
                 <VolunteerManagement />
             </div>
         </>
