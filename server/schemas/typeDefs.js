@@ -127,6 +127,25 @@ type MyWajebaatStatus {
     fmbPledgeAmount: Float
 }
 
+type Huqooq {
+    _id: ID
+    user: ActiveUser
+    year: String
+    wajebaatAmount: Float
+    sfAmount: Float
+    wcheck: Boolean
+    sfcheck: Boolean
+}
+
+type CheckInData {
+    user: ActiveUser
+    commitment: Commitment
+    ach: ACHInfo
+    openPledges: [QBOpen]
+    huqooq: Huqooq
+    fmbPledgeAmount: Float
+}
+
 type Query {
     me: LoggedInUser
     getMyOpenBalances(hofIts: String!): [QBOpen]
@@ -142,6 +161,7 @@ type Query {
     getAvailableSlots: [Slot]
     getVolunteerSlotGroups: [SlotGroup]
     getMaaliyaVolunteers: [ActiveUser]
+    getCheckInData(userId: ID!, year: String!): CheckInData
 }
 
 type Mutation {
@@ -160,6 +180,9 @@ type Mutation {
     claimSlotGroup(date: String!, group: String!): Boolean
     unclaimSlotGroup(date: String!, group: String!): Boolean
     reassignSlotGroup(date: String!, group: String!, volunteerId: ID!): Boolean
+    upsertCommitmentForUser(userId: ID!, kr: Float, ut: Float, year: String!): Commitment
+    upsertACHForUser(userId: ID!, accountNumber: String!, routingNumber: String!): Boolean
+    upsertHuqooq(userId: ID!, year: String!, wajebaatAmount: Float, sfAmount: Float, wcheck: Boolean, sfcheck: Boolean): Huqooq
 }
 `;
 

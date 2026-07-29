@@ -1,4 +1,4 @@
-const { Member, User, QBOpen, Approval, Letter, Masjid, Slot, Commitment, ACH, Miqaat, Pledge } = require('../models');
+const { Member, User, QBOpen, Approval, Letter, Masjid, Slot, Commitment, ACH, Miqaat, Pledge, Huqooq } = require('../models');
 const { signToken } = require('../utils/auth');
 const { AuthenticationError } = require('apollo-server-express');
 const { SendHtmlEmail } = require('../utils/email');
@@ -93,7 +93,8 @@ const resolvers = {
             if (!context.user) {
                 throw new AuthenticationError('You must be logged in');
             }
-            if (!context.user.roles || !context.user.roles.includes('LETTER_ADMIN')) {
+            const roles = context.user.roles || [];
+            if (!roles.includes('LETTER_ADMIN') && !roles.includes('MAALIYA_VOLUNTEER')) {
                 throw new AuthenticationError('Not authorized');
             }
             return User.find({ isActive: { $ne: false }, zone: { $ne: '9' } }).sort({ fullName: 1 });
@@ -364,6 +365,54 @@ const resolvers = {
             const members = await Member.find({ roles: { $in: ['MAALIYA_VOLUNTEER', 'LETTER_ADMIN'] } });
             const hofItsList = members.map(m => m.hofIts);
             return User.find({ hofIts: { $in: hofItsList }, isActive: { $ne: false } }).sort({ fullName: 1 });
+        },
+
+        getCheckInData: async (parent, { userId, year }, context) => {
+            if (!context.user) {
+                throw new AuthenticationError('You must be logged in');
+            }
+            const roles = context.user.roles || [];
+            if (!roles.includes('MAALIYA_VOLUNTEER') && !roles.includes('LETTER_ADMIN')) {
+                throw new AuthenticationError('Not authorized');
+            }
+
+            const [user, commitment, achRecord, openPledges, huqooq, fmbPledge] = await Promise.all([
+                User.findById(userId),
+                Commitment.findOne({ user: userId, year }),
+                ACH.findOne({ user: userId }),
+                QBOpen.find({ user: userId }).sort({ due: 1 }),
+                Huqooq.findOne({ user: userId, year }),
+                Pledge.findOne({ user: userId, period: year }),
+            ]);
+
+            return {
+                user,
+                commitment: commitment ? {
+                    _id: commitment._id,
+                    user,
+                    year: commitment.year,
+                    kr: commitment.kr,
+                    ut: commitment.ut,
+                    schedule: commitment.schedule,
+                } : null,
+                ach: achRecord ? {
+                    _id: achRecord._id,
+                    user,
+                    accountNumber: decrypt(achRecord.accountNumber),
+                    routingNumber: decrypt(achRecord.routingNumber),
+                } : null,
+                openPledges,
+                huqooq: huqooq ? {
+                    _id: huqooq._id,
+                    user,
+                    year: huqooq.year,
+                    wajebaatAmount: huqooq.wajebaatAmount,
+                    sfAmount: huqooq.sfAmount,
+                    wcheck: huqooq.wcheck,
+                    sfcheck: huqooq.sfcheck,
+                } : null,
+                fmbPledgeAmount: fmbPledge ? fmbPledge.amount : null,
+            };
         },
     },
 
@@ -876,6 +925,76 @@ const resolvers = {
                 { volunteer: volunteerId }
             );
             return true;
+        },
+
+        upsertCommitmentForUser: async (parent, { userId, kr, ut, year }, context) => {
+            if (!context.user) {
+                throw new AuthenticationError('You must be logged in');
+            }
+            const roles = context.user.roles || [];
+            if (!roles.includes('MAALIYA_VOLUNTEER') && !roles.includes('LETTER_ADMIN')) {
+                throw new AuthenticationError('Not authorized');
+            }
+
+            const commitment = await Commitment.findOneAndUpdate(
+                { user: userId, year },
+                { kr, ut },
+                { upsert: true, new: true }
+            );
+
+            const user = await User.findById(userId);
+            return {
+                _id: commitment._id,
+                user,
+                year: commitment.year,
+                kr: commitment.kr,
+                ut: commitment.ut,
+                schedule: commitment.schedule,
+            };
+        },
+
+        upsertACHForUser: async (parent, { userId, accountNumber, routingNumber }, context) => {
+            if (!context.user) {
+                throw new AuthenticationError('You must be logged in');
+            }
+            const roles = context.user.roles || [];
+            if (!roles.includes('MAALIYA_VOLUNTEER') && !roles.includes('LETTER_ADMIN')) {
+                throw new AuthenticationError('Not authorized');
+            }
+
+            await ACH.findOneAndUpdate(
+                { user: userId },
+                { accountNumber: encrypt(accountNumber), routingNumber: encrypt(routingNumber) },
+                { upsert: true }
+            );
+            return true;
+        },
+
+        upsertHuqooq: async (parent, { userId, year, wajebaatAmount, sfAmount, wcheck, sfcheck }, context) => {
+            if (!context.user) {
+                throw new AuthenticationError('You must be logged in');
+            }
+            const roles = context.user.roles || [];
+            if (!roles.includes('MAALIYA_VOLUNTEER') && !roles.includes('LETTER_ADMIN')) {
+                throw new AuthenticationError('Not authorized');
+            }
+
+            const huqooq = await Huqooq.findOneAndUpdate(
+                { user: userId, year },
+                { wajebaatAmount, sfAmount, wcheck, sfcheck },
+                { upsert: true, new: true }
+            );
+
+            const user = await User.findById(userId);
+            return {
+                _id: huqooq._id,
+                user,
+                year: huqooq.year,
+                wajebaatAmount: huqooq.wajebaatAmount,
+                sfAmount: huqooq.sfAmount,
+                wcheck: huqooq.wcheck,
+                sfcheck: huqooq.sfcheck,
+            };
         },
 
         cancelMySlot: async (parent, args, context) => {

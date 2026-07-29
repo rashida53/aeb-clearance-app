@@ -9,5 +9,6 @@ const Commitment = require('./Commitment');
 const ACH = require('./ACH');
 const Miqaat = require('./Miqaat');
 const Pledge = require('./Pledge');
+const Huqooq = require('./Huqooq');
 
-module.exports = { Member, User, QBOpen, Approval, Letter, Masjid, Slot, Commitment, ACH, Miqaat, Pledge };
+module.exports = { Member, User, QBOpen, Approval, Letter, Masjid, Slot, Commitment, ACH, Miqaat, Pledge, Huqooq };
