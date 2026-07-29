@@ -535,14 +535,15 @@ const resolvers = {
                     let laagatHtml = '';
                     if (sarkaariLaagat != null && jamaatLaagat != null) {
                         laagatHtml = `
-                            <p style="margin:16px 0 12px;font-size:11px;font-weight:bold;color:#CE9C01;text-transform:uppercase;letter-spacing:1px;">Sarkaari Laagat</p>
-                            <p style="margin:0 0 16px;font-size:15px;color:#00203D;">$${sarkaariLaagat}</p>
-                            <p style="margin:0 0 12px;font-size:11px;font-weight:bold;color:#CE9C01;text-transform:uppercase;letter-spacing:1px;">Jamaat Laagat</p>
-                            <p style="margin:0;font-size:15px;color:#00203D;">$${jamaatLaagat}</p>`;
+                                                                <p style="margin:0 0 12px;font-size:11px;font-weight:bold;color:#CE9C01;text-transform:uppercase;letter-spacing:1px;">Sarkaari Laagat</p>
+                                                                <p style="margin:0 0 16px;font-size:17px;font-weight:bold;color:#00203D;">$${sarkaariLaagat}</p>
+
+                                                                <p style="margin:0 0 12px;font-size:11px;font-weight:bold;color:#CE9C01;text-transform:uppercase;letter-spacing:1px;">Jamaat Laagat</p>
+                                                                <p style="margin:0 0 16px;font-size:17px;font-weight:bold;color:#00203D;">$${jamaatLaagat}</p>`;
                     } else if (laagatAmount != null) {
                         laagatHtml = `
-                            <p style="margin:16px 0 12px;font-size:11px;font-weight:bold;color:#CE9C01;text-transform:uppercase;letter-spacing:1px;">Jamaat Laagat</p>
-                            <p style="margin:0;font-size:15px;color:#00203D;">$${laagatAmount}</p>`;
+                                                                <p style="margin:0 0 12px;font-size:11px;font-weight:bold;color:#CE9C01;text-transform:uppercase;letter-spacing:1px;">Jamaat Laagat</p>
+                                                                <p style="margin:0 0 16px;font-size:17px;font-weight:bold;color:#00203D;">$${laagatAmount}</p>`;
                     }
 
                     const emailHtml = `
@@ -576,10 +577,9 @@ const resolvers = {
 
                                                                 <p style="margin:0 0 12px;font-size:11px;font-weight:bold;color:#CE9C01;text-transform:uppercase;letter-spacing:1px;">Reason</p>
                                                                 <p style="margin:0 0 16px;font-size:17px;font-weight:bold;color:#00203D;">${reason}</p>
-
+${laagatHtml}
                                                                 <p style="margin:0 0 12px;font-size:11px;font-weight:bold;color:#CE9C01;text-transform:uppercase;letter-spacing:1px;">Masjid Notes</p>
                                                                 <p style="margin:0;font-size:15px;color:#00203D;line-height:1.6;">${masjidNote || '—'}</p>
-                                                                ${laagatHtml}
                                                             </td>
                                                         </tr>
                                                     </table>
