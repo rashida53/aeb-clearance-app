@@ -2700,6 +2700,41 @@ label {
   color: var(--color-navy);
 }
 
+.ciScheduleRow {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.ciScheduleOptions {
+  display: flex;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.ciScheduleBtn {
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: bold;
+  padding: 6px 14px;
+  background: var(--color-white);
+  color: var(--color-navy);
+  border: 2px solid var(--color-navy);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all var(--transition-standard);
+}
+
+.ciScheduleBtn:hover {
+  background: var(--color-navy);
+  color: var(--color-gold);
+}
+
+.ciScheduleBtn.selected {
+  background: var(--color-navy);
+  color: var(--color-gold);
+}
+
 .ciBtnSave:disabled {
   opacity: 0.6;
   cursor: not-allowed;

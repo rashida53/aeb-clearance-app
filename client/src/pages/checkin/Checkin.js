@@ -24,6 +24,7 @@ export default function Checkin() {
 
     const [kr, setKr] = useState('');
     const [ut, setUt] = useState('');
+    const [schedule, setSchedule] = useState('');
     const [accountNumber, setAccountNumber] = useState('');
     const [routingNumber, setRoutingNumber] = useState('');
     const [wajebaatAmount, setWajebaatAmount] = useState('');
@@ -46,6 +47,7 @@ export default function Checkin() {
         if (!ciData) return;
         setKr(ciData.commitment?.kr != null ? String(ciData.commitment.kr) : '');
         setUt(ciData.commitment?.ut != null ? String(ciData.commitment.ut) : '');
+        setSchedule(ciData.commitment?.schedule || '');
         setAccountNumber(ciData.ach?.accountNumber || '');
         setRoutingNumber(ciData.ach?.routingNumber || '');
         setWajebaatAmount(ciData.huqooq?.wajebaatAmount != null ? String(ciData.huqooq.wajebaatAmount) : '');
@@ -66,7 +68,7 @@ export default function Checkin() {
         try {
             const promises = [];
             promises.push(upsertCommitment({
-                variables: { userId: selectedUser._id, kr: parseFloat(kr) || 0, ut: parseFloat(ut) || 0, year: CURRENT_YEAR },
+                variables: { userId: selectedUser._id, kr: parseFloat(kr) || 0, ut: parseFloat(ut) || 0, year: CURRENT_YEAR, schedule: schedule || null },
             }));
             if (accountNumber && routingNumber) {
                 promises.push(upsertACH({
@@ -229,6 +231,26 @@ export default function Checkin() {
                                         <span className="ciInlineValue">
                                             {ciData?.fmbPledgeAmount != null ? formatCurrency(ciData.fmbPledgeAmount) : 'PENDING'}
                                         </span>
+                                    </div>
+                                    <div className="ciScheduleRow">
+                                        <label className="ciLabel">Payment Schedule</label>
+                                        <div className="ciScheduleOptions">
+                                            {[
+                                                { value: 'ONE_TIME', label: '1 time' },
+                                                { value: 'THREE_MONTH', label: '3 month' },
+                                                { value: 'SIX_MONTH', label: '6 month' },
+                                                { value: 'NINE_MONTH', label: '9 month' },
+                                            ].map((opt) => (
+                                                <button
+                                                    key={opt.value}
+                                                    type="button"
+                                                    className={`ciScheduleBtn ${schedule === opt.value ? 'selected' : ''}`}
+                                                    onClick={() => setSchedule(opt.value)}
+                                                >
+                                                    {opt.label}
+                                                </button>
+                                            ))}
+                                        </div>
                                     </div>
                                 </div>
 

@@ -180,7 +180,7 @@ type Mutation {
     claimSlotGroup(date: String!, group: String!): Boolean
     unclaimSlotGroup(date: String!, group: String!): Boolean
     reassignSlotGroup(date: String!, group: String!, volunteerId: ID!): Boolean
-    upsertCommitmentForUser(userId: ID!, kr: Float, ut: Float, year: String!): Commitment
+    upsertCommitmentForUser(userId: ID!, kr: Float, ut: Float, year: String!, schedule: String): Commitment
     upsertACHForUser(userId: ID!, accountNumber: String!, routingNumber: String!): Boolean
     upsertHuqooq(userId: ID!, year: String!, wajebaatAmount: Float, sfAmount: Float, wcheck: Boolean, sfcheck: Boolean): Huqooq
 }

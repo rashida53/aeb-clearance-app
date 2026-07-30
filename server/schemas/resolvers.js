@@ -941,7 +941,7 @@ ${laagatHtml}
             return true;
         },
 
-        upsertCommitmentForUser: async (parent, { userId, kr, ut, year }, context) => {
+        upsertCommitmentForUser: async (parent, { userId, kr, ut, year, schedule }, context) => {
             if (!context.user) {
                 throw new AuthenticationError('You must be logged in');
             }
@@ -950,9 +950,11 @@ ${laagatHtml}
                 throw new AuthenticationError('Not authorized');
             }
 
+            const updateFields = { kr, ut };
+            if (schedule) updateFields.schedule = schedule;
             const commitment = await Commitment.findOneAndUpdate(
                 { user: userId, year },
-                { kr, ut },
+                updateFields,
                 { upsert: true, new: true }
             );
 

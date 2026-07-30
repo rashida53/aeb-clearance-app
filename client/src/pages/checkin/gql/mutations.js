@@ -1,11 +1,12 @@
 import { gql } from '@apollo/client';
 
 export const UPSERT_COMMITMENT_FOR_USER = gql`
-    mutation upsertCommitmentForUser($userId: ID!, $kr: Float, $ut: Float, $year: String!) {
-        upsertCommitmentForUser(userId: $userId, kr: $kr, ut: $ut, year: $year) {
+    mutation upsertCommitmentForUser($userId: ID!, $kr: Float, $ut: Float, $year: String!, $schedule: String) {
+        upsertCommitmentForUser(userId: $userId, kr: $kr, ut: $ut, year: $year, schedule: $schedule) {
             _id
             kr
             ut
+            schedule
         }
     }
 `;
