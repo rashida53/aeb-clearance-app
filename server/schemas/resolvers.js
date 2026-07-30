@@ -828,7 +828,7 @@ ${laagatHtml}
             }
 
             await Commitment.findOneAndUpdate(
-                { user: userId },
+                { user: userId, year: '1448-49' },
                 { schedule },
             );
 
