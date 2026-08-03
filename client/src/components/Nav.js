@@ -56,6 +56,11 @@ export default function Nav() {
                         )}
                         {isLetterAdmin && (
                             <li>
+                                <Link to="/takhmeen" onClick={closeMenu}>Takhmeen</Link>
+                            </li>
+                        )}
+                        {isLetterAdmin && (
+                            <li>
                                 <Link to="/admin" onClick={closeMenu}>Admin</Link>
                             </li>
                         )}
@@ -77,6 +82,9 @@ export default function Nav() {
                         )}
                         {isLetterAdmin && (
                             <Link to="/review" onClick={closeMenu}>Review</Link>
+                        )}
+                        {isLetterAdmin && (
+                            <Link to="/takhmeen" onClick={closeMenu}>Takhmeen</Link>
                         )}
                         {isLetterAdmin && (
                             <Link to="/admin" onClick={closeMenu}>Admin</Link>

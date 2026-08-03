@@ -18,7 +18,7 @@ export const UPSERT_ACH_FOR_USER = gql`
 `;
 
 export const UPSERT_HUQOOQ = gql`
-    mutation upsertHuqooq($userId: ID!, $year: String!, $wajebaatAmount: Float, $sfAmount: Float, $wcheck: Boolean, $sfcheck: Boolean) {
+    mutation upsertHuqooq($userId: ID!, $year: String!, $wajebaatAmount: Float, $sfAmount: Float, $wcheck: String, $sfcheck: String) {
         upsertHuqooq(userId: $userId, year: $year, wajebaatAmount: $wajebaatAmount, sfAmount: $sfAmount, wcheck: $wcheck, sfcheck: $sfcheck) {
             _id
             wajebaatAmount

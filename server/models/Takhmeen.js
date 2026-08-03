@@ -1,7 +1,7 @@
 const { clearanceDb } = require('../config/connection');
 const { Schema } = require('mongoose');
 
-const huqooqSchema = new Schema(
+const takhmeenSchema = new Schema(
     {
         user: {
             type: Schema.Types.ObjectId,
@@ -12,30 +12,22 @@ const huqooqSchema = new Schema(
             type: String,
             required: true,
         },
-        wajebaatAmount: {
+        wajebaat: {
             type: Number,
             default: null,
         },
-        sfAmount: {
+        sf: {
             type: Number,
             default: null,
-        },
-        wcheck: {
-            type: String,
-            default: '',
-        },
-        sfcheck: {
-            type: String,
-            default: '',
         },
     },
     {
-        collection: 'huqooq',
+        collection: 'takhmeen',
     }
 );
 
-huqooqSchema.index({ user: 1, year: 1 }, { unique: true });
+takhmeenSchema.index({ user: 1, year: 1 }, { unique: true });
 
-const Huqooq = clearanceDb.model('Huqooq', huqooqSchema);
+const Takhmeen = clearanceDb.model('Takhmeen', takhmeenSchema);
 
-module.exports = Huqooq;
+module.exports = Takhmeen;

@@ -1,4 +1,4 @@
-const { Member, User, QBOpen, Approval, Letter, Masjid, Slot, Commitment, ACH, Miqaat, Pledge, Huqooq } = require('../models');
+const { Member, User, QBOpen, Approval, Letter, Masjid, Slot, Commitment, ACH, Miqaat, Pledge, Huqooq, Takhmeen } = require('../models');
 const { signToken } = require('../utils/auth');
 const { AuthenticationError } = require('apollo-server-express');
 const { SendHtmlEmail } = require('../utils/email');
@@ -376,13 +376,14 @@ const resolvers = {
                 throw new AuthenticationError('Not authorized');
             }
 
-            const [user, commitment, achRecord, openPledges, huqooq, fmbPledge] = await Promise.all([
+            const [user, commitment, achRecord, openPledges, huqooq, fmbPledge, takhmeen] = await Promise.all([
                 User.findById(userId),
                 Commitment.findOne({ user: userId, year }),
                 ACH.findOne({ user: userId }),
                 QBOpen.find({ user: userId }).sort({ due: 1 }),
                 Huqooq.findOne({ user: userId, year }),
                 Pledge.findOne({ user: userId, period: year }),
+                Takhmeen.findOne({ user: userId, year }),
             ]);
 
             return {
@@ -401,7 +402,7 @@ const resolvers = {
                     accountNumber: decrypt(achRecord.accountNumber),
                     routingNumber: decrypt(achRecord.routingNumber),
                 } : null,
-                openPledges,
+                openPledges: openPledges.filter(p => !p.pp),
                 huqooq: huqooq ? {
                     _id: huqooq._id,
                     user,
@@ -412,6 +413,33 @@ const resolvers = {
                     sfcheck: huqooq.sfcheck,
                 } : null,
                 fmbPledgeAmount: fmbPledge ? fmbPledge.amount : null,
+                takhmeen: takhmeen ? {
+                    _id: takhmeen._id,
+                    user,
+                    year: takhmeen.year,
+                    wajebaat: takhmeen.wajebaat,
+                    sf: takhmeen.sf,
+                } : null,
+            };
+        },
+
+        getTakhmeen: async (parent, { userId, year }, context) => {
+            if (!context.user) {
+                throw new AuthenticationError('You must be logged in');
+            }
+            const roles = context.user.roles || [];
+            if (!roles.includes('LETTER_ADMIN')) {
+                throw new AuthenticationError('Not authorized');
+            }
+            const takhmeen = await Takhmeen.findOne({ user: userId, year });
+            if (!takhmeen) return null;
+            const user = await User.findById(userId);
+            return {
+                _id: takhmeen._id,
+                user,
+                year: takhmeen.year,
+                wajebaat: takhmeen.wajebaat,
+                sf: takhmeen.sf,
             };
         },
     },
@@ -1035,6 +1063,31 @@ ${laagatHtml}
                 startTime: slot.startTime,
                 endTime: slot.endTime,
                 bookedBy: null,
+            };
+        },
+
+        upsertTakhmeen: async (parent, { userId, year, wajebaat, sf }, context) => {
+            if (!context.user) {
+                throw new AuthenticationError('You must be logged in');
+            }
+            const roles = context.user.roles || [];
+            if (!roles.includes('LETTER_ADMIN')) {
+                throw new AuthenticationError('Not authorized');
+            }
+
+            const takhmeen = await Takhmeen.findOneAndUpdate(
+                { user: userId, year },
+                { wajebaat, sf },
+                { upsert: true, new: true }
+            );
+
+            const user = await User.findById(userId);
+            return {
+                _id: takhmeen._id,
+                user,
+                year: takhmeen.year,
+                wajebaat: takhmeen.wajebaat,
+                sf: takhmeen.sf,
             };
         },
     },

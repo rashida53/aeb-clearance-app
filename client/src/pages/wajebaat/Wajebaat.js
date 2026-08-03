@@ -132,7 +132,7 @@ function MaskedInput({ value, onChange, placeholder, label }) {
 
 // ── Commitment Step ──
 
-function CommitmentStep({ title, description, amount, onAmountChange, onDefer, onNext, deferred, lastYearAmount, minAmount = 353, unitHint }) {
+function CommitmentStep({ title, description, amount, onAmountChange, onDefer, onNext, onBack, deferred, lastYearAmount, minAmount = 353, unitHint }) {
     const parsedAmount = amount ? parseFloat(amount) : 0;
     const belowMin = minAmount > 0 && amount && parsedAmount < minAmount;
     const isValid = deferred || (amount && parsedAmount > 0 && (!minAmount || parsedAmount >= minAmount));
@@ -180,6 +180,11 @@ function CommitmentStep({ title, description, amount, onAmountChange, onDefer, o
             )}
 
             <div className="wjStepActions">
+                {onBack && (
+                    <button className="wjBtnSecondary" onClick={onBack}>
+                        Back
+                    </button>
+                )}
                 {!deferred && (
                     <button className="wjBtnSecondary" onClick={() => onDefer(true)}>
                         Defer
@@ -195,7 +200,7 @@ function CommitmentStep({ title, description, amount, onAmountChange, onDefer, o
 
 // ── ACH Step ──
 
-function ACHStep({ onSubmit, submitting }) {
+function ACHStep({ onSubmit, onBack, submitting }) {
     const [accountNumber, setAccountNumber] = useState('');
     const [routingNumber, setRoutingNumber] = useState('');
     const [schedule, setSchedule] = useState('');
@@ -248,6 +253,11 @@ function ACHStep({ onSubmit, submitting }) {
             </div>
 
             <div className="wjStepActions">
+                {onBack && (
+                    <button className="wjBtnSecondary" onClick={onBack}>
+                        Back
+                    </button>
+                )}
                 <button className="wjBtnPrimary" onClick={handleSubmit} disabled={!isValid || submitting}>
                     {submitting ? 'Submitting…' : 'Next'}
                 </button>
@@ -258,7 +268,7 @@ function ACHStep({ onSubmit, submitting }) {
 
 // ── Open Pledges Step ──
 
-function OpenPledgesStep({ hofIts, onConfirm }) {
+function OpenPledgesStep({ hofIts, onConfirm, onBack }) {
     const { data, loading } = useQuery(GET_MY_OPEN_BALANCES, {
         variables: { hofIts },
     });
@@ -300,6 +310,11 @@ function OpenPledgesStep({ hofIts, onConfirm }) {
             )}
 
             <div className="wjStepActions">
+                {onBack && (
+                    <button className="wjBtnSecondary" onClick={onBack}>
+                        Back
+                    </button>
+                )}
                 <a
                     href="https://www.billandpay.com/web/login.php?m=17357"
                     target="_blank"
@@ -319,7 +334,7 @@ function OpenPledgesStep({ hofIts, onConfirm }) {
 
 // ── Slot Scheduler ──
 
-function SlotScheduler({ onBook, hostingMiqaats }) {
+function SlotScheduler({ onBook, onBack, hostingMiqaats }) {
     const { data, loading } = useQuery(GET_AVAILABLE_SLOTS);
     const [pageStart, setPageStart] = useState(0);
     const [confirmSlot, setConfirmSlot] = useState(null);
@@ -356,6 +371,14 @@ function SlotScheduler({ onBook, hostingMiqaats }) {
     return (
         <div className="wjStep">
             <h2 className="wjStepTitle">Schedule Your Appointment</h2>
+
+            {onBack && (
+                <div className="wjStepActions" style={{ justifyContent: 'flex-start', marginTop: 0, marginBottom: 16 }}>
+                    <button className="wjBtnSecondary" onClick={onBack}>
+                        Back
+                    </button>
+                </div>
+            )}
 
             {hostingMiqaats && hostingMiqaats.length > 0 && (
                 <div className="wjNiyaazInfo">
@@ -524,11 +547,11 @@ function BookingConfirmation({ slot, commitment, fmbPledgeAmount, user, onCancel
 // ── Main Wajebaat Page ──
 
 export default function Wajebaat() {
-    const isLetterAdmin = Auth.isLetterAdmin();
+    const hasAccess = Auth.isMaaliyaVolunteer();
     const { data: meData } = useQuery(GET_ME);
     const { data: statusData, loading: statusLoading, refetch: refetchStatus } = useQuery(
         GET_MY_WAJEBAAT_STATUS,
-        { skip: !isLetterAdmin }
+        { skip: !hasAccess }
     );
 
     const [stepHistory, setStepHistory] = useState([STEP_INTRO]);
@@ -545,6 +568,7 @@ export default function Wajebaat() {
 
     const currentStep = stepHistory[stepHistory.length - 1];
     const goToStep = (step) => setStepHistory((prev) => [...prev, step]);
+    const goBack = () => setStepHistory((prev) => prev.length > 1 ? prev.slice(0, -1) : prev);
 
     const status = statusData?.getMyWajebaatStatus;
     const hofIts = meData?.me?.memberHof;
@@ -556,7 +580,7 @@ export default function Wajebaat() {
     const openBalances = (balancesData?.getMyOpenBalances || []).filter((b) => !b.pp);
     const hasOpenPledges = openBalances.length > 0;
 
-    if (!isLetterAdmin) {
+    if (!hasAccess) {
         return (
             <>
                 <Nav />
@@ -688,6 +712,7 @@ export default function Wajebaat() {
                         onAmountChange={setKrAmount}
                         deferred={krDeferred}
                         onDefer={setKrDeferred}
+                        onBack={goBack}
                         onNext={() => goToStep(STEP_UT)}
                         lastYearAmount={status?.lastYearCommitment?.kr}
                         unitHint="Please consider units of $353 | $553 | $786 | $1100 to help us reach our collective goal"
@@ -702,6 +727,7 @@ export default function Wajebaat() {
                         onAmountChange={setUtAmount}
                         deferred={utDeferred}
                         onDefer={setUtDeferred}
+                        onBack={goBack}
                         onNext={handleCommitmentSubmit}
                         lastYearAmount={status?.lastYearCommitment?.ut}
                         minAmount={72}
@@ -709,16 +735,17 @@ export default function Wajebaat() {
                     />
                 );
             case STEP_ACH:
-                return <ACHStep onSubmit={handleACHSubmit} submitting={achSubmitting} />;
+                return <ACHStep onSubmit={handleACHSubmit} onBack={goBack} submitting={achSubmitting} />;
             case STEP_PLEDGES:
                 return (
                     <OpenPledgesStep
                         hofIts={hofIts}
+                        onBack={goBack}
                         onConfirm={() => goToStep(STEP_SCHEDULER)}
                     />
                 );
             case STEP_SCHEDULER:
-                return <SlotScheduler onBook={handleBookSlot} hostingMiqaats={status?.hostingMiqaats} />;
+                return <SlotScheduler onBook={handleBookSlot} onBack={goBack} hostingMiqaats={status?.hostingMiqaats} />;
             default:
                 return null;
         }

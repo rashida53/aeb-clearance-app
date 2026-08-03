@@ -29,8 +29,8 @@ export default function Checkin() {
     const [routingNumber, setRoutingNumber] = useState('');
     const [wajebaatAmount, setWajebaatAmount] = useState('');
     const [sfAmount, setSfAmount] = useState('');
-    const [wcheck, setWcheck] = useState(false);
-    const [sfcheck, setSfcheck] = useState(false);
+    const [wcheck, setWcheck] = useState('');
+    const [sfcheck, setSfcheck] = useState('');
     const [saving, setSaving] = useState('');
     const [error, setError] = useState('');
 
@@ -52,8 +52,8 @@ export default function Checkin() {
         setRoutingNumber(ciData.ach?.routingNumber || '');
         setWajebaatAmount(ciData.huqooq?.wajebaatAmount != null ? String(ciData.huqooq.wajebaatAmount) : '');
         setSfAmount(ciData.huqooq?.sfAmount != null ? String(ciData.huqooq.sfAmount) : '');
-        setWcheck(ciData.huqooq?.wcheck || false);
-        setSfcheck(ciData.huqooq?.sfcheck || false);
+        setWcheck(ciData.huqooq?.wcheck || '');
+        setSfcheck(ciData.huqooq?.sfcheck || '');
     }, [ciData]);
 
     const handleSelectUser = (user) => {
@@ -133,6 +133,28 @@ export default function Checkin() {
                         ) : (
                             <>
                                 <div className="ciSection">
+                                    <h3 className="ciSectionTitle">Takhmeen</h3>
+                                    <div className="ciFieldRow">
+                                        <div className="ciFieldGroup">
+                                            <label className="ciLabel">Waajebaat</label>
+                                            <div className="ciReadonly">
+                                                {ciData?.takhmeen?.wajebaat != null
+                                                    ? formatCurrency(ciData.takhmeen.wajebaat)
+                                                    : 'Pending'}
+                                            </div>
+                                        </div>
+                                        <div className="ciFieldGroup">
+                                            <label className="ciLabel">Sila Fitra</label>
+                                            <div className="ciReadonly">
+                                                {ciData?.takhmeen?.sf != null
+                                                    ? formatCurrency(ciData.takhmeen.sf)
+                                                    : 'Pending'}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="ciSection">
                                     <h3 className="ciSectionTitle">Huqooq</h3>
                                     <div className="ciFieldRow">
                                         <div className="ciFieldGroup">
@@ -145,15 +167,15 @@ export default function Checkin() {
                                                 onChange={(e) => setWajebaatAmount(e.target.value)}
                                             />
                                         </div>
-                                        <div className="ciCheckRow">
-                                            <label className="ciCheckLabel">
-                                                <input
-                                                    type="checkbox"
-                                                    checked={wcheck}
-                                                    onChange={(e) => setWcheck(e.target.checked)}
-                                                />
-                                                Check Submitted
-                                            </label>
+                                        <div className="ciFieldGroup">
+                                            <label className="ciLabel">Check Number</label>
+                                            <input
+                                                className="ciInput"
+                                                type="text"
+                                                placeholder="Check #"
+                                                value={wcheck}
+                                                onChange={(e) => setWcheck(e.target.value)}
+                                            />
                                         </div>
                                     </div>
                                     <div className="ciFieldRow">
@@ -167,15 +189,15 @@ export default function Checkin() {
                                                 onChange={(e) => setSfAmount(e.target.value)}
                                             />
                                         </div>
-                                        <div className="ciCheckRow">
-                                            <label className="ciCheckLabel">
-                                                <input
-                                                    type="checkbox"
-                                                    checked={sfcheck}
-                                                    onChange={(e) => setSfcheck(e.target.checked)}
-                                                />
-                                                Check Submitted
-                                            </label>
+                                        <div className="ciFieldGroup">
+                                            <label className="ciLabel">Check Number</label>
+                                            <input
+                                                className="ciInput"
+                                                type="text"
+                                                placeholder="Check #"
+                                                value={sfcheck}
+                                                onChange={(e) => setSfcheck(e.target.value)}
+                                            />
                                         </div>
                                     </div>
                                 </div>
@@ -262,7 +284,6 @@ export default function Checkin() {
                                                 <li key={p._id} className="ciPledgeItem">
                                                     <span>{p.qb_id}</span>
                                                     <span>{formatCurrency(p.amount)}</span>
-                                                    {p.pp && <span className="ciPledgePP">PP</span>}
                                                 </li>
                                             ))}
                                         </ul>

@@ -37,7 +37,6 @@ export const GET_CHECK_IN_DATA = gql`
                 balance
                 due
                 customer
-                pp
             }
             huqooq {
                 _id
@@ -47,6 +46,11 @@ export const GET_CHECK_IN_DATA = gql`
                 sfcheck
             }
             fmbPledgeAmount
+            takhmeen {
+                _id
+                wajebaat
+                sf
+            }
         }
     }
 `;

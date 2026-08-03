@@ -94,13 +94,16 @@ export default function Volunteer() {
                                             <div key={`${g.date}-${g.group}`} className="volGroupCard">
                                                 <div className="volGroupName">{g.group}</div>
                                                 {g.bookedUsers && g.bookedUsers.length > 0 ? (
-                                                    <ul className="volGroupBookedList">
-                                                        {g.bookedUsers.map((u) => (
-                                                            <li key={u._id}>{u.fullName}</li>
-                                                        ))}
-                                                    </ul>
+                                                    <>
+                                                        <div className="volGroupLabel">Appointments:</div>
+                                                        <ul className="volGroupBookedList">
+                                                            {g.bookedUsers.map((u) => (
+                                                                <li key={u._id}>{u.fullName}</li>
+                                                            ))}
+                                                        </ul>
+                                                    </>
                                                 ) : (
-                                                    <div className="volGroupNoSignups">No signups yet</div>
+                                                    <div className="volGroupNoSignups">No Appointments Scheduled</div>
                                                 )}
                                                 <div className="volGroupAction">
                                                     <button
@@ -135,13 +138,16 @@ export default function Volunteer() {
                                                 <div key={`${g.date}-${g.group}`} className="volGroupCard mine">
                                                     <div className="volGroupName">{g.group}</div>
                                                     {g.bookedUsers && g.bookedUsers.length > 0 ? (
-                                                        <ul className="volGroupBookedList">
-                                                            {g.bookedUsers.map((u) => (
-                                                                <li key={u._id}>{u.fullName}</li>
-                                                            ))}
-                                                        </ul>
+                                                        <>
+                                                            <div className="volGroupLabel">Appointments:</div>
+                                                            <ul className="volGroupBookedList">
+                                                                {g.bookedUsers.map((u) => (
+                                                                    <li key={u._id}>{u.fullName}</li>
+                                                                ))}
+                                                            </ul>
+                                                        </>
                                                     ) : (
-                                                        <div className="volGroupNoSignups">No signups yet</div>
+                                                        <div className="volGroupNoSignups">No Appointments Scheduled</div>
                                                     )}
                                                     <div className="volGroupAction">
                                                         <button

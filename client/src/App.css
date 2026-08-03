@@ -2374,10 +2374,21 @@ label {
   margin-bottom: 6px;
 }
 
+.volGroupLabel {
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: bold;
+  color: var(--color-navy);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-top: 6px;
+  text-align: center;
+}
+
 .volGroupBookedList {
   list-style: none;
   padding-left: 0;
-  margin: 6px 0 8px;
+  margin: 4px 0 8px;
   text-align: center;
 }
 
@@ -2638,6 +2649,14 @@ label {
   margin-bottom: 4px;
 }
 
+.ciReadonly {
+  font-family: var(--font-body);
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--navy);
+  padding: 6px 0;
+}
+
 .ciInput {
   width: 100%;
   padding: 8px 12px;
@@ -2819,4 +2838,140 @@ label {
   .ciCheckRow {
     flex-shrink: 0;
   }
+}
+
+/* ── Takhmeen ── */
+
+.tkHeader {
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+.tkHeader h1 {
+  font-family: var(--font-heading);
+  color: var(--color-navy);
+  font-size: 28px;
+  margin: 0;
+}
+
+.tkFormWrapper {
+  max-width: 900px;
+  margin: 24px auto 0;
+}
+
+.tkFormContainer {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+}
+
+.tkFormImage {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.tkLastYearValue {
+  position: absolute;
+  top: 6.2%;
+  right: 8.5%;
+  width: 10%;
+  font-family: var(--font-body);
+  font-size: clamp(11px, 1.6vw, 16px);
+  font-weight: bold;
+  color: var(--color-navy);
+  text-align: center;
+}
+
+.tkMawdiValue {
+  position: absolute;
+  top: 15.8%;
+  right: 18%;
+  font-family: var(--font-body);
+  font-size: clamp(11px, 1.4vw, 15px);
+  font-weight: bold;
+  color: var(--color-navy);
+}
+
+.tkOverlayInput {
+  position: absolute;
+  right: 25%;
+  width: 13%;
+  height: 3.5%;
+  font-family: var(--font-body);
+  font-size: clamp(12px, 1.5vw, 16px);
+  font-weight: bold;
+  color: var(--color-navy);
+  text-align: center;
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(0, 32, 61, 0.3);
+  border-radius: 3px;
+  outline: none;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.tkOverlayInput:focus {
+  background: rgba(255, 255, 255, 0.95);
+  border-color: var(--color-gold);
+}
+
+.tkOverlayInput::placeholder {
+  color: #bbb;
+}
+
+.tkOverlayTotal {
+  position: absolute;
+  right: 25%;
+  width: 13%;
+  height: 3.5%;
+  font-family: var(--font-body);
+  font-size: clamp(12px, 1.5vw, 16px);
+  font-weight: bold;
+  color: var(--color-navy);
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tkInputZakaat { top: 33.5%; }
+.tkInputKhums { top: 37.5%; }
+.tkInputNazr { top: 52.5%; }
+.tkInputTotal { top: 63%; }
+
+/* SF table columns (left table) */
+.tkSfRate { left: 32%; width: 9%; height: 3.8%; }
+.tkSfCount { left: 23%; width: 9%; height: 3.8%; }
+.tkSfProduct { left: 7.5%; width: 13%; height: 3.8%; }
+.tkSfTotalB { left: 7.5%; width: 13%; height: 3.8%; }
+
+/* SF table rows */
+.tkSfsf1Rate, .tkSfsf1Count, .tkSfsf1Product { top: 35.5%; }
+.tkSfsf2Rate, .tkSfsf2Count, .tkSfsf2Product { top: 39.3%; }
+.tkSfsf3Rate, .tkSfsf3Count, .tkSfsf3Product { top: 43.1%; }
+.tkSfsf4Rate, .tkSfsf4Count, .tkSfsf4Product { top: 46.9%; }
+.tkSfsf5Rate, .tkSfsf5Count, .tkSfsf5Product { top: 50.7%; }
+.tkSfTotalB { top: 54.5%; }
+
+.tkSaveRow {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  justify-content: center;
+  margin-top: 20px;
+  padding-bottom: 20px;
+}
+
+.tkSaved {
+  font-family: var(--font-body);
+  font-weight: bold;
+  color: #2e7d32;
+  font-size: 16px;
+}
+
+.tkError {
+  font-family: var(--font-body);
+  color: #c62828;
+  font-size: 14px;
 }
