@@ -27,8 +27,6 @@ export default function Checkin() {
     const [schedule, setSchedule] = useState('');
     const [accountNumber, setAccountNumber] = useState('');
     const [routingNumber, setRoutingNumber] = useState('');
-    const [wajebaatAmount, setWajebaatAmount] = useState('');
-    const [sfAmount, setSfAmount] = useState('');
     const [wcheck, setWcheck] = useState('');
     const [sfcheck, setSfcheck] = useState('');
     const [saving, setSaving] = useState('');
@@ -50,8 +48,6 @@ export default function Checkin() {
         setSchedule(ciData.commitment?.schedule || '');
         setAccountNumber(ciData.ach?.accountNumber || '');
         setRoutingNumber(ciData.ach?.routingNumber || '');
-        setWajebaatAmount(ciData.huqooq?.wajebaatAmount != null ? String(ciData.huqooq.wajebaatAmount) : '');
-        setSfAmount(ciData.huqooq?.sfAmount != null ? String(ciData.huqooq.sfAmount) : '');
         setWcheck(ciData.huqooq?.wcheck || '');
         setSfcheck(ciData.huqooq?.sfcheck || '');
     }, [ciData]);
@@ -79,8 +75,6 @@ export default function Checkin() {
                 variables: {
                     userId: selectedUser._id,
                     year: CURRENT_YEAR,
-                    wajebaatAmount: parseFloat(wajebaatAmount) || null,
-                    sfAmount: parseFloat(sfAmount) || null,
                     wcheck,
                     sfcheck,
                 },
@@ -133,39 +127,15 @@ export default function Checkin() {
                         ) : (
                             <>
                                 <div className="ciSection">
-                                    <h3 className="ciSectionTitle">Takhmeen</h3>
+                                    <h3 className="ciSectionTitle">Huqooq</h3>
                                     <div className="ciFieldRow">
                                         <div className="ciFieldGroup">
-                                            <label className="ciLabel">Waajebaat</label>
+                                            <label className="ciLabel">Waajebaat Amount</label>
                                             <div className="ciReadonly">
                                                 {ciData?.takhmeen?.wajebaat != null
                                                     ? formatCurrency(ciData.takhmeen.wajebaat)
                                                     : 'Pending'}
                                             </div>
-                                        </div>
-                                        <div className="ciFieldGroup">
-                                            <label className="ciLabel">Sila Fitra</label>
-                                            <div className="ciReadonly">
-                                                {ciData?.takhmeen?.sf != null
-                                                    ? formatCurrency(ciData.takhmeen.sf)
-                                                    : 'Pending'}
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="ciSection">
-                                    <h3 className="ciSectionTitle">Huqooq</h3>
-                                    <div className="ciFieldRow">
-                                        <div className="ciFieldGroup">
-                                            <label className="ciLabel">Waajebaat Check Amount</label>
-                                            <input
-                                                className="ciInput"
-                                                type="number"
-                                                placeholder="Amount"
-                                                value={wajebaatAmount}
-                                                onChange={(e) => setWajebaatAmount(e.target.value)}
-                                            />
                                         </div>
                                         <div className="ciFieldGroup">
                                             <label className="ciLabel">Check Number</label>
@@ -181,13 +151,11 @@ export default function Checkin() {
                                     <div className="ciFieldRow">
                                         <div className="ciFieldGroup">
                                             <label className="ciLabel">Sila Fitra Amount</label>
-                                            <input
-                                                className="ciInput"
-                                                type="number"
-                                                placeholder="Amount"
-                                                value={sfAmount}
-                                                onChange={(e) => setSfAmount(e.target.value)}
-                                            />
+                                            <div className="ciReadonly">
+                                                {ciData?.takhmeen?.sf != null
+                                                    ? formatCurrency(ciData.takhmeen.sf)
+                                                    : 'Pending'}
+                                            </div>
                                         </div>
                                         <div className="ciFieldGroup">
                                             <label className="ciLabel">Check Number</label>
