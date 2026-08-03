@@ -203,7 +203,7 @@ export default function Takhmeen() {
                             <button className="wjBtnPrimary" onClick={handleSave} disabled={saving || (!totalA && !totalB)}>
                                 {saving ? 'Saving...' : 'Save'}
                             </button>
-                            {saved && <span className="tkSaved">Saved</span>}
+                            {saved && <span className="tkSaved">Takhmeen Complete.</span>}
                             {error && <span className="tkError">{error}</span>}
                         </div>
                     </div>
