@@ -5,6 +5,7 @@ import { GET_ALL_ACTIVE_USERS, GET_TAKHMEEN } from './gql/queries';
 import { UPSERT_TAKHMEEN } from './gql/mutations';
 import formBg from '../../assets/takhmeen-form.png';
 
+const CURRENT_YEAR = '1448-49';
 const LAST_YEAR = '1447-48';
 
 const formatCurrency = (amount) =>
@@ -20,30 +21,38 @@ export default function Takhmeen() {
 
     const totalA = (parseFloat(zakaat) || 0) + (parseFloat(khumus) || 0) + (parseFloat(nm) || 0);
 
-    const [r1c1, setR1c1] = useState('');
     const [r1c2, setR1c2] = useState('');
-    const [r2c1, setR2c1] = useState('');
     const [r2c2, setR2c2] = useState('');
-    const [r3c1, setR3c1] = useState('');
     const [r3c2, setR3c2] = useState('');
-    const [r4c1, setR4c1] = useState('');
     const [r4c2, setR4c2] = useState('');
-    const [r5c1, setR5c1] = useState('');
     const [r5c2, setR5c2] = useState('');
 
-    const r1p = (parseFloat(r1c1) || 0) * (parseFloat(r1c2) || 0);
-    const r2p = (parseFloat(r2c1) || 0) * (parseFloat(r2c2) || 0);
-    const r3p = (parseFloat(r3c1) || 0) * (parseFloat(r3c2) || 0);
-    const r4p = (parseFloat(r4c1) || 0) * (parseFloat(r4c2) || 0);
-    const r5p = (parseFloat(r5c1) || 0) * (parseFloat(r5c2) || 0);
+    const sfRates = [14, 14, 7, 7, 14];
+    const r1p = sfRates[0] * (parseFloat(r1c2) || 0);
+    const r2p = sfRates[1] * (parseFloat(r2c2) || 0);
+    const r3p = sfRates[2] * (parseFloat(r3c2) || 0);
+    const r4p = sfRates[3] * (parseFloat(r4c2) || 0);
+    const r5p = sfRates[4] * (parseFloat(r5c2) || 0);
     const totalB = r1p + r2p + r3p + r4p + r5p;
 
+    const [savedTotalA, setSavedTotalA] = useState(null);
+    const [savedTotalB, setSavedTotalB] = useState(null);
     const [saving, setSaving] = useState(false);
     const [saved, setSaved] = useState(false);
     const [error, setError] = useState('');
 
     const [getLastYear, { data: lastYearData, loading: lastYearLoading }] = useLazyQuery(GET_TAKHMEEN, {
         fetchPolicy: 'network-only',
+    });
+    const [getCurrentYear] = useLazyQuery(GET_TAKHMEEN, {
+        fetchPolicy: 'network-only',
+        onCompleted: (data) => {
+            const tk = data?.getTakhmeen;
+            if (tk) {
+                setSavedTotalA(tk.wajebaat);
+                setSavedTotalB(tk.sf);
+            }
+        },
     });
     const [upsertTakhmeen] = useMutation(UPSERT_TAKHMEEN);
 
@@ -60,14 +69,17 @@ export default function Takhmeen() {
         setZakaat('');
         setKhumus('');
         setNm('');
-        setR1c1(''); setR1c2('');
-        setR2c1(''); setR2c2('');
-        setR3c1(''); setR3c2('');
-        setR4c1(''); setR4c2('');
-        setR5c1(''); setR5c2('');
+        setR1c2('');
+        setR2c2('');
+        setR3c2('');
+        setR4c2('');
+        setR5c2('');
+        setSavedTotalA(null);
+        setSavedTotalB(null);
         setSaved(false);
         setError('');
         getLastYear({ variables: { userId: user._id, year: LAST_YEAR } });
+        getCurrentYear({ variables: { userId: user._id, year: CURRENT_YEAR } });
     };
 
     const handleSave = async () => {
@@ -75,14 +87,18 @@ export default function Takhmeen() {
         setError('');
         setSaved(false);
         try {
+            const finalA = totalA || savedTotalA || null;
+            const finalB = totalB || savedTotalB || null;
             await upsertTakhmeen({
                 variables: {
                     userId: selectedUser._id,
-                    year: '1448-49',
-                    wajebaat: totalA || null,
-                    sf: totalB || null,
+                    year: CURRENT_YEAR,
+                    wajebaat: finalA,
+                    sf: finalB,
                 },
             });
+            setSavedTotalA(finalA);
+            setSavedTotalB(finalB);
             setSaved(true);
         } catch (err) {
             setError(err.message);
@@ -163,25 +179,20 @@ export default function Takhmeen() {
                                 placeholder="0"
                             />
                             <div className="tkOverlayTotal tkInputTotal">
-                                {totalA > 0 ? formatCurrency(totalA) : ''}
+                                {totalA > 0 ? formatCurrency(totalA) : savedTotalA != null ? formatCurrency(savedTotalA) : ''}
                             </div>
 
-                            {/* SF table: c1=rate (هر ایک), c2=count (تعداد), product (Dollars) */}
                             {[
-                                [r1c1, setR1c1, r1c2, setR1c2, r1p, 'sf1'],
-                                [r2c1, setR2c1, r2c2, setR2c2, r2p, 'sf2'],
-                                [r3c1, setR3c1, r3c2, setR3c2, r3p, 'sf3'],
-                                [r4c1, setR4c1, r4c2, setR4c2, r4p, 'sf4'],
-                                [r5c1, setR5c1, r5c2, setR5c2, r5p, 'sf5'],
-                            ].map(([rate, setRate, count, setCount, product, key]) => (
+                                [sfRates[0], r1c2, setR1c2, r1p, 'sf1'],
+                                [sfRates[1], r2c2, setR2c2, r2p, 'sf2'],
+                                [sfRates[2], r3c2, setR3c2, r3p, 'sf3'],
+                                [sfRates[3], r4c2, setR4c2, r4p, 'sf4'],
+                                [sfRates[4], r5c2, setR5c2, r5p, 'sf5'],
+                            ].map(([rate, count, setCount, product, key]) => (
                                 <React.Fragment key={key}>
-                                    <input
-                                        className={`tkOverlayInput tkSfRate tkSf${key}Rate`}
-                                        type="number"
-                                        value={rate}
-                                        onChange={(e) => setRate(e.target.value)}
-                                        placeholder="0"
-                                    />
+                                    <div className={`tkOverlayTotal tkSfRate tkSf${key}Rate`}>
+                                        {rate}
+                                    </div>
                                     <input
                                         className={`tkOverlayInput tkSfCount tkSf${key}Count`}
                                         type="number"
@@ -195,12 +206,12 @@ export default function Takhmeen() {
                                 </React.Fragment>
                             ))}
                             <div className="tkOverlayTotal tkSfTotalB">
-                                {totalB > 0 ? formatCurrency(totalB) : ''}
+                                {totalB > 0 ? formatCurrency(totalB) : savedTotalB != null ? formatCurrency(savedTotalB) : ''}
                             </div>
                         </div>
 
                         <div className="tkSaveRow">
-                            <button className="wjBtnPrimary" onClick={handleSave} disabled={saving || (!totalA && !totalB)}>
+                            <button className="wjBtnPrimary" onClick={handleSave} disabled={saving || (!totalA && !totalB && savedTotalA == null && savedTotalB == null)}>
                                 {saving ? 'Saving...' : 'Save'}
                             </button>
                             {saved && <span className="tkSaved">Takhmeen Complete.</span>}
