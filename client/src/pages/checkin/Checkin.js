@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useLazyQuery } from '@apollo/client';
 import Nav from '../../components/Nav';
 import { GET_ALL_ACTIVE_USERS, GET_CHECK_IN_DATA } from './gql/queries';
-import { UPSERT_COMMITMENT_FOR_USER, UPSERT_ACH_FOR_USER, UPSERT_HUQOOQ } from './gql/mutations';
+import { UPSERT_COMMITMENT_FOR_USER, UPSERT_ACH_FOR_USER, UPSERT_TAKHMEEN } from './gql/mutations';
 
 const CURRENT_YEAR = '1448-49';
 
@@ -20,7 +20,7 @@ export default function Checkin() {
 
     const [upsertCommitment] = useMutation(UPSERT_COMMITMENT_FOR_USER);
     const [upsertACH] = useMutation(UPSERT_ACH_FOR_USER);
-    const [upsertHuqooq] = useMutation(UPSERT_HUQOOQ);
+    const [upsertTakhmeen] = useMutation(UPSERT_TAKHMEEN);
 
     const [kr, setKr] = useState('');
     const [ut, setUt] = useState('');
@@ -48,8 +48,8 @@ export default function Checkin() {
         setSchedule(ciData.commitment?.schedule || '');
         setAccountNumber(ciData.ach?.accountNumber || '');
         setRoutingNumber(ciData.ach?.routingNumber || '');
-        setWcheck(ciData.huqooq?.wcheck || '');
-        setSfcheck(ciData.huqooq?.sfcheck || '');
+        setWcheck(ciData.takhmeen?.wcheck || '');
+        setSfcheck(ciData.takhmeen?.sfcheck || '');
     }, [ciData]);
 
     const handleSelectUser = (user) => {
@@ -71,7 +71,7 @@ export default function Checkin() {
                     variables: { userId: selectedUser._id, accountNumber, routingNumber },
                 }));
             }
-            promises.push(upsertHuqooq({
+            promises.push(upsertTakhmeen({
                 variables: {
                     userId: selectedUser._id,
                     year: CURRENT_YEAR,
@@ -130,7 +130,7 @@ export default function Checkin() {
                                     <h3 className="ciSectionTitle">Huqooq</h3>
                                     <div className="ciFieldRow">
                                         <div className="ciFieldGroup">
-                                            <label className="ciLabel">Waajebaat Amount</label>
+                                            <label className="ciLabel">Wajebaat Amount</label>
                                             <div className="ciReadonly">
                                                 {ciData?.takhmeen?.wajebaat != null
                                                     ? formatCurrency(ciData.takhmeen.wajebaat)
@@ -216,12 +216,12 @@ export default function Checkin() {
                                             onChange={(e) => setUt(e.target.value)}
                                         />
                                     </div>
-                                    <div className="ciInlineRow">
-                                        <label className="ciInlineLabel">Faiz ul Mawaid il Burhaniyah</label>
-                                        <span className="ciInlineValue">
-                                            {ciData?.fmbPledgeAmount != null ? formatCurrency(ciData.fmbPledgeAmount) : 'PENDING'}
-                                        </span>
-                                    </div>
+                                    {ciData?.fmbPledgeAmount == null && (
+                                        <div className="ciInlineRow">
+                                            <label className="ciInlineLabel">Faiz ul Mawaid il Burhaniyah</label>
+                                            <span className="ciInlineValue">PENDING</span>
+                                        </div>
+                                    )}
                                     <div className="ciScheduleRow">
                                         <label className="ciLabel">Payment Schedule</label>
                                         <div className="ciScheduleOptions">

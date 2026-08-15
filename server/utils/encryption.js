@@ -20,6 +20,7 @@ function encrypt(text) {
 }
 
 function decrypt(encryptedText) {
+    if (!encryptedText) return null;
     const [ivHex, encrypted] = encryptedText.split(':');
     const iv = Buffer.from(ivHex, 'hex');
     const decipher = crypto.createDecipheriv(ALGORITHM, getKey(), iv);

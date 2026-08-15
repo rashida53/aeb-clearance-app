@@ -11,11 +11,11 @@ const achSchema = new Schema(
         },
         accountNumber: {
             type: String,
-            required: true,
+            default: null,
         },
         routingNumber: {
             type: String,
-            required: true,
+            default: null,
         },
     },
     {

@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { useQuery, useLazyQuery, useMutation } from '@apollo/client';
 import Nav from '../../components/Nav';
-import { GET_ALL_ACTIVE_USERS, GET_TAKHMEEN } from './gql/queries';
-import { UPSERT_TAKHMEEN } from './gql/mutations';
+import { GET_ALL_ACTIVE_USERS, GET_TAKHMEEN, GET_COMMITMENT_FOR_USER } from './gql/queries';
+import { UPSERT_TAKHMEEN, UPSERT_COMMITMENT_FOR_USER } from './gql/mutations';
 import formBg from '../../assets/takhmeen-form.png';
 
 const CURRENT_YEAR = '1448-49';
@@ -17,9 +17,20 @@ export default function Takhmeen() {
     const [selectedUser, setSelectedUser] = useState(null);
     const [zakaat, setZakaat] = useState('');
     const [khumus, setKhumus] = useState('');
+    const [silat, setSilat] = useState('');
+    const [nafs, setNafs] = useState('');
+    const [najwa, setNajwa] = useState('');
     const [nm, setNm] = useState('');
+    const [kaffarat, setKaffarat] = useState('');
+    const [minnat, setMinnat] = useState('');
+    // Editable lumpsum total — mutually exclusive with the itemized amounts above.
+    const [lumpTotal, setLumpTotal] = useState('');
 
-    const totalA = (parseFloat(zakaat) || 0) + (parseFloat(khumus) || 0) + (parseFloat(nm) || 0);
+    const itemsA = [zakaat, khumus, silat, nafs, najwa, nm, kaffarat, minnat];
+    const itemsSumA = itemsA.reduce((sum, v) => sum + (parseFloat(v) || 0), 0);
+    const anyItemA = itemsA.some((v) => v !== '');
+    // If any item is entered, the total is the locked sum; otherwise it's the lumpsum.
+    const totalA = anyItemA ? itemsSumA : (parseFloat(lumpTotal) || 0);
 
     const [r1c2, setR1c2] = useState('');
     const [r2c2, setR2c2] = useState('');
@@ -41,6 +52,12 @@ export default function Takhmeen() {
     const [saved, setSaved] = useState(false);
     const [error, setError] = useState('');
 
+    // Austin Khidmats (commitment) amounts — editable, resaved only if changed.
+    const [kr, setKr] = useState('');
+    const [ut, setUt] = useState('');
+    const [initialKr, setInitialKr] = useState('');
+    const [initialUt, setInitialUt] = useState('');
+
     const [getLastYear, { data: lastYearData, loading: lastYearLoading }] = useLazyQuery(GET_TAKHMEEN, {
         fetchPolicy: 'network-only',
     });
@@ -51,10 +68,25 @@ export default function Takhmeen() {
             if (tk) {
                 setSavedTotalA(tk.wajebaat);
                 setSavedTotalB(tk.sf);
+                // Only the total is stored, so seed it as the lumpsum value.
+                setLumpTotal(tk.wajebaat != null ? String(tk.wajebaat) : '');
             }
         },
     });
+    const [getCommitment] = useLazyQuery(GET_COMMITMENT_FOR_USER, {
+        fetchPolicy: 'network-only',
+        onCompleted: (data) => {
+            const c = data?.getCommitmentForUser;
+            const krVal = c?.kr != null ? String(c.kr) : '';
+            const utVal = c?.ut != null ? String(c.ut) : '';
+            setKr(krVal);
+            setUt(utVal);
+            setInitialKr(krVal);
+            setInitialUt(utVal);
+        },
+    });
     const [upsertTakhmeen] = useMutation(UPSERT_TAKHMEEN);
+    const [upsertCommitment] = useMutation(UPSERT_COMMITMENT_FOR_USER);
 
     const allUsers = usersData?.getAllActiveUsers || [];
     const filtered = searchTerm.length >= 2
@@ -68,7 +100,13 @@ export default function Takhmeen() {
         setSearchTerm('');
         setZakaat('');
         setKhumus('');
+        setSilat('');
+        setNafs('');
+        setNajwa('');
         setNm('');
+        setKaffarat('');
+        setMinnat('');
+        setLumpTotal('');
         setR1c2('');
         setR2c2('');
         setR3c2('');
@@ -76,10 +114,15 @@ export default function Takhmeen() {
         setR5c2('');
         setSavedTotalA(null);
         setSavedTotalB(null);
+        setKr('');
+        setUt('');
+        setInitialKr('');
+        setInitialUt('');
         setSaved(false);
         setError('');
         getLastYear({ variables: { userId: user._id, year: LAST_YEAR } });
         getCurrentYear({ variables: { userId: user._id, year: CURRENT_YEAR } });
+        getCommitment({ variables: { userId: user._id, year: CURRENT_YEAR } });
     };
 
     const handleSave = async () => {
@@ -87,18 +130,36 @@ export default function Takhmeen() {
         setError('');
         setSaved(false);
         try {
-            const finalA = totalA || savedTotalA || null;
-            const finalB = totalB || savedTotalB || null;
-            await upsertTakhmeen({
-                variables: {
-                    userId: selectedUser._id,
-                    year: CURRENT_YEAR,
-                    wajebaat: finalA,
-                    sf: finalB,
-                },
-            });
+            // Match the on-screen display exactly (only positive totals count),
+            // so we never persist a value the UI isn't showing.
+            const finalA = totalA > 0 ? totalA : (savedTotalA != null ? savedTotalA : null);
+            const finalB = totalB > 0 ? totalB : (savedTotalB != null ? savedTotalB : null);
+            const promises = [
+                upsertTakhmeen({
+                    variables: {
+                        userId: selectedUser._id,
+                        year: CURRENT_YEAR,
+                        wajebaat: finalA,
+                        sf: finalB,
+                    },
+                }),
+            ];
+            // Only resave commitments if the KR/UT amounts were edited here.
+            if (kr !== initialKr || ut !== initialUt) {
+                promises.push(upsertCommitment({
+                    variables: {
+                        userId: selectedUser._id,
+                        year: CURRENT_YEAR,
+                        kr: kr !== '' ? parseFloat(kr) : null,
+                        ut: ut !== '' ? parseFloat(ut) : null,
+                    },
+                }));
+            }
+            await Promise.all(promises);
             setSavedTotalA(finalA);
             setSavedTotalB(finalB);
+            setInitialKr(kr);
+            setInitialUt(ut);
             setSaved(true);
         } catch (err) {
             setError(err.message);
@@ -160,27 +221,84 @@ export default function Takhmeen() {
                             <input
                                 className="tkOverlayInput tkInputZakaat"
                                 type="number"
+                                min="0"
                                 value={zakaat}
                                 onChange={(e) => setZakaat(e.target.value)}
+                                disabled={lumpTotal !== ''}
                                 placeholder="0"
                             />
                             <input
                                 className="tkOverlayInput tkInputKhums"
                                 type="number"
+                                min="0"
                                 value={khumus}
                                 onChange={(e) => setKhumus(e.target.value)}
+                                disabled={lumpTotal !== ''}
+                                placeholder="0"
+                            />
+                            <input
+                                className="tkOverlayInput tkInputSilat"
+                                type="number"
+                                min="0"
+                                value={silat}
+                                onChange={(e) => setSilat(e.target.value)}
+                                disabled={lumpTotal !== ''}
+                                placeholder="0"
+                            />
+                            <input
+                                className="tkOverlayInput tkInputNafs"
+                                type="number"
+                                min="0"
+                                value={nafs}
+                                onChange={(e) => setNafs(e.target.value)}
+                                disabled={lumpTotal !== ''}
+                                placeholder="0"
+                            />
+                            <input
+                                className="tkOverlayInput tkInputNajwa"
+                                type="number"
+                                min="0"
+                                value={najwa}
+                                onChange={(e) => setNajwa(e.target.value)}
+                                disabled={lumpTotal !== ''}
                                 placeholder="0"
                             />
                             <input
                                 className="tkOverlayInput tkInputNazr"
                                 type="number"
+                                min="0"
                                 value={nm}
                                 onChange={(e) => setNm(e.target.value)}
+                                disabled={lumpTotal !== ''}
                                 placeholder="0"
                             />
-                            <div className="tkOverlayTotal tkInputTotal">
-                                {totalA > 0 ? formatCurrency(totalA) : savedTotalA != null ? formatCurrency(savedTotalA) : ''}
-                            </div>
+                            <input
+                                className="tkOverlayInput tkInputKaffarat"
+                                type="number"
+                                min="0"
+                                value={kaffarat}
+                                onChange={(e) => setKaffarat(e.target.value)}
+                                disabled={lumpTotal !== ''}
+                                placeholder="0"
+                            />
+                            <input
+                                className="tkOverlayInput tkInputMinnat"
+                                type="number"
+                                min="0"
+                                value={minnat}
+                                onChange={(e) => setMinnat(e.target.value)}
+                                disabled={lumpTotal !== ''}
+                                placeholder="0"
+                            />
+                            <input
+                                className="tkOverlayInput tkInputTotal"
+                                type="number"
+                                min="0"
+                                value={anyItemA ? String(itemsSumA) : lumpTotal}
+                                onChange={(e) => setLumpTotal(e.target.value)}
+                                disabled={anyItemA}
+                                placeholder="0"
+                            />
 
                             {[
                                 [sfRates[0], r1c2, setR1c2, r1p, 'sf1'],
@@ -196,6 +314,7 @@ export default function Takhmeen() {
                                     <input
                                         className={`tkOverlayInput tkSfCount tkSf${key}Count`}
                                         type="number"
+                                        min="0"
                                         value={count}
                                         onChange={(e) => setCount(e.target.value)}
                                         placeholder="0"
@@ -210,8 +329,32 @@ export default function Takhmeen() {
                             </div>
                         </div>
 
+                        <div className="ciSection tkKhidmatSection">
+                            <h3 className="ciSectionTitle">Austin Khidmat</h3>
+                            <div className="ciInlineRow">
+                                <label className="ciInlineLabel">Khidmat Ramadaniyah</label>
+                                <input
+                                    className="ciInlineInput"
+                                    type="number"
+                                    placeholder="Amount"
+                                    value={kr}
+                                    onChange={(e) => setKr(e.target.value)}
+                                />
+                            </div>
+                            <div className="ciInlineRow">
+                                <label className="ciInlineLabel">Umoor Taalimiyah</label>
+                                <input
+                                    className="ciInlineInput"
+                                    type="number"
+                                    placeholder="Amount"
+                                    value={ut}
+                                    onChange={(e) => setUt(e.target.value)}
+                                />
+                            </div>
+                        </div>
+
                         <div className="tkSaveRow">
-                            <button className="wjBtnPrimary" onClick={handleSave} disabled={saving || (!totalA && !totalB && savedTotalA == null && savedTotalB == null)}>
+                            <button className="wjBtnPrimary" onClick={handleSave} disabled={saving || (!totalA && !totalB && savedTotalA == null && savedTotalB == null && kr === initialKr && ut === initialUt)}>
                                 {saving ? 'Saving...' : 'Save'}
                             </button>
                             {saved && <span className="tkSaved">Takhmeen Complete.</span>}

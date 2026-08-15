@@ -37,7 +37,7 @@ export default function Nav() {
                             <Link to="/letter" onClick={closeMenu}>Letter</Link>
                         </li>
                         <li>
-                            <Link to="/wajebaat" onClick={closeMenu}>Waajebaat</Link>
+                            <Link to="/wajebaat" onClick={closeMenu}>Wajebaat</Link>
                         </li>
                         {isMaaliyaVolunteer && (
                             <li>
@@ -73,7 +73,7 @@ export default function Nav() {
 
                     <div className={`navMobileMenu ${menuOpen ? 'open' : ''}`}>
                         <Link to="/letter" onClick={closeMenu}>Letter</Link>
-                        <Link to="/wajebaat" onClick={closeMenu}>Waajebaat</Link>
+                        <Link to="/wajebaat" onClick={closeMenu}>Wajebaat</Link>
                         {isMaaliyaVolunteer && (
                             <Link to="/volunteer" onClick={closeMenu}>Volunteer</Link>
                         )}

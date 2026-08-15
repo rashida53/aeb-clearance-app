@@ -20,3 +20,13 @@ export const GET_TAKHMEEN = gql`
         }
     }
 `;
+
+export const GET_COMMITMENT_FOR_USER = gql`
+    query getCommitmentForUser($userId: ID!, $year: String!) {
+        getCommitmentForUser(userId: $userId, year: $year) {
+            _id
+            kr
+            ut
+        }
+    }
+`;

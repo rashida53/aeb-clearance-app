@@ -38,18 +38,13 @@ export const GET_CHECK_IN_DATA = gql`
                 due
                 customer
             }
-            huqooq {
-                _id
-                wajebaatAmount
-                sfAmount
-                wcheck
-                sfcheck
-            }
             fmbPledgeAmount
             takhmeen {
                 _id
                 wajebaat
                 sf
+                wcheck
+                sfcheck
             }
         }
     }

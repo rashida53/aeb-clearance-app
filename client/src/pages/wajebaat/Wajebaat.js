@@ -3,7 +3,7 @@ import { useQuery, useMutation } from '@apollo/client';
 import Nav from '../../components/Nav';
 import Auth from '../../utils/auth';
 import { GET_MY_WAJEBAAT_STATUS, GET_AVAILABLE_SLOTS } from './gql/queries';
-import { SUBMIT_COMMITMENTS, SUBMIT_ACH, BOOK_SLOT, CANCEL_MY_SLOT } from './gql/mutations';
+import { SUBMIT_COMMITMENTS, SUBMIT_ACH, DEFER_ACH, EMAIL_APPOINTMENT, BOOK_SLOT, CANCEL_MY_SLOT } from './gql/mutations';
 import { GET_MY_OPEN_BALANCES } from '../openBalances/gql/queries';
 import { GET_ME } from '../user/gql/queries';
 
@@ -30,13 +30,37 @@ const STEP_ACH = 'ACH';
 const STEP_PLEDGES = 'PLEDGES';
 const STEP_SCHEDULER = 'SCHEDULER';
 
+// Renders the label with the main text bold and any "(...)" note in normal weight.
+const renderItemLabel = (label) => {
+    const idx = label.indexOf('(');
+    if (idx === -1) return <strong>{label}</strong>;
+    return (
+        <>
+            <strong>{label.slice(0, idx).trim()}</strong>{' '}
+            <span className="wjItemNote">{label.slice(idx)}</span>
+        </>
+    );
+};
+
+const KR_ITEMS = [
+    { key: 'lailatulQadr', label: 'Austin Lailatul Qadr Niyaaz (After Maghrib and Sihori)' },
+    { key: 'hazratAaliyah', label: 'Hazrat Aaliyah Niyaaz (Iftaari in Aqa Maula TUS Hazrat)' },
+    { key: 'hajjEBadal', label: 'Hajj e Badal (Support Hajj Logistics)' },
+    { key: 'moaasaat', label: 'Marafiq Burhaniyah (Support Mumineen through Moasaat)' },
+];
+
+const UT_ITEMS = [
+    { key: 'madrasahTulBadri', label: 'Madrasah tul Badri' },
+    { key: 'raudatAlQuran', label: 'Raudat al Quran Academy' },
+];
+
 const CHECKLIST_ITEMS = [
     'Wuzu',
     'Remind your family to attend with you',
     'Wajebaat Check',
     'Sila Fitra Check',
-    'Voided Check',
-    'Printout of this page',
+    'Raza Saheb Ikraam',
+    'Screenshot of this page',
 ];
 
 // ── Intro Step ──
@@ -45,7 +69,16 @@ function IntroStep({ onNext }) {
     return (
         <div className="wjStep">
             <p className="wjStepDesc">
-                The system will guide you through the prerequisites for your Waajebaat. Please contact a member from Umoor Maaliyah if you have any questions.
+                We aim to make the process efficient by eliminating paper forms and collecting Niyyats for local khidmats before the appointment. The system will guide you through these prerequisites and pick a Wajebaat appointment slot.
+            </p>
+            <p className="wjStepDesc">What we will need:</p>
+            <ul className="wjIntroList">
+                <li>Niyyat for Khidmat Ramadaniyah</li>
+                <li>Niyyat for Umoor Taalimiyah</li>
+                <li>ACH authorization and payment plan duration</li>
+            </ul>
+            <p className="wjStepDesc">
+                Please contact a member from Umoor Maaliyah if you have any questions.
             </p>
             <div className="wjContactGrid">
                 <div className="wjContactCard">
@@ -132,11 +165,46 @@ function MaskedInput({ value, onChange, placeholder, label }) {
 
 // ── Commitment Step ──
 
-function CommitmentStep({ title, description, amount, onAmountChange, onDefer, onNext, onBack, deferred, lastYearAmount, minAmount = 353, unitHint }) {
+function CommitmentStep({ title, description, amount, onAmountChange, onDefer, onNext, onBack, lastYearAmount, minAmount = 353, unitHint, items }) {
     const parsedAmount = amount ? parseFloat(amount) : 0;
     const belowMin = minAmount > 0 && amount && parsedAmount < minAmount;
-    const isValid = deferred || (amount && parsedAmount > 0 && (!minAmount || parsedAmount >= minAmount));
+    const isValid = amount && parsedAmount > 0 && (!minAmount || parsedAmount >= minAmount);
     const [showHint, setShowHint] = useState(false);
+
+    const isItemized = Array.isArray(items) && items.length > 0;
+    // Per-item amounts. When any are entered the Total is locked to their sum;
+    // otherwise the Total acts as a directly-editable lumpsum field.
+    const [itemValues, setItemValues] = useState(() =>
+        isItemized ? Object.fromEntries(items.map((i) => [i.key, ''])) : {}
+    );
+    // Lumpsum seeded from any prefilled amount (we can't reconstruct a breakdown).
+    const [lumpValue, setLumpValue] = useState(isItemized ? (amount || '') : '');
+
+    const itemsTotal = Object.values(itemValues).reduce((sum, v) => sum + (parseFloat(v) || 0), 0);
+    const anyItem = Object.values(itemValues).some((v) => v !== '');
+
+    const handleItemChange = (key, val) => {
+        const next = { ...itemValues, [key]: val };
+        setItemValues(next);
+        const entered = Object.values(next).some((v) => v !== '');
+        const total = Object.values(next).reduce((sum, v) => sum + (parseFloat(v) || 0), 0);
+        onAmountChange(entered && total ? String(total) : '');
+    };
+
+    const handleLumpChange = (val) => {
+        setLumpValue(val);
+        onAmountChange(val);
+    };
+
+    const handleDefer = () => {
+        // Clear every field and treat the commitment as null before moving on.
+        if (isItemized) {
+            setItemValues(Object.fromEntries(items.map((i) => [i.key, ''])));
+            setLumpValue('');
+        }
+        onAmountChange('');
+        onDefer();
+    };
 
     useEffect(() => {
         setShowHint(false);
@@ -148,36 +216,54 @@ function CommitmentStep({ title, description, amount, onAmountChange, onDefer, o
     return (
         <div className="wjStep">
             <h2 className="wjStepTitle">{title}</h2>
-            <p className="wjStepDesc">{description}</p>
+            {description && <p className="wjStepDesc">{description}</p>}
 
-            {lastYearAmount != null && (
+            {lastYearAmount > 0 && (
                 <div className="wjLastYear">
                     Last year, you committed ${Math.round(lastYearAmount)} towards this cause
                 </div>
             )}
 
-            {deferred ? (
-                <div className="wjDeferred">
-                    <p>Deferred</p>
-                    <button className="wjBtnSecondary" onClick={() => onDefer(false)}>
-                        Enter Amount Instead
-                    </button>
-                </div>
-            ) : (
+            {isItemized ? (
                 <>
-                    <div className="wjFormGroupInline">
-                        <label>Amount ($)</label>
+                    <div className="wjItemizedList">
+                        {items.map((item) => (
+                            <div key={item.key} className="wjFormGroupInline wjItemRow">
+                                <label>{renderItemLabel(item.label)}</label>
+                                <input
+                                    type="number"
+                                    min="0"
+                                    value={itemValues[item.key]}
+                                    onChange={(e) => handleItemChange(item.key, e.target.value)}
+                                    disabled={lumpValue !== ''}
+                                />
+                            </div>
+                        ))}
+                    </div>
+                    <div className="wjFormGroupInline wjTotalRow">
+                        <label>Total ($)</label>
                         <input
                             type="number"
-                            value={amount}
-                            onChange={(e) => onAmountChange(e.target.value)}
                             min="0"
-                            placeholder=""
+                            value={anyItem ? String(itemsTotal) : lumpValue}
+                            onChange={(e) => handleLumpChange(e.target.value)}
+                            disabled={anyItem}
                         />
                     </div>
-                    {showHint && unitHint && <p className="wjUnitHint">{unitHint}</p>}
                 </>
+            ) : (
+                <div className="wjFormGroupInline">
+                    <label>Amount ($)</label>
+                    <input
+                        type="number"
+                        value={amount}
+                        onChange={(e) => onAmountChange(e.target.value)}
+                        min="0"
+                        placeholder=""
+                    />
+                </div>
             )}
+            {showHint && unitHint && <p className="wjUnitHint">{unitHint}</p>}
 
             <div className="wjStepActions">
                 {onBack && (
@@ -185,11 +271,9 @@ function CommitmentStep({ title, description, amount, onAmountChange, onDefer, o
                         Back
                     </button>
                 )}
-                {!deferred && (
-                    <button className="wjBtnSecondary" onClick={() => onDefer(true)}>
-                        Defer
-                    </button>
-                )}
+                <button className="wjBtnSecondary" onClick={handleDefer}>
+                    Defer
+                </button>
                 <button className="wjBtnPrimary" onClick={onNext} disabled={!isValid}>
                     Next
                 </button>
@@ -200,7 +284,7 @@ function CommitmentStep({ title, description, amount, onAmountChange, onDefer, o
 
 // ── ACH Step ──
 
-function ACHStep({ onSubmit, onBack, submitting }) {
+function ACHStep({ onSubmit, onBack, onDefer, submitting }) {
     const [accountNumber, setAccountNumber] = useState('');
     const [routingNumber, setRoutingNumber] = useState('');
     const [schedule, setSchedule] = useState('');
@@ -256,6 +340,11 @@ function ACHStep({ onSubmit, onBack, submitting }) {
                 {onBack && (
                     <button className="wjBtnSecondary" onClick={onBack}>
                         Back
+                    </button>
+                )}
+                {onDefer && (
+                    <button className="wjBtnSecondary" onClick={onDefer} disabled={submitting}>
+                        Defer
                     </button>
                 )}
                 <button className="wjBtnPrimary" onClick={handleSubmit} disabled={!isValid || submitting}>
@@ -334,7 +423,7 @@ function OpenPledgesStep({ hofIts, onConfirm, onBack }) {
 
 // ── Slot Scheduler ──
 
-function SlotScheduler({ onBook, onBack, hostingMiqaats }) {
+function SlotScheduler({ onBook, onBack, onRestart, hostingMiqaats }) {
     const { data, loading } = useQuery(GET_AVAILABLE_SLOTS);
     const [pageStart, setPageStart] = useState(0);
     const [confirmSlot, setConfirmSlot] = useState(null);
@@ -363,7 +452,21 @@ function SlotScheduler({ onBook, onBack, hostingMiqaats }) {
         return (
             <div className="wjStep">
                 <h2 className="wjStepTitle">Schedule Your Appointment</h2>
+                {onBack && (
+                    <div className="wjStepActions" style={{ justifyContent: 'flex-start', marginTop: 0, marginBottom: 16 }}>
+                        <button className="wjBtnSecondary" onClick={onBack}>
+                            Back
+                        </button>
+                    </div>
+                )}
                 <p className="wjNoData">No available slots at this time.</p>
+                {onRestart && (
+                    <div className="wjUpdateNiyyatWrap">
+                        <button className="wjBtnUpdateNiyyat" onClick={onRestart}>
+                            Update Niyyat
+                        </button>
+                    </div>
+                )}
             </div>
         );
     }
@@ -437,6 +540,14 @@ function SlotScheduler({ onBook, onBack, hostingMiqaats }) {
                 })}
             </div>
 
+            {onRestart && (
+                <div className="wjUpdateNiyyatWrap">
+                    <button className="wjBtnPrimary" onClick={onRestart}>
+                        Update Niyyat
+                    </button>
+                </div>
+            )}
+
             {confirmSlot && (
                 <div className="wjModal">
                     <div className="wjModalContent">
@@ -463,6 +574,18 @@ function SlotScheduler({ onBook, onBack, hostingMiqaats }) {
 
 function BookingConfirmation({ slot, commitment, fmbPledgeAmount, user, onCancel, cancelling }) {
     const printRef = useRef();
+    const [emailAppointment] = useMutation(EMAIL_APPOINTMENT);
+    const [showEmailModal, setShowEmailModal] = useState(false);
+    const [emailInput, setEmailInput] = useState('');
+
+    const handleSendEmail = () => {
+        const emails = emailInput.trim();
+        setShowEmailModal(false);
+        setEmailInput('');
+        if (!emails) return;
+        // Fail silently on invalid emails or send failures.
+        emailAppointment({ variables: { emails } }).catch(() => {});
+    };
     const krDisplay = commitment?.kr > 0 ? formatCurrency(commitment.kr) : 'Pending';
     const utDisplay = commitment?.ut > 0 ? formatCurrency(commitment.ut) : 'Pending';
     const fmbDisplay = fmbPledgeAmount != null ? formatCurrency(fmbPledgeAmount) : 'Pending';
@@ -508,7 +631,7 @@ function BookingConfirmation({ slot, commitment, fmbPledgeAmount, user, onCancel
             </div>
 
             <div className="wjCommitmentSummary">
-                <h3 className="wjStepTitle">Commitments</h3>
+                <h3 className="wjStepTitle">Niyyats</h3>
                 <div className="wjSummaryRow">
                     <span>Khidmat Ramadaniyah</span>
                     <span className={krDisplay === 'Pending' ? 'wjPending' : ''}>{krDisplay}</span>
@@ -517,10 +640,12 @@ function BookingConfirmation({ slot, commitment, fmbPledgeAmount, user, onCancel
                     <span>Umoor Taalimiyah</span>
                     <span className={utDisplay === 'Pending' ? 'wjPending' : ''}>{utDisplay}</span>
                 </div>
-                <div className="wjSummaryRow">
-                    <span>FMB</span>
-                    <span className={fmbDisplay === 'Pending' ? 'wjPending' : ''}>{fmbDisplay}</span>
-                </div>
+                {fmbDisplay === 'Pending' && (
+                    <div className="wjSummaryRow">
+                        <span>FMB</span>
+                        <span className="wjPending">{fmbDisplay}</span>
+                    </div>
+                )}
             </div>
 
             <div className="wjChecklist">
@@ -536,10 +661,42 @@ function BookingConfirmation({ slot, commitment, fmbPledgeAmount, user, onCancel
                 <button className="wjBtnPrimary" onClick={handlePrint}>
                     Print
                 </button>
+                <button className="wjBtnPrimary" onClick={() => setShowEmailModal(true)}>
+                    Email
+                </button>
                 <button className="wjBtnCancel" onClick={onCancel} disabled={cancelling}>
                     {cancelling ? 'Cancelling…' : 'Cancel'}
                 </button>
             </div>
+
+            {showEmailModal && (
+                <div className="wjModal">
+                    <div className="wjModalContent">
+                        <h3>Email Appointment</h3>
+                        <p style={{ marginTop: 0 }}>Enter email addresses, separated by commas.</p>
+                        <div className="wjFormGroup">
+                            <input
+                                type="text"
+                                value={emailInput}
+                                onChange={(e) => setEmailInput(e.target.value)}
+                                placeholder="name@example.com, other@example.com"
+                                autoFocus
+                            />
+                        </div>
+                        <div className="wjModalActions">
+                            <button
+                                className="wjBtnSecondary"
+                                onClick={() => { setShowEmailModal(false); setEmailInput(''); }}
+                            >
+                                Cancel
+                            </button>
+                            <button className="wjBtnPrimary" onClick={handleSendEmail}>
+                                Send
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
@@ -557,21 +714,35 @@ export default function Wajebaat() {
     const [stepHistory, setStepHistory] = useState([STEP_INTRO]);
     const [krAmount, setKrAmount] = useState('');
     const [utAmount, setUtAmount] = useState('');
-    const [krDeferred, setKrDeferred] = useState(false);
-    const [utDeferred, setUtDeferred] = useState(false);
     const [error, setError] = useState('');
 
     const [submitCommitments, { loading: committing }] = useMutation(SUBMIT_COMMITMENTS);
     const [submitACH, { loading: achSubmitting }] = useMutation(SUBMIT_ACH);
+    const [deferACH] = useMutation(DEFER_ACH);
     const [bookSlot, { loading: booking }] = useMutation(BOOK_SLOT);
     const [cancelMySlot, { loading: cancelling }] = useMutation(CANCEL_MY_SLOT);
 
     const currentStep = stepHistory[stepHistory.length - 1];
+    const canGoBack = stepHistory.length > 1;
     const goToStep = (step) => setStepHistory((prev) => [...prev, step]);
     const goBack = () => setStepHistory((prev) => prev.length > 1 ? prev.slice(0, -1) : prev);
+    // Restart the commitments flow from the top, keeping already-saved values prefilled.
+    const handleRestart = () => setStepHistory([STEP_KR]);
 
     const status = statusData?.getMyWajebaatStatus;
     const hofIts = meData?.me?.memberHof;
+
+    // Prefill commitment fields once from any previously-saved commitment so a
+    // returning user (or one who hits Restart) can review and edit their values.
+    const prefilledRef = useRef(false);
+    useEffect(() => {
+        const commitment = status?.commitment;
+        if (!commitment || prefilledRef.current) return;
+        prefilledRef.current = true;
+        // A null amount means it was deferred; leave that field empty.
+        if (commitment.kr != null) setKrAmount(String(commitment.kr));
+        if (commitment.ut != null) setUtAmount(String(commitment.ut));
+    }, [status]);
 
     const { data: balancesData } = useQuery(GET_MY_OPEN_BALANCES, {
         variables: { hofIts: hofIts || '' },
@@ -586,7 +757,7 @@ export default function Wajebaat() {
                 <Nav />
                 <div className="pageContainer">
                     <div className="letterHeader">
-                        <h1>Waajebaat</h1>
+                        <h1>Wajebaat</h1>
                     </div>
                     <div
                         className="laagatWarning"
@@ -599,7 +770,7 @@ export default function Wajebaat() {
                             margin: '0 auto',
                         }}
                     >
-                        <span>The Waajebaat module will be live in Rajab ul Asab 1448H</span>
+                        <span>The Wajebaat module will be live in Rajab ul Asab 1448H</span>
                     </div>
                 </div>
             </>
@@ -619,16 +790,19 @@ export default function Wajebaat() {
     const hasACH = !!status?.ach;
     const hasBookedSlot = !!status?.bookedSlot;
 
-    const handleCommitmentSubmit = async () => {
+    const handleCommitmentSubmit = async (utIsDeferred) => {
         setError('');
         try {
             await submitCommitments({
                 variables: {
-                    kr: krDeferred ? null : parseFloat(krAmount),
-                    ut: utDeferred ? null : parseFloat(utAmount),
+                    // An empty amount means the cause was deferred → send null.
+                    kr: krAmount ? parseFloat(krAmount) : null,
+                    ut: utIsDeferred ? null : parseFloat(utAmount),
                     year: '1448-49',
                 },
             });
+            // Always show the ACH step — it's an upsert, so re-submitting (or
+            // deferring) on restart is fine and lets the user update their details.
             goToStep(STEP_ACH);
             refetchStatus();
         } catch (err) {
@@ -642,6 +816,18 @@ export default function Wajebaat() {
             await submitACH({
                 variables: { accountNumber, routingNumber, schedule },
             });
+            goToStep(hasOpenPledges ? STEP_PLEDGES : STEP_SCHEDULER);
+            refetchStatus();
+        } catch (err) {
+            setError(err.message);
+        }
+    };
+
+    const handleACHDefer = async () => {
+        setError('');
+        try {
+            // Persist a blank ACH so the user isn't asked again on reload.
+            await deferACH();
             goToStep(hasOpenPledges ? STEP_PLEDGES : STEP_SCHEDULER);
             refetchStatus();
         } catch (err) {
@@ -693,11 +879,11 @@ export default function Wajebaat() {
         }
 
         if (resumeState === STEP_SCHEDULER && currentStep === STEP_INTRO) {
-            return <SlotScheduler onBook={handleBookSlot} hostingMiqaats={status?.hostingMiqaats} />;
+            return <SlotScheduler onBook={handleBookSlot} onRestart={handleRestart} hostingMiqaats={status?.hostingMiqaats} />;
         }
 
         if (resumeState === STEP_ACH && currentStep === STEP_INTRO) {
-            return <ACHStep onSubmit={handleACHSubmit} submitting={achSubmitting} />;
+            return <ACHStep onSubmit={handleACHSubmit} onDefer={handleACHDefer} submitting={achSubmitting} />;
         }
 
         switch (currentStep) {
@@ -706,46 +892,46 @@ export default function Wajebaat() {
             case STEP_KR:
                 return (
                     <CommitmentStep
+                        key={STEP_KR}
                         title={<span style={{ color: 'var(--color-gold)' }}>Khidmat Ramadaniyah</span>}
-                        description="This amount goes towards various Khidmats that Austin Jamaat collectively does during Shehrullah il Moazzam. This includes Lailatul Qadr niyaaz and sihori here in Austin, Niyaaz and Ziafat in Hazrat Aaliyah, Hajj e Badal to support Hajj volunteers and Marafiq Burhaniyah (Upliftment and financial aid in Austin)"
                         amount={krAmount}
                         onAmountChange={setKrAmount}
-                        deferred={krDeferred}
-                        onDefer={setKrDeferred}
-                        onBack={goBack}
+                        onBack={canGoBack ? goBack : undefined}
+                        onDefer={() => { setKrAmount(''); goToStep(STEP_UT); }}
                         onNext={() => goToStep(STEP_UT)}
                         lastYearAmount={status?.lastYearCommitment?.kr}
+                        items={KR_ITEMS}
                         unitHint="Please consider units of $353 | $553 | $786 | $1100 to help us reach our collective goal"
                     />
                 );
             case STEP_UT:
                 return (
                     <CommitmentStep
+                        key={STEP_UT}
                         title={<span style={{ color: 'var(--color-gold)' }}>Umoor Taalimiyah</span>}
-                        description="Majority of our Taalim operations are supported through student fees. Your additional contributions will help drive larger projects across both Raudat al Quran and Madrasah tul Badri and will collectively benefit our next generation"
                         amount={utAmount}
                         onAmountChange={setUtAmount}
-                        deferred={utDeferred}
-                        onDefer={setUtDeferred}
-                        onBack={goBack}
-                        onNext={handleCommitmentSubmit}
+                        onBack={canGoBack ? goBack : undefined}
+                        onDefer={() => { setUtAmount(''); handleCommitmentSubmit(true); }}
+                        onNext={() => handleCommitmentSubmit(false)}
                         lastYearAmount={status?.lastYearCommitment?.ut}
+                        items={UT_ITEMS}
                         minAmount={72}
                         unitHint="Please consider units of $72 | $153 | $253 to help us reach our collective goal"
                     />
                 );
             case STEP_ACH:
-                return <ACHStep onSubmit={handleACHSubmit} onBack={goBack} submitting={achSubmitting} />;
+                return <ACHStep onSubmit={handleACHSubmit} onBack={canGoBack ? goBack : undefined} onDefer={handleACHDefer} submitting={achSubmitting} />;
             case STEP_PLEDGES:
                 return (
                     <OpenPledgesStep
                         hofIts={hofIts}
-                        onBack={goBack}
+                        onBack={canGoBack ? goBack : undefined}
                         onConfirm={() => goToStep(STEP_SCHEDULER)}
                     />
                 );
             case STEP_SCHEDULER:
-                return <SlotScheduler onBook={handleBookSlot} onBack={goBack} hostingMiqaats={status?.hostingMiqaats} />;
+                return <SlotScheduler onBook={handleBookSlot} onRestart={handleRestart} hostingMiqaats={status?.hostingMiqaats} />;
             default:
                 return null;
         }
@@ -756,7 +942,7 @@ export default function Wajebaat() {
             <Nav />
             <div className="pageContainer">
                 <div className="wjHeader">
-                    <h1>Waajebaat</h1>
+                    <h1>Wajebaat</h1>
                 </div>
 
                 {error && <p className="wjError">{error}</p>}

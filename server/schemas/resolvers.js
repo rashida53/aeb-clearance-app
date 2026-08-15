@@ -1,7 +1,7 @@
-const { Member, User, QBOpen, Approval, Letter, Masjid, Slot, Commitment, ACH, Miqaat, Pledge, Huqooq, Takhmeen } = require('../models');
+const { Member, User, QBOpen, Approval, Letter, Masjid, Slot, Commitment, ACH, Miqaat, Pledge, Takhmeen } = require('../models');
 const { signToken } = require('../utils/auth');
 const { AuthenticationError } = require('apollo-server-express');
-const { SendHtmlEmail } = require('../utils/email');
+const { SendHtmlEmail, SendAppointmentEmail } = require('../utils/email');
 const { encrypt, decrypt } = require('../utils/encryption');
 
 const resolvers = {
@@ -83,9 +83,6 @@ const resolvers = {
             if (!context.user) {
                 throw new AuthenticationError('You must be logged in');
             }
-            if (!context.user.roles || !context.user.roles.includes('LETTER_ADMIN')) {
-                throw new AuthenticationError('Not authorized');
-            }
             return Approval.find({ requester: userId }).sort({ approvedAt: -1 });
         },
 
@@ -93,19 +90,12 @@ const resolvers = {
             if (!context.user) {
                 throw new AuthenticationError('You must be logged in');
             }
-            const roles = context.user.roles || [];
-            if (!roles.includes('LETTER_ADMIN') && !roles.includes('MAALIYA_VOLUNTEER')) {
-                throw new AuthenticationError('Not authorized');
-            }
             return User.find({ isActive: { $ne: false }, zone: { $ne: '9' } }).sort({ fullName: 1 });
         },
 
         getSlots: async (parent, args, context) => {
             if (!context.user) {
                 throw new AuthenticationError('You must be logged in');
-            }
-            if (!context.user.roles || !context.user.roles.includes('LETTER_ADMIN')) {
-                throw new AuthenticationError('Not authorized');
             }
             const slots = await Slot.find().sort({ date: 1, startTime: 1 });
             const userIds = slots.filter(s => s.bookedBy).map(s => s.bookedBy);
@@ -125,9 +115,6 @@ const resolvers = {
         getSlotsByDate: async (parent, { date }, context) => {
             if (!context.user) {
                 throw new AuthenticationError('You must be logged in');
-            }
-            if (!context.user.roles || !context.user.roles.includes('LETTER_ADMIN')) {
-                throw new AuthenticationError('Not authorized');
             }
 
             const queryDate = new Date(date);
@@ -185,9 +172,6 @@ const resolvers = {
             if (!context.user) {
                 throw new AuthenticationError('You must be logged in');
             }
-            if (!context.user.roles || !context.user.roles.includes('LETTER_ADMIN')) {
-                throw new AuthenticationError('Not authorized');
-            }
 
             const [allUsers, bookedSlots] = await Promise.all([
                 User.find({ isActive: { $ne: false }, zone: { $ne: '9' } }).sort({ fullName: 1 }),
@@ -213,9 +197,6 @@ const resolvers = {
         lookupACH: async (parent, { userId }, context) => {
             if (!context.user) {
                 throw new AuthenticationError('You must be logged in');
-            }
-            if (!context.user.roles || !context.user.roles.includes('LETTER_ADMIN')) {
-                throw new AuthenticationError('Not authorized');
             }
 
             const achRecord = await ACH.findOne({ user: userId });
@@ -316,10 +297,6 @@ const resolvers = {
             if (!context.user) {
                 throw new AuthenticationError('You must be logged in');
             }
-            const roles = context.user.roles || [];
-            if (!roles.includes('MAALIYA_VOLUNTEER') && !roles.includes('LETTER_ADMIN')) {
-                throw new AuthenticationError('Not authorized');
-            }
 
             const slots = await Slot.find({ group: { $ne: null } }).sort({ date: 1, startTime: 1 });
 
@@ -358,9 +335,6 @@ const resolvers = {
             if (!context.user) {
                 throw new AuthenticationError('You must be logged in');
             }
-            if (!context.user.roles || !context.user.roles.includes('LETTER_ADMIN')) {
-                throw new AuthenticationError('Not authorized');
-            }
 
             const members = await Member.find({ roles: { $in: ['MAALIYA_VOLUNTEER', 'LETTER_ADMIN'] } });
             const hofItsList = members.map(m => m.hofIts);
@@ -371,17 +345,12 @@ const resolvers = {
             if (!context.user) {
                 throw new AuthenticationError('You must be logged in');
             }
-            const roles = context.user.roles || [];
-            if (!roles.includes('MAALIYA_VOLUNTEER') && !roles.includes('LETTER_ADMIN')) {
-                throw new AuthenticationError('Not authorized');
-            }
 
-            const [user, commitment, achRecord, openPledges, huqooq, fmbPledge, takhmeen] = await Promise.all([
+            const [user, commitment, achRecord, openPledges, fmbPledge, takhmeen] = await Promise.all([
                 User.findById(userId),
                 Commitment.findOne({ user: userId, year }),
                 ACH.findOne({ user: userId }),
                 QBOpen.find({ user: userId }).sort({ due: 1 }),
-                Huqooq.findOne({ user: userId, year }),
                 Pledge.findOne({ user: userId, period: year }),
                 Takhmeen.findOne({ user: userId, year }),
             ]);
@@ -403,15 +372,6 @@ const resolvers = {
                     routingNumber: decrypt(achRecord.routingNumber),
                 } : null,
                 openPledges: openPledges.filter(p => !p.pp),
-                huqooq: huqooq ? {
-                    _id: huqooq._id,
-                    user,
-                    year: huqooq.year,
-                    wajebaatAmount: huqooq.wajebaatAmount,
-                    sfAmount: huqooq.sfAmount,
-                    wcheck: huqooq.wcheck,
-                    sfcheck: huqooq.sfcheck,
-                } : null,
                 fmbPledgeAmount: fmbPledge ? fmbPledge.amount : null,
                 takhmeen: takhmeen ? {
                     _id: takhmeen._id,
@@ -419,6 +379,8 @@ const resolvers = {
                     year: takhmeen.year,
                     wajebaat: takhmeen.wajebaat,
                     sf: takhmeen.sf,
+                    wcheck: takhmeen.wcheck,
+                    sfcheck: takhmeen.sfcheck,
                 } : null,
             };
         },
@@ -426,10 +388,6 @@ const resolvers = {
         getTakhmeen: async (parent, { userId, year }, context) => {
             if (!context.user) {
                 throw new AuthenticationError('You must be logged in');
-            }
-            const roles = context.user.roles || [];
-            if (!roles.includes('LETTER_ADMIN')) {
-                throw new AuthenticationError('Not authorized');
             }
             const takhmeen = await Takhmeen.findOne({ user: userId, year });
             if (!takhmeen) return null;
@@ -441,6 +399,60 @@ const resolvers = {
                 wajebaat: takhmeen.wajebaat,
                 sf: takhmeen.sf,
             };
+        },
+
+        getCommitmentForUser: async (parent, { userId, year }, context) => {
+            if (!context.user) {
+                throw new AuthenticationError('You must be logged in');
+            }
+            const commitment = await Commitment.findOne({ user: userId, year });
+            if (!commitment) return null;
+            return {
+                _id: commitment._id,
+                user: await User.findById(userId),
+                year: commitment.year,
+                kr: commitment.kr,
+                ut: commitment.ut,
+                schedule: commitment.schedule,
+            };
+        },
+
+        getHuqooqExport: async (parent, args, context) => {
+            if (!context.user) {
+                throw new AuthenticationError('You must be logged in');
+            }
+            const currentYear = '1448-49';
+            const previousYear = '1447-48';
+
+            const takhmeens = await Takhmeen.find({ year: currentYear });
+            // Complete = both check numbers have been entered.
+            const complete = takhmeens.filter((t) => !!t.wcheck && !!t.sfcheck);
+
+            const userIds = complete.map((t) => t.user);
+            const [users, prevTakhmeens] = await Promise.all([
+                User.find({ _id: { $in: userIds } }),
+                Takhmeen.find({ user: { $in: userIds }, year: previousYear }),
+            ]);
+
+            const userMap = {};
+            users.forEach((u) => { userMap[u._id.toString()] = u; });
+            const prevMap = {};
+            prevTakhmeens.forEach((t) => { prevMap[t.user.toString()] = t; });
+
+            return complete.map((t) => {
+                const uid = t.user.toString();
+                const u = userMap[uid];
+                const prev = prevMap[uid];
+                return {
+                    its: u?.hofIts || '',
+                    previousYear: prev ? prev.wajebaat : null,
+                    name: u?.fullName || '',
+                    wajebaatAmount: t.wajebaat,
+                    wcheck: t.wcheck,
+                    sfAmount: t.sf,
+                    sfcheck: t.sfcheck,
+                };
+            });
         },
     },
 
@@ -639,9 +651,6 @@ ${laagatHtml}
             if (!context.user) {
                 throw new AuthenticationError('You must be logged in');
             }
-            if (!context.user.roles || !context.user.roles.includes('LETTER_ADMIN')) {
-                throw new AuthenticationError('Not authorized');
-            }
 
             return Approval.create({
                 hofIts,
@@ -676,9 +685,6 @@ ${laagatHtml}
         createSlots: async (parent, { startDate, endDate, startTime, endTime, duration }, context) => {
             if (!context.user) {
                 throw new AuthenticationError('You must be logged in');
-            }
-            if (!context.user.roles || !context.user.roles.includes('LETTER_ADMIN')) {
-                throw new AuthenticationError('Not authorized');
             }
 
             const minDate = new Date('2027-02-07');
@@ -762,9 +768,6 @@ ${laagatHtml}
             if (!context.user) {
                 throw new AuthenticationError('You must be logged in');
             }
-            if (!context.user.roles || !context.user.roles.includes('LETTER_ADMIN')) {
-                throw new AuthenticationError('Not authorized');
-            }
 
             const slot = await Slot.findById(slotId);
             if (!slot) {
@@ -781,9 +784,6 @@ ${laagatHtml}
         cancelSignup: async (parent, { slotId }, context) => {
             if (!context.user) {
                 throw new AuthenticationError('You must be logged in');
-            }
-            if (!context.user.roles || !context.user.roles.includes('LETTER_ADMIN')) {
-                throw new AuthenticationError('Not authorized');
             }
 
             const slot = await Slot.findByIdAndUpdate(
@@ -810,17 +810,12 @@ ${laagatHtml}
             }
 
             const userId = context.user.userId;
-            const existing = await Commitment.findOne({ user: userId, year });
-            if (existing) {
-                throw new Error('Commitments already submitted');
-            }
-
-            const commitment = await Commitment.create({
-                user: userId,
-                year,
-                kr,
-                ut,
-            });
+            // Upsert: overwrite kr/ut if a commitment already exists for this year.
+            const commitment = await Commitment.findOneAndUpdate(
+                { user: userId, year },
+                { $set: { kr, ut } },
+                { new: true, upsert: true, setDefaultsOnInsert: true },
+            );
 
             const user = await User.findById(userId);
             return {
@@ -839,17 +834,18 @@ ${laagatHtml}
             }
 
             const userId = context.user.userId;
-            const existingACH = await ACH.findOne({ user: userId });
-            if (existingACH) {
-                throw new Error('ACH details already submitted');
-            }
-
+            // Upsert: overwrite stored bank details if ACH already exists.
             try {
-                await ACH.create({
-                    user: userId,
-                    accountNumber: encrypt(accountNumber),
-                    routingNumber: encrypt(routingNumber),
-                });
+                await ACH.findOneAndUpdate(
+                    { user: userId },
+                    {
+                        $set: {
+                            accountNumber: encrypt(accountNumber),
+                            routingNumber: encrypt(routingNumber),
+                        },
+                    },
+                    { new: true, upsert: true, setDefaultsOnInsert: true },
+                );
             } catch (err) {
                 console.error('ACH save error:', err.message);
                 throw new Error('ACH could not be saved');
@@ -861,6 +857,131 @@ ${laagatHtml}
             );
 
             return true;
+        },
+
+        deferACH: async (parent, args, context) => {
+            if (!context.user) {
+                throw new AuthenticationError('You must be logged in');
+            }
+
+            const userId = context.user.userId;
+            // Record that ACH was deferred (blank) so the user isn't re-prompted
+            // on reload. Restarting from the schedule screen shows the step again.
+            await ACH.findOneAndUpdate(
+                { user: userId },
+                { $set: { accountNumber: null, routingNumber: null } },
+                { new: true, upsert: true, setDefaultsOnInsert: true },
+            );
+
+            return true;
+        },
+
+        emailAppointment: async (parent, { emails }, context) => {
+            if (!context.user) {
+                throw new AuthenticationError('You must be logged in');
+            }
+            // Everything here fails silently: bad emails or a send failure just
+            // resolve to false without surfacing an error to the user.
+            try {
+                const senderEmail = process.env.EMAIL_SENDER;
+                const emailPassword = process.env.EMAIL_APP_PASSWORD;
+                if (!senderEmail || !emailPassword) return false;
+
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                const recipients = (emails || '')
+                    .split(',')
+                    .map((e) => e.trim())
+                    .filter((e) => emailRegex.test(e));
+                if (recipients.length === 0) return false;
+
+                const userId = context.user.userId;
+                const slot = await Slot.findOne({ bookedBy: userId });
+                if (!slot) return false;
+
+                const dateLabel = new Date(slot.date).toLocaleDateString('en-US', {
+                    weekday: 'long', month: 'long', day: 'numeric', timeZone: 'UTC',
+                });
+                const to12h = (t) => {
+                    if (!t) return '';
+                    const [h, m] = t.split(':').map(Number);
+                    const period = h >= 12 ? 'PM' : 'AM';
+                    const h12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
+                    return `${h12}:${String(m).padStart(2, '0')} ${period}`;
+                };
+                const timeLabel = to12h(slot.startTime);
+
+                // iCalendar REQUEST so Gmail renders it as a calendar appointment.
+                const dateStr = slot.date.toISOString().split('T')[0].replace(/-/g, '');
+                const toIcsTime = (t) => `${(t || '00:00').replace(':', '')}00`;
+                const dtStart = `${dateStr}T${toIcsTime(slot.startTime)}`;
+                const dtEnd = `${dateStr}T${toIcsTime(slot.endTime || slot.startTime)}`;
+                const pad = (n) => String(n).padStart(2, '0');
+                const now = new Date();
+                const dtStamp = `${now.getUTCFullYear()}${pad(now.getUTCMonth() + 1)}${pad(now.getUTCDate())}T${pad(now.getUTCHours())}${pad(now.getUTCMinutes())}${pad(now.getUTCSeconds())}Z`;
+                const uid = `${slot._id}-${now.getTime()}@aeb-clearance`;
+
+                const checklist = [
+                    'Wuzu',
+                    'Remind your family to attend with you',
+                    'Wajebaat Check',
+                    'Sila Fitra Check',
+                    'Raza Saheb Ikraam',
+                ];
+                const description = `Before your appointment:\\n${checklist.map((c) => `- ${c}`).join('\\n')}`;
+
+                const ics = [
+                    'BEGIN:VCALENDAR',
+                    'VERSION:2.0',
+                    'PRODID:-//AeB Clearance//Wajebaat//EN',
+                    'CALSCALE:GREGORIAN',
+                    'METHOD:REQUEST',
+                    'BEGIN:VTIMEZONE',
+                    'TZID:America/Chicago',
+                    'BEGIN:DAYLIGHT',
+                    'TZOFFSETFROM:-0600',
+                    'TZOFFSETTO:-0500',
+                    'TZNAME:CDT',
+                    'DTSTART:19700308T020000',
+                    'RRULE:FREQ=YEARLY;BYMONTH=3;BYDAY=2SU',
+                    'END:DAYLIGHT',
+                    'BEGIN:STANDARD',
+                    'TZOFFSETFROM:-0500',
+                    'TZOFFSETTO:-0600',
+                    'TZNAME:CST',
+                    'DTSTART:19701101T020000',
+                    'RRULE:FREQ=YEARLY;BYMONTH=11;BYDAY=1SU',
+                    'END:STANDARD',
+                    'END:VTIMEZONE',
+                    'BEGIN:VEVENT',
+                    `UID:${uid}`,
+                    `DTSTAMP:${dtStamp}`,
+                    `DTSTART;TZID=America/Chicago:${dtStart}`,
+                    `DTEND;TZID=America/Chicago:${dtEnd}`,
+                    'SUMMARY:Wajebaat Appointment',
+                    `DESCRIPTION:${description}`,
+                    'LOCATION:Anjuman-e-Burhani Austin',
+                    `ORGANIZER;CN=Umoor Maaliyah:mailto:${senderEmail}`,
+                    'STATUS:CONFIRMED',
+                    'END:VEVENT',
+                    'END:VCALENDAR',
+                ].join('\r\n');
+
+                const emailHtml = `
+                    <div style="font-family:Arial,sans-serif;max-width:520px;margin:0 auto;color:#00203D;">
+                        <h2 style="color:#00203D;">Wajebaat Appointment</h2>
+                        <p style="font-size:18px;font-weight:bold;color:#CE9C01;">${dateLabel} at ${timeLabel}</p>
+                        <h3 style="color:#00203D;margin-top:20px;">Before Your Appointment</h3>
+                        <ul style="font-size:15px;line-height:1.8;padding-left:20px;">
+                            ${checklist.map((c) => `<li>${c}</li>`).join('')}
+                        </ul>
+                    </div>`;
+
+                await SendAppointmentEmail(senderEmail, emailPassword, recipients, 'Your Wajebaat Appointment', emailHtml, ics);
+                return true;
+            } catch (err) {
+                console.error('emailAppointment error:', err.message);
+                return false;
+            }
         },
 
         bookSlot: async (parent, { slotId }, context) => {
@@ -906,10 +1027,6 @@ ${laagatHtml}
             if (!context.user) {
                 throw new AuthenticationError('You must be logged in');
             }
-            const roles = context.user.roles || [];
-            if (!roles.includes('MAALIYA_VOLUNTEER') && !roles.includes('LETTER_ADMIN')) {
-                throw new AuthenticationError('Not authorized');
-            }
 
             const queryDate = new Date(date);
             const nextDay = new Date(date);
@@ -934,10 +1051,6 @@ ${laagatHtml}
             if (!context.user) {
                 throw new AuthenticationError('You must be logged in');
             }
-            const roles = context.user.roles || [];
-            if (!roles.includes('MAALIYA_VOLUNTEER') && !roles.includes('LETTER_ADMIN')) {
-                throw new AuthenticationError('Not authorized');
-            }
 
             const queryDate = new Date(date);
             const nextDay = new Date(date);
@@ -954,9 +1067,6 @@ ${laagatHtml}
             if (!context.user) {
                 throw new AuthenticationError('You must be logged in');
             }
-            if (!context.user.roles || !context.user.roles.includes('LETTER_ADMIN')) {
-                throw new AuthenticationError('Not authorized');
-            }
 
             const queryDate = new Date(date);
             const nextDay = new Date(date);
@@ -972,10 +1082,6 @@ ${laagatHtml}
         upsertCommitmentForUser: async (parent, { userId, kr, ut, year, schedule }, context) => {
             if (!context.user) {
                 throw new AuthenticationError('You must be logged in');
-            }
-            const roles = context.user.roles || [];
-            if (!roles.includes('MAALIYA_VOLUNTEER') && !roles.includes('LETTER_ADMIN')) {
-                throw new AuthenticationError('Not authorized');
             }
 
             const updateFields = { kr, ut };
@@ -1001,10 +1107,6 @@ ${laagatHtml}
             if (!context.user) {
                 throw new AuthenticationError('You must be logged in');
             }
-            const roles = context.user.roles || [];
-            if (!roles.includes('MAALIYA_VOLUNTEER') && !roles.includes('LETTER_ADMIN')) {
-                throw new AuthenticationError('Not authorized');
-            }
 
             await ACH.findOneAndUpdate(
                 { user: userId },
@@ -1012,33 +1114,6 @@ ${laagatHtml}
                 { upsert: true }
             );
             return true;
-        },
-
-        upsertHuqooq: async (parent, { userId, year, wajebaatAmount, sfAmount, wcheck, sfcheck }, context) => {
-            if (!context.user) {
-                throw new AuthenticationError('You must be logged in');
-            }
-            const roles = context.user.roles || [];
-            if (!roles.includes('MAALIYA_VOLUNTEER') && !roles.includes('LETTER_ADMIN')) {
-                throw new AuthenticationError('Not authorized');
-            }
-
-            const huqooq = await Huqooq.findOneAndUpdate(
-                { user: userId, year },
-                { wajebaatAmount, sfAmount, wcheck, sfcheck },
-                { upsert: true, new: true }
-            );
-
-            const user = await User.findById(userId);
-            return {
-                _id: huqooq._id,
-                user,
-                year: huqooq.year,
-                wajebaatAmount: huqooq.wajebaatAmount,
-                sfAmount: huqooq.sfAmount,
-                wcheck: huqooq.wcheck,
-                sfcheck: huqooq.sfcheck,
-            };
         },
 
         cancelMySlot: async (parent, args, context) => {
@@ -1066,19 +1141,23 @@ ${laagatHtml}
             };
         },
 
-        upsertTakhmeen: async (parent, { userId, year, wajebaat, sf }, context) => {
+        upsertTakhmeen: async (parent, { userId, year, wajebaat, sf, wcheck, sfcheck }, context) => {
             if (!context.user) {
                 throw new AuthenticationError('You must be logged in');
             }
-            const roles = context.user.roles || [];
-            if (!roles.includes('LETTER_ADMIN')) {
-                throw new AuthenticationError('Not authorized');
-            }
+
+            // Only set fields that were provided so the Takhmeen page (amounts) and
+            // the Check-In page (check numbers) can update the record independently.
+            const updateFields = {};
+            if (wajebaat !== undefined) updateFields.wajebaat = wajebaat;
+            if (sf !== undefined) updateFields.sf = sf;
+            if (wcheck !== undefined) updateFields.wcheck = wcheck;
+            if (sfcheck !== undefined) updateFields.sfcheck = sfcheck;
 
             const takhmeen = await Takhmeen.findOneAndUpdate(
                 { user: userId, year },
-                { wajebaat, sf },
-                { upsert: true, new: true }
+                { $set: updateFields },
+                { upsert: true, new: true, setDefaultsOnInsert: true }
             );
 
             const user = await User.findById(userId);
@@ -1088,6 +1167,8 @@ ${laagatHtml}
                 year: takhmeen.year,
                 wajebaat: takhmeen.wajebaat,
                 sf: takhmeen.sf,
+                wcheck: takhmeen.wcheck,
+                sfcheck: takhmeen.sfcheck,
             };
         },
     },

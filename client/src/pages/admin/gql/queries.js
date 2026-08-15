@@ -79,6 +79,20 @@ export const LOOKUP_ACH = gql`
     }
 `;
 
+export const GET_HUQOOQ_EXPORT = gql`
+    query getHuqooqExport {
+        getHuqooqExport {
+            its
+            previousYear
+            name
+            wajebaatAmount
+            wcheck
+            sfAmount
+            sfcheck
+        }
+    }
+`;
+
 export const GET_MAALIYA_VOLUNTEERS = gql`
     query getMaaliyaVolunteers {
         getMaaliyaVolunteers {

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { useQuery, useMutation } from '@apollo/client';
+import { useQuery, useMutation, useLazyQuery } from '@apollo/client';
 import Nav from '../../components/Nav';
-import { GET_SLOTS, GET_HOF_SLOT_STATUSES, GET_MAALIYA_VOLUNTEERS } from './gql/queries';
+import { GET_SLOTS, GET_HOF_SLOT_STATUSES, GET_HUQOOQ_EXPORT, GET_MAALIYA_VOLUNTEERS } from './gql/queries';
 import { CREATE_SLOTS, DELETE_SLOT, CANCEL_SIGNUP, REASSIGN_SLOT_GROUP } from './gql/mutations';
 import { GET_ALL_ACTIVE_USERS } from '../review/gql/queries';
 import { GET_VOLUNTEER_SLOT_GROUPS } from '../volunteer/gql/queries';
@@ -21,6 +21,25 @@ const formatTime12 = (time24) => {
 
 const formatCurrency = (amount) =>
     amount != null ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount) : '—';
+
+const csvEscape = (value) => {
+    if (value == null) return '';
+    const str = String(value);
+    return /[",\n]/.test(str) ? `"${str.replace(/"/g, '""')}"` : str;
+};
+
+const downloadCsv = (filename, rows) => {
+    const csv = rows.map((row) => row.map(csvEscape).join(',')).join('\r\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+};
 
 const SCHEDULE_LABELS = {
     ONE_TIME: '1 time',
@@ -275,6 +294,30 @@ function HOFDashboard() {
     const [filter, setFilter] = useState('ALL');
     const [sortBy, setSortBy] = useState('NAME');
     const [error, setError] = useState('');
+    const [exporting, setExporting] = useState(false);
+    const [runExport] = useLazyQuery(GET_HUQOOQ_EXPORT, { fetchPolicy: 'network-only' });
+
+    const handleExport = async () => {
+        setExporting(true);
+        setError('');
+        try {
+            const { data: exportData } = await runExport();
+            const rows = exportData?.getHuqooqExport || [];
+            const header = [
+                'ITS', 'Previous Year', 'Name',
+                'Wajebaat Amount', 'Wajebaat Check #',
+                'Silat ul-Fitr Amount', 'Silat ul-Fitr Check #',
+            ];
+            const body = rows.map((r) => [
+                r.its, r.previousYear, r.name,
+                r.wajebaatAmount, r.wcheck, r.sfAmount, r.sfcheck,
+            ]);
+            downloadCsv('huqooq-export.csv', [header, ...body]);
+        } catch (err) {
+            setError(err.message);
+        }
+        setExporting(false);
+    };
 
     const statuses = data?.getHOFSlotStatuses || [];
 
@@ -311,7 +354,15 @@ function HOFDashboard() {
     return (
         <div className="adminSection">
             <h2 className="adminSectionTitle">HOF Dashboard</h2>
-            <p className="adminSubText">{signedUpCount} of {statuses.length} signed up</p>
+            <div className="adminProgress">
+                <div className="adminProgressTrack">
+                    <div
+                        className="adminProgressFill"
+                        style={{ width: `${statuses.length ? (signedUpCount / statuses.length) * 100 : 0}%` }}
+                    />
+                </div>
+                <div className="adminProgressLabel">{signedUpCount} of {statuses.length} signed up</div>
+            </div>
 
             <div className="adminControls">
                 <div className="adminFormGroup">
@@ -372,6 +423,12 @@ function HOFDashboard() {
                     </table>
                 </div>
             )}
+
+            <div className="adminExportRow">
+                <button className="adminBtn" onClick={handleExport} disabled={exporting}>
+                    {exporting ? 'Exporting…' : 'Export'}
+                </button>
+            </div>
         </div>
     );
 }

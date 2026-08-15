@@ -20,9 +20,17 @@ const takhmeenSchema = new Schema(
             type: Number,
             default: null,
         },
+        wcheck: {
+            type: String,
+            default: null,
+        },
+        sfcheck: {
+            type: String,
+            default: null,
+        },
     },
     {
-        collection: 'takhmeen',
+        collection: 'huqooq',
     }
 );
 

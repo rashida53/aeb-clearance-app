@@ -26,7 +26,7 @@ const commitmentSchema = new Schema(
         },
     },
     {
-        collection: 'commitments',
+        collection: 'localniyyats',
     }
 );
 

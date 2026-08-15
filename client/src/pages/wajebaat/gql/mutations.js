@@ -16,6 +16,18 @@ export const SUBMIT_ACH = gql`
     }
 `;
 
+export const DEFER_ACH = gql`
+    mutation deferACH {
+        deferACH
+    }
+`;
+
+export const EMAIL_APPOINTMENT = gql`
+    mutation emailAppointment($emails: String!) {
+        emailAppointment(emails: $emails)
+    }
+`;
+
 export const BOOK_SLOT = gql`
     mutation bookSlot($slotId: ID!) {
         bookSlot(slotId: $slotId) {

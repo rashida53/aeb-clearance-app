@@ -127,22 +127,14 @@ type MyWajebaatStatus {
     fmbPledgeAmount: Float
 }
 
-type Huqooq {
-    _id: ID
-    user: ActiveUser
-    year: String
-    wajebaatAmount: Float
-    sfAmount: Float
-    wcheck: String
-    sfcheck: String
-}
-
 type Takhmeen {
     _id: ID
     user: ActiveUser
     year: String
     wajebaat: Float
     sf: Float
+    wcheck: String
+    sfcheck: String
 }
 
 type CheckInData {
@@ -150,7 +142,6 @@ type CheckInData {
     commitment: Commitment
     ach: ACHInfo
     openPledges: [QBOpen]
-    huqooq: Huqooq
     fmbPledgeAmount: Float
     takhmeen: Takhmeen
 }
@@ -172,6 +163,18 @@ type Query {
     getMaaliyaVolunteers: [ActiveUser]
     getCheckInData(userId: ID!, year: String!): CheckInData
     getTakhmeen(userId: ID!, year: String!): Takhmeen
+    getCommitmentForUser(userId: ID!, year: String!): Commitment
+    getHuqooqExport: [HuqooqExportRow]
+}
+
+type HuqooqExportRow {
+    its: String
+    previousYear: Float
+    name: String
+    wajebaatAmount: Float
+    wcheck: String
+    sfAmount: Float
+    sfcheck: String
 }
 
 type Mutation {
@@ -185,6 +188,8 @@ type Mutation {
     cancelSignup(slotId: ID!): Slot
     submitCommitments(kr: Float, ut: Float, year: String!): Commitment
     submitACH(accountNumber: String!, routingNumber: String!, schedule: String!): Boolean
+    deferACH: Boolean
+    emailAppointment(emails: String!): Boolean
     bookSlot(slotId: ID!): Slot
     cancelMySlot: Slot
     claimSlotGroup(date: String!, group: String!): Boolean
@@ -192,8 +197,7 @@ type Mutation {
     reassignSlotGroup(date: String!, group: String!, volunteerId: ID!): Boolean
     upsertCommitmentForUser(userId: ID!, kr: Float, ut: Float, year: String!, schedule: String): Commitment
     upsertACHForUser(userId: ID!, accountNumber: String!, routingNumber: String!): Boolean
-    upsertHuqooq(userId: ID!, year: String!, wajebaatAmount: Float, sfAmount: Float, wcheck: String, sfcheck: String): Huqooq
-    upsertTakhmeen(userId: ID!, year: String!, wajebaat: Float, sf: Float): Takhmeen
+    upsertTakhmeen(userId: ID!, year: String!, wajebaat: Float, sf: Float, wcheck: String, sfcheck: String): Takhmeen
 }
 `;
 
