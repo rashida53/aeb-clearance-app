@@ -8,7 +8,9 @@ import { GET_VOLUNTEER_SLOT_GROUPS } from '../volunteer/gql/queries';
 
 const formatDate = (dateStr) => {
     const date = new Date(dateStr);
-    return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+    // Slot dates are stored as UTC midnight of the intended day, so format in UTC
+    // to avoid a local-timezone off-by-one (e.g. showing Feb 9 for a Feb 10 slot).
+    return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'UTC' });
 };
 
 const formatTime12 = (time24) => {
