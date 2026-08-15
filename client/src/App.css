@@ -2463,6 +2463,8 @@ label {
   padding: 16px;
   text-align: center;
   border: 2px solid transparent;
+  display: flex;
+  flex-direction: column;
 }
 
 .volGroupCard.mine {
@@ -2520,6 +2522,7 @@ label {
 
 .volGroupAction {
   min-height: 36px;
+  margin-top: auto;
 }
 
 .volBtnClaim {
