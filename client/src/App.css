@@ -2733,11 +2733,12 @@ label {
   width: 120px;
   font-family: var(--font-body);
   font-size: 14px;
-  font-weight: bold;
+  font-weight: normal;
   color: var(--color-navy);
   padding: 6px 10px;
   text-align: center;
   box-sizing: border-box;
+  white-space: nowrap;
 }
 
 .ciFieldRow {
