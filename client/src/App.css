@@ -2730,11 +2730,14 @@ label {
 }
 
 .ciInlineValue {
+  width: 120px;
   font-family: var(--font-body);
   font-size: 14px;
   font-weight: bold;
   color: var(--color-navy);
   padding: 6px 10px;
+  text-align: center;
+  box-sizing: border-box;
 }
 
 .ciFieldRow {

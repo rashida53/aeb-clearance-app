@@ -39,6 +39,7 @@ export const GET_CHECK_IN_DATA = gql`
                 customer
             }
             fmbPledgeAmount
+            fmbPledgeStatus
             takhmeen {
                 _id
                 wajebaat

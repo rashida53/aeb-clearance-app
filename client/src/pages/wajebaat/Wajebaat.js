@@ -575,7 +575,6 @@ function SlotScheduler({ onBook, onBack, onRestart, hostingMiqaats }) {
 // ── Booking Confirmation ──
 
 function BookingConfirmation({ slot, commitment, fmbPledgeAmount, user, onCancel, cancelling }) {
-    const printRef = useRef();
     const [emailAppointment] = useMutation(EMAIL_APPOINTMENT);
     const [showEmailModal, setShowEmailModal] = useState(false);
     const [emailInput, setEmailInput] = useState('');
@@ -592,35 +591,8 @@ function BookingConfirmation({ slot, commitment, fmbPledgeAmount, user, onCancel
     const utDisplay = commitment?.ut > 0 ? formatCurrency(commitment.ut) : 'Pending';
     const fmbDisplay = fmbPledgeAmount != null ? formatCurrency(fmbPledgeAmount) : 'Pending';
 
-    const handlePrint = () => {
-        const content = printRef.current;
-        const win = window.open('', '_blank');
-        win.document.write('<html><head><title>Wajebaat Appointment</title>');
-        win.document.write('<link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@700&family=PT+Sans:wght@400;700&display=swap" rel="stylesheet">');
-        win.document.write('<style>');
-        win.document.write('body { font-family: "PT Sans", sans-serif; padding: 32px; }');
-        win.document.write('h2, h3 { font-family: "Merriweather", serif; color: #00203D; }');
-        win.document.write('.wjBookingDetails { text-align: center; padding: 20px; background: #f5f5f5; border-radius: 10px; margin-bottom: 24px; }');
-        win.document.write('.wjBookingDateTime { font-size: 20px; font-weight: bold; color: #CE9C01; }');
-        win.document.write('.wjUserInfo { margin-bottom: 24px; }');
-        win.document.write('.wjUserInfo h3 { margin: 0 0 4px 0; font-size: 20px; }');
-        win.document.write('.wjUserInfo p { margin: 0; color: #555; font-size: 14px; }');
-        win.document.write('.wjSummaryRow { display: flex; justify-content: space-between; padding: 10px 14px; background: #f5f5f5; border-radius: 6px; margin-bottom: 8px; }');
-        win.document.write('.wjSummaryRow span:last-child { font-weight: bold; }');
-        win.document.write('.wjPending { text-transform: uppercase; }');
-        win.document.write('.wjChecklist li { padding: 8px 0; border-bottom: 1px solid #eee; }');
-        win.document.write('.wjChecklist ul { list-style: none; padding: 0; }');
-        win.document.write('.wjChecklist li::before { content: "\\2610"; margin-right: 10px; font-size: 18px; }');
-        win.document.write('.wjCancelAction { display: none; }');
-        win.document.write('</style></head><body>');
-        win.document.write(content.innerHTML);
-        win.document.write('</body></html>');
-        win.document.close();
-        win.print();
-    };
-
     return (
-        <div className="wjStep" ref={printRef}>
+        <div className="wjStep">
             <h2 className="wjStepTitle">Your Appointment</h2>
             <div className="wjBookingDetails">
                 <div className="wjBookingDateTime">{formatDate(slot.date)} at {formatTime12(slot.startTime)}</div>
@@ -660,9 +632,6 @@ function BookingConfirmation({ slot, commitment, fmbPledgeAmount, user, onCancel
             </div>
 
             <div className="wjCancelAction">
-                <button className="wjBtnPrimary" onClick={handlePrint}>
-                    Print
-                </button>
                 <button className="wjBtnPrimary" onClick={() => setShowEmailModal(true)}>
                     Email
                 </button>

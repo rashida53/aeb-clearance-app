@@ -9,6 +9,14 @@ const CURRENT_YEAR = '1448-49';
 const formatCurrency = (amount) =>
     amount != null ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount) : '—';
 
+// FMB pledge display: no pledge → PENDING; otherwise the amount, appending
+// (PENDING) when the pledge itself is still pending.
+const formatFmb = (amount, status) => {
+    if (amount == null) return 'PENDING';
+    const amt = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(amount);
+    return status === 'PENDING' ? `${amt} (PENDING)` : amt;
+};
+
 export default function Checkin() {
     const { data: usersData } = useQuery(GET_ALL_ACTIVE_USERS);
     const [searchTerm, setSearchTerm] = useState('');
@@ -216,12 +224,12 @@ export default function Checkin() {
                                             onChange={(e) => setUt(e.target.value)}
                                         />
                                     </div>
-                                    {ciData?.fmbPledgeAmount == null && (
-                                        <div className="ciInlineRow">
-                                            <label className="ciInlineLabel">Faiz ul Mawaid il Burhaniyah</label>
-                                            <span className="ciInlineValue">PENDING</span>
-                                        </div>
-                                    )}
+                                    <div className="ciInlineRow">
+                                        <label className="ciInlineLabel">Faiz ul Mawaid il Burhaniyah</label>
+                                        <span className="ciInlineValue">
+                                            {formatFmb(ciData?.fmbPledgeAmount, ciData?.fmbPledgeStatus)}
+                                        </span>
+                                    </div>
                                     <div className="ciScheduleRow">
                                         <label className="ciLabel">Payment Schedule</label>
                                         <div className="ciScheduleOptions">

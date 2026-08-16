@@ -373,6 +373,7 @@ const resolvers = {
                 } : null,
                 openPledges: openPledges.filter(p => !p.pp),
                 fmbPledgeAmount: fmbPledge ? fmbPledge.amount : null,
+                fmbPledgeStatus: fmbPledge ? fmbPledge.status : null,
                 takhmeen: takhmeen ? {
                     _id: takhmeen._id,
                     user,
@@ -415,6 +416,15 @@ const resolvers = {
                 ut: commitment.ut,
                 schedule: commitment.schedule,
             };
+        },
+
+        getFmbPledge: async (parent, { userId, year }, context) => {
+            if (!context.user) {
+                throw new AuthenticationError('You must be logged in');
+            }
+            const pledge = await Pledge.findOne({ user: userId, period: year });
+            if (!pledge) return null;
+            return { amount: pledge.amount, status: pledge.status };
         },
 
         getHuqooqExport: async (parent, args, context) => {

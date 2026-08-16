@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery, useLazyQuery, useMutation } from '@apollo/client';
 import Nav from '../../components/Nav';
-import { GET_ALL_ACTIVE_USERS, GET_TAKHMEEN, GET_COMMITMENT_FOR_USER } from './gql/queries';
+import { GET_ALL_ACTIVE_USERS, GET_TAKHMEEN, GET_COMMITMENT_FOR_USER, GET_FMB_PLEDGE } from './gql/queries';
 import { UPSERT_TAKHMEEN, UPSERT_COMMITMENT_FOR_USER } from './gql/mutations';
 import formBg from '../../assets/takhmeen-form.png';
 
@@ -10,6 +10,14 @@ const LAST_YEAR = '1447-48';
 
 const formatCurrency = (amount) =>
     amount != null ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(amount) : '';
+
+// FMB pledge display: no pledge → PENDING; otherwise the amount, appending
+// (PENDING) when the pledge itself is still pending.
+const formatFmb = (amount, status) => {
+    if (amount == null) return 'PENDING';
+    const amt = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(amount);
+    return status === 'PENDING' ? `${amt} (PENDING)` : amt;
+};
 
 export default function Takhmeen() {
     const { data: usersData } = useQuery(GET_ALL_ACTIVE_USERS);
@@ -57,6 +65,7 @@ export default function Takhmeen() {
     const [ut, setUt] = useState('');
     const [initialKr, setInitialKr] = useState('');
     const [initialUt, setInitialUt] = useState('');
+    const [fmb, setFmb] = useState(null);
 
     const [getLastYear, { data: lastYearData, loading: lastYearLoading }] = useLazyQuery(GET_TAKHMEEN, {
         fetchPolicy: 'network-only',
@@ -84,6 +93,10 @@ export default function Takhmeen() {
             setInitialKr(krVal);
             setInitialUt(utVal);
         },
+    });
+    const [getFmb] = useLazyQuery(GET_FMB_PLEDGE, {
+        fetchPolicy: 'network-only',
+        onCompleted: (data) => setFmb(data?.getFmbPledge || null),
     });
     const [upsertTakhmeen] = useMutation(UPSERT_TAKHMEEN);
     const [upsertCommitment] = useMutation(UPSERT_COMMITMENT_FOR_USER);
@@ -118,11 +131,13 @@ export default function Takhmeen() {
         setUt('');
         setInitialKr('');
         setInitialUt('');
+        setFmb(null);
         setSaved(false);
         setError('');
         getLastYear({ variables: { userId: user._id, year: LAST_YEAR } });
         getCurrentYear({ variables: { userId: user._id, year: CURRENT_YEAR } });
         getCommitment({ variables: { userId: user._id, year: CURRENT_YEAR } });
+        getFmb({ variables: { userId: user._id, year: CURRENT_YEAR } });
     };
 
     const handleSave = async () => {
@@ -350,6 +365,10 @@ export default function Takhmeen() {
                                     value={ut}
                                     onChange={(e) => setUt(e.target.value)}
                                 />
+                            </div>
+                            <div className="ciInlineRow">
+                                <label className="ciInlineLabel">Faiz ul Mawaid il Burhaniyah</label>
+                                <span className="ciInlineValue">{formatFmb(fmb?.amount, fmb?.status)}</span>
                             </div>
                         </div>
 

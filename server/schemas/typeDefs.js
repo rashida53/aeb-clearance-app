@@ -143,7 +143,13 @@ type CheckInData {
     ach: ACHInfo
     openPledges: [QBOpen]
     fmbPledgeAmount: Float
+    fmbPledgeStatus: String
     takhmeen: Takhmeen
+}
+
+type FmbPledgeInfo {
+    amount: Float
+    status: String
 }
 
 type Query {
@@ -164,6 +170,7 @@ type Query {
     getCheckInData(userId: ID!, year: String!): CheckInData
     getTakhmeen(userId: ID!, year: String!): Takhmeen
     getCommitmentForUser(userId: ID!, year: String!): Commitment
+    getFmbPledge(userId: ID!, year: String!): FmbPledgeInfo
     getHuqooqExport: [HuqooqExportRow]
 }
 

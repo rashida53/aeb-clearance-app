@@ -30,3 +30,12 @@ export const GET_COMMITMENT_FOR_USER = gql`
         }
     }
 `;
+
+export const GET_FMB_PLEDGE = gql`
+    query getFmbPledge($userId: ID!, $year: String!) {
+        getFmbPledge(userId: $userId, year: $year) {
+            amount
+            status
+        }
+    }
+`;
