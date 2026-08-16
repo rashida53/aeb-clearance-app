@@ -1829,6 +1829,16 @@ label {
   text-align: center;
 }
 
+/* Keep itemized amount inputs usable on narrow screens. */
+@media (max-width: 600px) {
+  .wjItemRow input,
+  .wjTotalRow input {
+    flex-basis: 32%;
+    width: 32%;
+    min-width: 72px;
+  }
+}
+
 .wjValidation {
   color: #d15252;
   font-family: var(--font-body);
@@ -3102,4 +3112,22 @@ label {
   font-family: var(--font-body);
   color: #c62828;
   font-size: 14px;
+}
+
+/* Austin Khidmat table widens to fill the card on smaller screens. */
+@media (max-width: 900px) {
+  .tkKhidmatSection {
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .ciInlineRow {
+    gap: 10px;
+  }
+
+  .ciInlineInput,
+  .ciInlineValue {
+    width: 96px;
+  }
 }
