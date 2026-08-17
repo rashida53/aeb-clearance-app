@@ -49,11 +49,12 @@ GOTCHAS:
 - Year format is "1448-49" (current) / "1447-48" (last year) — not derivable from data, use these. Clearance collections use the field name "year"; fmb "pledges" uses "period" (same format).
 - Dates: miqaats/events/slots/menuitems.menuDate/pledges.pledgedOn are Date (compare with ISO date ranges). approvals.approvedAt and letters.generatedOn are epoch-millisecond Numbers (compare numerically). No day-of-week is stored — derive it in aggregate with $dayOfWeek if needed.
 - zone / status / eventType / roles are free-form strings.
+- NAME MATCHING: names are NOT stored as "First Last". users.fullName and especially qbopens.customer are often "Last, First ..." and may include honorifics ("bhai"/"bhen") or a spouse. Match a person by AND-ing a case-insensitive regex for EACH name token, so word order and extra words don't matter — e.g. for "Murtaza Rawat": {"$and": [{"<field>": {"$regex": "Murtaza", "$options": "i"}}, {"<field>": {"$regex": "Rawat", "$options": "i"}}]}. Never match a full name as one ordered phrase.
 
 EXAMPLES:
 - "how many active users" -> count_documents("users", {"isActive": {"$ne": false}})
 - "everyone in zone 4" -> find_documents("users", {"zone": "4"})
-- "<name>'s open balances" -> find_documents("users", {"fullName": {"$regex": "<name>", "$options": "i"}}) then find_documents("qbopens", {"user": {"$oid": "<user _id>"}})
+- "<name>'s open pledges / balances" (open = balance > 0; the name is on qbopens.customer, stored "Last, First") -> find_documents("qbopens", {"$and": [{"customer": {"$regex": "<token1>", "$options": "i"}}, {"customer": {"$regex": "<token2>", "$options": "i"}}], "balance": {"$gt": 0}}), and report each result's customer + qb_id + balance. (If you need the person's household/zone too, also resolve users by the same token-AND regex on fullName.)
 - "<name>'s Wajebaat last year" (CROSS-DB: users in fmb, huqooq in clearance) -> find the user in "users" (fmb), then find_documents("huqooq", {"user": {"$oid": "<user _id>"}, "year": "1447-48"})
 - "who has NOT RSVP'd for <miqaat title>" (anti-join) ->
   step 1: find_documents("miqaats", {"title": {"$regex": "<title>", "$options": "i"}})   // read its _id

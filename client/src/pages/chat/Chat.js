@@ -15,17 +15,29 @@ const SUGGESTED_PROMPTS = [
     "What was Murtaza Rawat's Wajebaat last year",
 ];
 
+// Module-scoped cache so the conversation survives navigating away from and back
+// to the tab (the component unmounts, but this module stays loaded). A full page
+// refresh reloads the module and resets it — i.e. it sticks until you refresh.
+let cachedMessages = [WELCOME];
+let cachedThreadId = null;
+
 const Chat = () => {
-    const [messages, setMessages] = useState([WELCOME]);
+    const [messages, setMessages] = useState(cachedMessages);
     const [input, setInput] = useState('');
     const [streaming, setStreaming] = useState(false);
     const [error, setError] = useState('');
 
-    // One conversation thread id for this browser session. The backend uses it
-    // as the LangGraph memory key so follow-up questions keep context.
+    // Reuse the same thread id across remounts so the backend memory (keyed by
+    // thread_id) stays continuous; a page refresh mints a fresh one.
     const threadId = useRef(
-        (window.crypto?.randomUUID?.() || String(Date.now()))
+        cachedThreadId || (window.crypto?.randomUUID?.() || String(Date.now()))
     );
+    cachedThreadId = threadId.current;
+
+    // Persist messages to the module cache whenever they change.
+    useEffect(() => {
+        cachedMessages = messages;
+    }, [messages]);
 
     const bottomRef = useRef(null);
     useEffect(() => {
