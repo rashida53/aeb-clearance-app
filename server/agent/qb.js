@@ -1,26 +1,83 @@
 const fs = require('fs');
 const OAuthClient = require('intuit-oauth');
 const QuickBooks = require('node-quickbooks');
+const { clearanceDb } = require('../config/connection');
+const { encrypt, decrypt } = require('../utils/encryption');
 
 // QuickBooks integration for the clearance app. Mirrors the working OAuth2 +
-// node-quickbooks setup from the fmb import script. Reuses the same OAuth app
-// and (by default) the same rotating token file, so no separate re-auth is
-// needed for READS. Writing invoices additionally requires the token to carry
-// the com.intuit.quickbooks.accounting scope.
+// node-quickbooks setup from the fmb import script (same OAuth app, same token
+// shape). The OAuth token is persisted durably in Mongo (clearanceDb.qb_tokens)
+// with access/refresh tokens encrypted at rest via the same AES helper used for
+// ACH — so it survives Heroku restarts/dynos and is never on disk. The token
+// collection is NOT in the agent's queryable whitelist, so the assistant can
+// never read it. Writing invoices requires the token to carry the
+// com.intuit.quickbooks.accounting scope.
 const clientId = process.env.QUICKBOOKS_CLIENT_ID;
 const clientSecret = process.env.QUICKBOOKS_CLIENT_SECRET;
 const environment = process.env.QUICKBOOKS_ENVIRONMENT || 'production';
 const realmId = process.env.QUICKBOOKS_REALM_ID;
-const tokensFile = process.env.QB_TOKENS_FILE;
 const useSandbox = environment === 'sandbox';
+
+const TOKEN_COLLECTION = 'qb_tokens';
+const TOKEN_KEY = 'quickbooks';
 
 let qbo;
 
-function loadTokens() {
-    return JSON.parse(fs.readFileSync(tokensFile, 'utf8'));
+async function tokenColl() {
+    await clearanceDb.asPromise();
+    return clearanceDb.db.collection(TOKEN_COLLECTION);
 }
-function saveTokens(t) {
-    fs.writeFileSync(tokensFile, JSON.stringify(t, null, 2));
+
+// Bootstrap source, used ONLY when Mongo has no token yet: a local token file
+// (dev convenience) or the QB_REFRESH_TOKEN env var (prod). After the first
+// save, Mongo is the source of truth and these are ignored.
+function seedTokens() {
+    const file = process.env.QB_TOKENS_FILE;
+    if (file && fs.existsSync(file)) {
+        const t = JSON.parse(fs.readFileSync(file, 'utf8'));
+        return { access_token: t.access_token || null, refresh_token: t.refresh_token, realmId: t.realmId || realmId };
+    }
+    if (process.env.QB_REFRESH_TOKEN) {
+        return { access_token: null, refresh_token: process.env.QB_REFRESH_TOKEN, realmId };
+    }
+    return null;
+}
+
+async function loadTokens() {
+    const coll = await tokenColl();
+    const doc = await coll.findOne({ _id: TOKEN_KEY });
+    if (doc && doc.refreshToken) {
+        return {
+            access_token: doc.accessToken ? decrypt(doc.accessToken) : null,
+            refresh_token: decrypt(doc.refreshToken),
+            realmId: doc.realmId || realmId,
+        };
+    }
+    const seed = seedTokens();
+    if (!seed || !seed.refresh_token) {
+        throw new Error(
+            'No QuickBooks token stored and no seed available. Set QB_REFRESH_TOKEN (or QB_TOKENS_FILE for local dev) to bootstrap.'
+        );
+    }
+    return seed;
+}
+
+async function saveTokens(t) {
+    const coll = await tokenColl();
+    await coll.updateOne(
+        { _id: TOKEN_KEY },
+        {
+            $set: {
+                accessToken: t.access_token ? encrypt(t.access_token) : null,
+                refreshToken: encrypt(t.refresh_token),
+                realmId: t.realmId || realmId,
+                tokenType: t.token_type || 'bearer',
+                expiresIn: t.expires_in || null,
+                updatedAt: new Date(),
+            },
+        },
+        { upsert: true }
+    );
 }
 
 function promisify(fn, ctx) {
@@ -30,16 +87,17 @@ function promisify(fn, ctx) {
         );
 }
 
-// Initialize once: refresh the access token (rotating the refresh token back to
-// the shared file) and build the QuickBooks client.
+// Initialize once: load the token from Mongo (seeding it there on first use),
+// refresh the access token, persist the rotated token back (encrypted), and
+// build the QuickBooks client.
 async function getQbo() {
     if (qbo) return qbo;
-    if (!clientId || !clientSecret || !realmId || !tokensFile) {
+    if (!clientId || !clientSecret || !realmId) {
         throw new Error(
-            'QuickBooks is not configured (need QUICKBOOKS_CLIENT_ID/SECRET/REALM_ID and QB_TOKENS_FILE in server/.env).'
+            'QuickBooks is not configured (need QUICKBOOKS_CLIENT_ID/SECRET/REALM_ID in server/.env).'
         );
     }
-    const tokens = loadTokens();
+    const tokens = await loadTokens();
     const oauthClient = new OAuthClient({
         clientId,
         clientSecret,
@@ -49,27 +107,26 @@ async function getQbo() {
     // Exact token shape used by fmb/scripts/clearance.js (the proven, working
     // connection). Omitting x_refresh_token_expires_in caused refresh to fail.
     oauthClient.setToken({
-        access_token: tokens.access_token,
+        access_token: tokens.access_token || '',
         refresh_token: tokens.refresh_token,
         token_type: 'bearer',
         expires_in: 3600,
         x_refresh_token_expires_in: 8726400,
     });
     const refreshed = (await oauthClient.refresh()).getJson();
-    saveTokens({
-        ...tokens,
+    await saveTokens({
         access_token: refreshed.access_token,
         refresh_token: refreshed.refresh_token,
         token_type: refreshed.token_type,
         expires_in: refreshed.expires_in,
-        updated_at: new Date().toISOString(),
+        realmId: tokens.realmId,
     });
     qbo = new QuickBooks(
         clientId,
         clientSecret,
         refreshed.access_token,
         false, // no OAuth1 token secret
-        realmId,
+        tokens.realmId || realmId,
         useSandbox,
         false,
         null,
