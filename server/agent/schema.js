@@ -26,7 +26,7 @@ fmb DATABASE:
 - eventrsvps: user -> users._id, event -> events._id, men/women/children/toddlers (Numbers).
 - invitees: user -> users._id, event -> events._id, men/women/children (STRINGS here, not Numbers — don't sum without converting).
 - pledges: user -> users._id, period (string like "1447-48"), amount (Number), isPaid (bool), pledgedOn (Date), status (free-form string, e.g. "PENDING").
-- qbopens (QuickBooks billing — a person's outstanding balances / "open pledges"): user -> users._id, customer (household name string — use this for the person's name, no join needed), hofIts, qb_id (unique), amount, balance (Numbers), due (string).
+- qbopens (QuickBooks billing — a person's outstanding balances / "open pledges"): user -> users._id, hofIts (string = users.hofIts), qb_id (unique), amount, balance (Numbers), due (string), customer (denormalized display name — do NOT match people by this; resolve people via users, then filter qbopens by user or hofIts).
     qb_id encodes a billing CATEGORY + year + sequence, e.g. "Sabil_2026-052" (sabeel; Gregorian year, underscore) or "Madrasa-1447-070" (madrasa; hijri year, dash) — the year style/separator VARIES by category. To filter a category, regex qb_id on the category word: sabeel/sabil -> "Sabil", madrasa -> "Madrasa", niyaz -> "Niyaz" (also "FMB", "KR"). To scope a year, also match the year digits AS THEY APPEAR in qb_id (e.g. "2026" or "1447"). balance > 0 = UNPAID / still owed; balance 0 or absent = paid.
 - pickupgroups: name (string), users[] -> users._id. Prefer reading a user's group via users.pickupGroup (string) == pickupgroups.name; the users[] array can be stale.
 - cooks: fullName.
@@ -49,12 +49,15 @@ GOTCHAS:
 - Year format is "1448-49" (current) / "1447-48" (last year) — not derivable from data, use these. Clearance collections use the field name "year"; fmb "pledges" uses "period" (same format).
 - Dates: miqaats/events/slots/menuitems.menuDate/pledges.pledgedOn are Date (compare with ISO date ranges). approvals.approvedAt and letters.generatedOn are epoch-millisecond Numbers (compare numerically). No day-of-week is stored — derive it in aggregate with $dayOfWeek if needed.
 - zone / status / eventType / roles are free-form strings.
-- NAME MATCHING: names are NOT stored as "First Last". users.fullName and especially qbopens.customer are often "Last, First ..." and may include honorifics ("bhai"/"bhen") or a spouse. Match a person by AND-ing a case-insensitive regex for EACH name token, so word order and extra words don't matter — e.g. for "Murtaza Rawat": {"$and": [{"<field>": {"$regex": "Murtaza", "$options": "i"}}, {"<field>": {"$regex": "Rawat", "$options": "i"}}]}. Never match a full name as one ordered phrase.
+- IDENTIFYING A PERSON (always do this): the "users" collection is the ONLY place to match a person's name. Find them in users by fullName, then take their _id and hofIts and use those to query every other collection (qbopens, pledges, huqooq, localniyyats, slots, rsvps, ...). NEVER match a person's name in qbopens.customer or any other collection.
+  - fullName may include a title ("Shk", "Shaikh", "Sk.") and is not "First Last" order. Match with a case-insensitive regex for EACH name token AND-ed together, so titles/word-order/extra words don't matter — e.g. "Murtaza Rawat" -> {"$and": [{"fullName": {"$regex": "Murtaza", "$options": "i"}}, {"fullName": {"$regex": "Rawat", "$options": "i"}}]} matches stored "Shk Murtaza Rawat". Never match a full name as one ordered phrase.
 
 EXAMPLES:
 - "how many active users" -> count_documents("users", {"isActive": {"$ne": false}})
 - "everyone in zone 4" -> find_documents("users", {"zone": "4"})
-- "<name>'s open pledges / balances" (open = balance > 0; the name is on qbopens.customer, stored "Last, First") -> find_documents("qbopens", {"$and": [{"customer": {"$regex": "<token1>", "$options": "i"}}, {"customer": {"$regex": "<token2>", "$options": "i"}}], "balance": {"$gt": 0}}), and report each result's customer + qb_id + balance. (If you need the person's household/zone too, also resolve users by the same token-AND regex on fullName.)
+- "<name>'s open pledges / balances" (open = balance > 0) ->
+  step 1: find_documents("users", {"$and": [{"fullName": {"$regex": "<token1>", "$options": "i"}}, {"fullName": {"$regex": "<token2>", "$options": "i"}}]})   // get the user's _id and hofIts
+  step 2: find_documents("qbopens", {"user": {"$oid": "<user _id>"}, "balance": {"$gt": 0}})   // or {"hofIts": "<hofIts>", "balance": {"$gt": 0}}
 - "<name>'s Wajebaat last year" (CROSS-DB: users in fmb, huqooq in clearance) -> find the user in "users" (fmb), then find_documents("huqooq", {"user": {"$oid": "<user _id>"}, "year": "1447-48"})
 - "who has NOT RSVP'd for <miqaat title>" (anti-join) ->
   step 1: find_documents("miqaats", {"title": {"$regex": "<title>", "$options": "i"}})   // read its _id
