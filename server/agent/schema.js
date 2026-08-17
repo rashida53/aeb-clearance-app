@@ -26,7 +26,8 @@ fmb DATABASE:
 - eventrsvps: user -> users._id, event -> events._id, men/women/children/toddlers (Numbers).
 - invitees: user -> users._id, event -> events._id, men/women/children (STRINGS here, not Numbers — don't sum without converting).
 - pledges: user -> users._id, period (string like "1447-48"), amount (Number), isPaid (bool), pledgedOn (Date), status (free-form string, e.g. "PENDING").
-- qbopens (QuickBooks open balances = a person's outstanding balances / "open pledges"): user -> users._id, hofIts (denormalized string), qb_id (unique), amount, balance (Numbers), due (string), customer (string).
+- qbopens (QuickBooks billing — a person's outstanding balances / "open pledges"): user -> users._id, customer (household name string — use this for the person's name, no join needed), hofIts, qb_id (unique), amount, balance (Numbers), due (string).
+    qb_id encodes a billing CATEGORY + year + sequence, e.g. "Sabil_2026-052" (sabeel; Gregorian year, underscore) or "Madrasa-1447-070" (madrasa; hijri year, dash) — the year style/separator VARIES by category. To filter a category, regex qb_id on the category word: sabeel/sabil -> "Sabil", madrasa -> "Madrasa", niyaz -> "Niyaz" (also "FMB", "KR"). To scope a year, also match the year digits AS THEY APPEAR in qb_id (e.g. "2026" or "1447"). balance > 0 = UNPAID / still owed; balance 0 or absent = paid.
 - pickupgroups: name (string), users[] -> users._id. Prefer reading a user's group via users.pickupGroup (string) == pickupgroups.name; the users[] array can be stale.
 - cooks: fullName.
 - dishes: dishName (unique), category, allergens[].
@@ -71,6 +72,8 @@ EXAMPLES:
             {"$unwind": "$d"}, {"$group": {"_id": "$d.dishName"}}])   // each _id is a unique dish name
 - "how many children RSVP'd for <miqaat>" (sum a count field) ->
   find the miqaat _id, then aggregate("rsvps", [{"$match": {"miqaat": {"$oid": "<id>"}}},
-    {"$group": {"_id": null, "children": {"$sum": "$children"}, "adults": {"$sum": "$adults"}}}])`;
+    {"$group": {"_id": null, "children": {"$sum": "$children"}, "adults": {"$sum": "$adults"}}}])
+- "which users have NOT paid sabeel for 2026" (unpaid = open balance on a billing category) ->
+  find_documents("qbopens", {"qb_id": {"$regex": "Sabil.*2026", "$options": "i"}, "balance": {"$gt": 0}}), then list each result's "customer".`;
 
 module.exports = { SCHEMA_MAP };
