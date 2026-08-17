@@ -32,8 +32,9 @@ const findDocuments = tool(
     {
         name: 'find_documents',
         description:
-            'Read documents from a collection. filter is a MongoDB query object. ' +
-            'To match an _id or a reference field (user, miqaat, event, host, ...), pass the id as {"$oid": "<24-hex>"}. ' +
+            'Read documents from a collection (in either the fmb or clearance database — routing is automatic). ' +
+            'filter is a MongoDB query object. To match an _id or a reference field (user, miqaat, event, host, cook, dish, bookedBy, ...), ' +
+            'pass the id as {"$oid": "<24-hex>"}. ' +
             `Returns at most ${MAX_LIMIT} documents. Read-only.`,
         schema: z.object({
             collection: z.string().describe('Collection name, e.g. "users" or "rsvps"'),
@@ -84,9 +85,10 @@ const aggregate = tool(
     {
         name: 'aggregate',
         description:
-            'Run a read-only MongoDB aggregation pipeline on a collection. Use for group-bys and ' +
-            'joins ($lookup) between collections in the SAME database. Wrap ObjectIds as {"$oid": "<hex>"}. ' +
-            '$out/$merge/$where/$function are blocked.',
+            'Run a read-only MongoDB aggregation pipeline on a collection. Use for group-bys, sums, and ' +
+            'joins ($lookup) between collections IN THE SAME DATABASE. You CANNOT $lookup across the fmb and ' +
+            'clearance databases — for those, make two separate calls and combine the results. In a $match on ' +
+            'an id, wrap the value as {"$oid": "<hex>"}. $out/$merge/$where/$function are blocked.',
         schema: z.object({
             collection: z.string(),
             pipeline: z.array(z.record(z.any())).describe('Aggregation stages'),

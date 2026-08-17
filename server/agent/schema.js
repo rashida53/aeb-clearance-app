@@ -1,98 +1,76 @@
-// The data-model map handed to the LLM in the system prompt. The generic tools
-// only work well if the model knows the collections, their fields, and how they
-// relate — so keep this accurate and in sync with dbAccess.js's whitelist.
+// The authoritative data-model map handed to the LLM. The generic tools only
+// work well if the model knows the collections, their fields, how they relate,
+// and the two-database architecture. Keep this in sync with dbAccess.js.
 
-const SCHEMA_MAP = `DATA MODEL (all collections are read-only via your tools)
+const SCHEMA_MAP = `ARCHITECTURE — TWO DATABASES:
+There are two MongoDB databases; every collection belongs to exactly one, and the tools route automatically by collection name (you never specify the database).
+- "fmb" database: the community app's data (people, events, food, finances source).
+- "clearance" database: this app's own records (clearance letters, approvals, wajebaat/takhmeen, niyyat commitments, volunteer slots).
+The clearance database REFERENCES the fmb "users" collection — clearance records store an fmb user's _id (or their hofIts string). fmb data never references clearance.
 
-How to query:
-- Use count_documents for "how many" questions.
-- Use find_documents to fetch/list documents (max 100).
-- Use aggregate for group-bys and joins ($lookup) BETWEEN COLLECTIONS IN THE SAME DATABASE.
-- IDs (_id and reference fields) appear as 24-character hex strings in results. To
-  filter by one, wrap it as {"$oid": "<hex>"} — e.g. {"user": {"$oid": "662f..."}}.
-- To relate two collections, first find the target to get its _id, then filter the
-  other collection by that id (wrapped in $oid), OR use aggregate with $lookup.
-- Two separate databases (fmb, clearance). $lookup cannot cross them; join across
-  databases by making two queries and combining the results yourself.
+CROSS-DATABASE JOINS: aggregate/$lookup work ONLY within a single database — you CANNOT $lookup between fmb and clearance. To combine them, do it in two steps: query one database, take the _id (or hofIts) from the result, then query the other database with it. Wrap an ObjectId value as {"$oid": "<24-hex>"}.
 
-fmb database:
-- users: fullName, hofIts (household ITS id, the business key — a number, NOT money),
-    spouseName, zone (free-form string), pickupGroup, isActive (bool). "Active" = isActive != false.
-- miqaats: title (event name), date (Date), hijriDate (display string), time, description,
-    hosts (→users._id[]), menu (→dishes._id[]).
-- rsvps: user (→users._id), miqaat (→miqaats._id), adults (Number), children (Number).
-    One doc per (user,miqaat). THERE IS NO yes/no status — a doc's existence means the
-    user responded; adults/children are attendance counts (0/0 = responded, not coming).
-    "Has not RSVP'd" = no rsvp doc for that (user, miqaat). Prefer the
-    list_miqaat_non_responders tool for this question.
-- events + eventrsvps + invitees: a SEPARATE event system (do not confuse with miqaats/rsvps).
-    eventrsvps has men/women/children/toddlers counts; invitees defines who was invited.
-- pledges: user (→users._id), period (string like "1447-48"), amount (Number), isPaid (bool),
-    pledgedOn (Date), status (free-form string).
-- qbopens: hofIts, user (→users._id), qb_id (unique), amount, balance (Number), due (string),
-    customer. QuickBooks open balances (a person's outstanding balances / "open pledges").
-- pickupgroups: name, users (→users._id[]).
+USERS IS THE HUB: the fmb "users" collection is the join point for almost everything. Its _id is referenced by fmb collections (rsvps.user, pledges.user, qbopens.user, miqaats.hosts, ...) AND by clearance collections (huqooq.user, localniyyats.user, slots.bookedBy/volunteer, approvals.requester). The string "hofIts" (household ITS number) is the secondary bridge key.
+
+TOOL USAGE:
+- count_documents for "how many"; find_documents to fetch/list (max 100); aggregate for group-bys and $lookup joins WITHIN one database.
+- _id and reference fields appear as 24-hex strings; to filter by one, pass {"$oid": "<hex>"}. In aggregate $match on an id, also use {"$oid": ...} (raw aggregation does not auto-cast ids).
+- NEVER invent an id — first find the target to get its real _id, then use it.
+- The database is the SOURCE OF TRUTH; if a question maps to a collection below, use the data tools even if the info might also be written in a document.
+
+fmb DATABASE:
+- users (THE HUB): fullName, spouseName, hofIts (household ITS, unique string), zone (free-form string), pickupGroup (string = pickupgroups.name), isActive (bool). "Active" = isActive != false.
+- miqaats (religious events): title, date (Date), hijriDate (display string), time, description, isCommittee (bool); hosts[] -> users._id; menu[] -> dishes._id.
+- rsvps: user -> users._id, miqaat -> miqaats._id, adults (Number), children (Number). One doc per (user,miqaat). NO status field: a doc's existence = responded; adults/children are attendance counts. "Has NOT RSVP'd" = no rsvp doc.
+- events: title, date (Date), hijriDate, eventType ("public"/"private"), venue, category, womenOnly/menOnly (bool); hosts[] -> members._id. (NOTE: events are hosted by MEMBERS; miqaats are hosted by USERS. Separate systems — do not mix miqaats/rsvps with events/eventrsvps.)
+- eventrsvps: user -> users._id, event -> events._id, men/women/children/toddlers (Numbers).
+- invitees: user -> users._id, event -> events._id, men/women/children (STRINGS here, not Numbers — don't sum without converting).
+- pledges: user -> users._id, period (string like "1447-48"), amount (Number), isPaid (bool), pledgedOn (Date), status (free-form string, e.g. "PENDING").
+- qbopens (QuickBooks open balances = a person's outstanding balances / "open pledges"): user -> users._id, hofIts (denormalized string), qb_id (unique), amount, balance (Numbers), due (string), customer (string).
+- pickupgroups: name (string), users[] -> users._id. Prefer reading a user's group via users.pickupGroup (string) == pickupgroups.name; the users[] array can be stale.
 - cooks: fullName.
-- dishes: dishName, category, allergens.
-- menuitems: cook (→cooks._id), dish (→dishes._id), menuDate (Date), amount, isPaid, forAll, fmbItem.
-    THIS IS THE LINK between cooks and dishes: a cook makes dishes via menuitems
-    (menuitems.cook = the cook, menuitems.dish = the dish). To find "dishes a cook made",
-    go cooks -> menuitems (by cook) -> dishes (by dish).
-- signups: user (→users._id), menuItem (→menuitems._id), size.
-- feedbacks: user (→users._id), menuItem (→menuitems._id), rating fields.
+- dishes: dishName (unique), category, allergens[].
+- menuitems (THE LINK between cooks and dishes): cook -> cooks._id, dish -> dishes._id, menuDate (Date), amount, isPaid, forAll, fmbItem (bools). A cook's dishes = menuitems by cook, then their dish -> dishes.
+- signups: user -> users._id, menuItem -> menuitems._id, size (string).
+- feedbacks: user -> users._id, menuItem -> menuitems._id, rating fields (Numbers).
 
-clearance database (this app's own):
-- approvals: hofIts, requester, approver, remarks, masjid, approvedAt (epoch ms Number).
-- letters: requester, approver, reason, hofIts, generatedOn (epoch ms Number).
-- masjid: its (HOF ITS), status.
-- slots: date (Date), startTime/endTime ("HH:MM" strings), bookedBy (→users._id), group, volunteer (→users._id).
-- localniyyats: user (→users._id), year (string), kr, ut (Numbers), schedule.
-- huqooq: user (→users._id), year (string like "1447-48"), wajebaat (Number), sf (Number),
-    wcheck, sfcheck. This is the Takhmeen / Wajebaat record. NOTE: huqooq lives in the
-    clearance DB but its user field references users in the fmb DB — join across DBs in two steps.
+clearance DATABASE (each row is tied to an fmb user):
+- approvals: hofIts (string = users.hofIts), requester (-> users._id), approver (name string, not an id), remarks, masjid, approvedAt (epoch-MILLISECONDS Number).
+- letters: hofIts (string = users.hofIts), requester (name string), approver (name string or "AUTO"), reason, generatedOn (epoch-MILLISECONDS Number).
+- masjid: its (string = users.hofIts), status.
+- slots (volunteer time slots): date (Date), startTime/endTime ("HH:MM" strings), group (string), bookedBy (-> users._id), volunteer (-> users._id).
+- localniyyats (a.k.a. Commitment): user (-> users._id), year (string like "1448-49"), kr, ut (Numbers), schedule.
+- huqooq (a.k.a. Takhmeen / Wajebaat): user (-> users._id), year (string), wajebaat (Number), sf (Number), wcheck, sfcheck. Unique (user, year).
 
-Date context: current year is "1448-49"; last year is "1447-48". Dates stored as Date
-appear as ISO strings; approvals.approvedAt and letters.generatedOn are epoch milliseconds.
+GOTCHAS:
+- Facts about people live in "users" (keyed by hofIts). "members" (login accounts, passwords, email) and "ach" (encrypted bank info) are BLOCKED — not queryable.
+- "Active" = {"isActive": {"$ne": false}} — NEVER {"isActive": true} (the field is often missing). Only filter by active when the user asks for active people.
+- Year format is "1448-49" (current) / "1447-48" (last year) — not derivable from data, use these. Clearance collections use the field name "year"; fmb "pledges" uses "period" (same format).
+- Dates: miqaats/events/slots/menuitems.menuDate/pledges.pledgedOn are Date (compare with ISO date ranges). approvals.approvedAt and letters.generatedOn are epoch-millisecond Numbers (compare numerically). No day-of-week is stored — derive it in aggregate with $dayOfWeek if needed.
+- zone / status / eventType / roles are free-form strings.
 
-Blocked (never queryable): members (passwords/email) and ach (encrypted bank info).
-
-QUERY RULES (follow exactly):
-- "Active" means isActive != false. ALWAYS express it as {"isActive": {"$ne": false}} — never
-  {"isActive": true}, because many active users have no isActive field and true-equality misses them.
-- Only add an active filter when the user explicitly asks for "active" users. For "everyone",
-  "all", or "list ... in zone X", do NOT filter by isActive.
-- zone is matched as a string (e.g. "4").
-- NEVER invent, guess, or use a placeholder _id. To reference a document by id, FIRST find it (by
-  name/title) and read its real _id from the results, THEN pass {"$oid": "<that id>"} in the next call.
-- "Who has NOT done X / is missing X / without X" is an ANTI-JOIN — you CANNOT answer it by filtering
-  one collection. Use aggregate on the base collection with $lookup to the related collection, then
-  keep rows whose joined array is empty ($size 0). See the RSVP example below.
-
-Examples:
+EXAMPLES:
 - "how many active users" -> count_documents("users", {"isActive": {"$ne": false}})
 - "everyone in zone 4" -> find_documents("users", {"zone": "4"})
-- "active users in zone 2" -> find_documents("users", {"zone": "2", "isActive": {"$ne": false}})
-- "Hamza Karachiwala's open balances" -> find_documents("users", {"fullName": {"$regex": "Hamza Karachiwala", "$options": "i"}})
-  then find_documents("qbopens", {"user": {"$oid": "<the user _id>"}})
-- "who has NOT RSVP'd for <miqaat title>" (anti-join):
-  step 1: find_documents("miqaats", {"title": {"$regex": "<title>", "$options": "i"}})  // read its _id
+- "<name>'s open balances" -> find_documents("users", {"fullName": {"$regex": "<name>", "$options": "i"}}) then find_documents("qbopens", {"user": {"$oid": "<user _id>"}})
+- "<name>'s Wajebaat last year" (CROSS-DB: users in fmb, huqooq in clearance) -> find the user in "users" (fmb), then find_documents("huqooq", {"user": {"$oid": "<user _id>"}, "year": "1447-48"})
+- "who has NOT RSVP'd for <miqaat title>" (anti-join) ->
+  step 1: find_documents("miqaats", {"title": {"$regex": "<title>", "$options": "i"}})   // read its _id
   step 2: aggregate("users", [
             {"$match": {"isActive": {"$ne": false}}},
             {"$lookup": {"from": "rsvps", "let": {"uid": "$_id"},
               "pipeline": [{"$match": {"$expr": {"$and": [
-                 {"$eq": ["$user", "$$uid"]},
-                 {"$eq": ["$miqaat", {"$oid": "<miqaat _id from step 1>"}]}
-              ]}}}], "as": "rsvp"}},
+                 {"$eq": ["$user", "$$uid"]}, {"$eq": ["$miqaat", {"$oid": "<miqaat _id>"}]}]}}}], "as": "rsvp"}},
             {"$match": {"rsvp": {"$size": 0}}},
-            {"$project": {"_id": 0, "fullName": 1, "hofIts": 1}}
-          ])
-- "which dishes has <cook name> cooked" (multi-hop: cook -> menuitems -> dishes):
-  step 1: find_documents("cooks", {"fullName": {"$regex": "<name>", "$options": "i"}})  // read its _id
+            {"$project": {"_id": 0, "fullName": 1, "hofIts": 1}}])
+- "which dishes has <cook> cooked" (multi-hop: cooks -> menuitems -> dishes) ->
+  step 1: find_documents("cooks", {"fullName": {"$regex": "<name>", "$options": "i"}})
   step 2: aggregate("menuitems", [
-            {"$match": {"cook": {"$oid": "<cook _id from step 1>"}}},
+            {"$match": {"cook": {"$oid": "<cook _id>"}}},
             {"$lookup": {"from": "dishes", "localField": "dish", "foreignField": "_id", "as": "d"}},
-            {"$unwind": "$d"},
-            {"$group": {"_id": "$d.dishName"}}
-          ])  // each returned _id is a unique dish name`;
+            {"$unwind": "$d"}, {"$group": {"_id": "$d.dishName"}}])   // each _id is a unique dish name
+- "how many children RSVP'd for <miqaat>" (sum a count field) ->
+  find the miqaat _id, then aggregate("rsvps", [{"$match": {"miqaat": {"$oid": "<id>"}}},
+    {"$group": {"_id": null, "children": {"$sum": "$children"}, "adults": {"$sum": "$adults"}}}])`;
 
 module.exports = { SCHEMA_MAP };
