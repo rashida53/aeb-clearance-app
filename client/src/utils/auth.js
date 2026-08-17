@@ -28,6 +28,11 @@ class AuthService {
         return token && decode(token).data.roles.includes('LETTER_ADMIN');
     }
 
+    isChatAdmin() {
+        const token = this.getToken();
+        return token && decode(token).data.roles.includes('CHAT_ADMIN');
+    }
+
     isMaaliyaVolunteer() {
         const token = this.getToken();
         if (!token) return false;

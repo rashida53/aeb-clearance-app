@@ -20,6 +20,7 @@ const PrivateRoute = ({ children, requiredRole, redirectPath = '/pledges' }) => 
             CLEARANCE_ADMIN: Auth.isClearanceAdmin(),
             LETTER_ADMIN: Auth.isLetterAdmin(),
             MAALIYA_VOLUNTEER: Auth.isMaaliyaVolunteer(),
+            CHAT_ADMIN: Auth.isChatAdmin(),
         };
 
         if (!roleChecks[requiredRole]) {

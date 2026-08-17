@@ -1,0 +1,127 @@
+.chatHeader {
+    text-align: center;
+    margin-bottom: 16px;
+}
+
+.chatHeader p {
+    color: var(--color-navy);
+    opacity: 0.7;
+    margin-top: 4px;
+}
+
+.chatWindow {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 16px;
+    background: var(--color-light-gray);
+    border-radius: 12px;
+    min-height: 320px;
+    max-height: 55vh;
+    overflow-y: auto;
+}
+
+.chatMessage {
+    display: flex;
+}
+
+.chatMessage.user {
+    justify-content: flex-end;
+}
+
+.chatMessage.assistant {
+    justify-content: flex-start;
+}
+
+.chatBubble {
+    max-width: 80%;
+    padding: 10px 14px;
+    border-radius: 14px;
+    line-height: 1.45;
+    white-space: pre-wrap;
+    word-break: break-word;
+    font-family: var(--font-body);
+}
+
+.chatMessage.user .chatBubble {
+    background: var(--color-navy);
+    color: var(--color-white);
+    border-bottom-right-radius: 4px;
+}
+
+.chatMessage.assistant .chatBubble {
+    background: var(--color-white);
+    color: var(--color-navy);
+    border: 1px solid rgba(0, 32, 61, 0.12);
+    border-bottom-left-radius: 4px;
+}
+
+.chatInputRow {
+    display: flex;
+    gap: 8px;
+    max-width: 760px;
+    margin: 16px auto 0;
+}
+
+.chatInputRow input {
+    flex: 1;
+    padding: 12px 14px;
+    border: 1px solid rgba(0, 32, 61, 0.2);
+    border-radius: 10px;
+    font-family: var(--font-body);
+    font-size: 16px;
+}
+
+.chatInputRow input:focus {
+    outline: none;
+    border-color: var(--color-gold);
+}
+
+.chatInputRow button {
+    padding: 12px 20px;
+    background: var(--color-gold);
+    color: var(--color-navy);
+    border: none;
+    border-radius: 10px;
+    font-weight: bold;
+    cursor: pointer;
+    font-family: var(--font-body);
+}
+
+.chatInputRow button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.chatSuggestions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+    max-width: 760px;
+    margin: 12px auto 0;
+}
+
+.chatSuggestion {
+    padding: 8px 14px;
+    background: var(--color-white);
+    color: var(--color-navy);
+    border: 1px solid var(--color-gold);
+    border-radius: 20px;
+    font-family: var(--font-body);
+    font-size: 14px;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+
+.chatSuggestion:hover:not(:disabled) {
+    background: var(--color-gold);
+    color: var(--color-navy);
+}
+
+.chatSuggestion:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}

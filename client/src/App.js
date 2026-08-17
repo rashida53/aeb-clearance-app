@@ -20,6 +20,7 @@ const Checkin = lazy(() => import('./pages/checkin/Checkin'));
 const Admin = lazy(() => import('./pages/admin/Admin'));
 const Review = lazy(() => import('./pages/review/Review'));
 const Takhmeen = lazy(() => import('./pages/takhmeen/Takhmeen'));
+const Chat = lazy(() => import('./pages/chat/Chat'));
 
 const httpLink = createHttpLink({
   uri: '/graphql',
@@ -110,6 +111,14 @@ function App() {
             element={
               <PrivateRoute requiredRole="LETTER_ADMIN">
                 <Takhmeen />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/chat"
+            element={
+              <PrivateRoute requiredRole="CHAT_ADMIN">
+                <Chat />
               </PrivateRoute>
             }
           />

@@ -6,3 +6,7 @@ client/build
 .env
 server/.env
 client/.env
+# Google service-account keys (never commit)
+**/gcp-key.json
+**/*service-account*.json
+**/*-sa.json

@@ -16,6 +16,7 @@ export default function Nav() {
 
     const isLetterAdmin = data?.me?.roles?.includes('LETTER_ADMIN');
     const isMaaliyaVolunteer = isLetterAdmin || data?.me?.roles?.includes('MAALIYA_VOLUNTEER');
+    const isChatAdmin = data?.me?.roles?.includes('CHAT_ADMIN');
 
     const toggleMenu = () => setMenuOpen(!menuOpen);
     const closeMenu = () => setMenuOpen(false);
@@ -64,6 +65,11 @@ export default function Nav() {
                                 <Link to="/admin" onClick={closeMenu}>Admin</Link>
                             </li>
                         )}
+                        {isChatAdmin && (
+                            <li>
+                                <Link to="/chat" onClick={closeMenu}>Assistant</Link>
+                            </li>
+                        )}
                         <li>
                             <button onClick={handleLogout}>Sign Out</button>
                         </li>
@@ -88,6 +94,9 @@ export default function Nav() {
                         )}
                         {isLetterAdmin && (
                             <Link to="/admin" onClick={closeMenu}>Admin</Link>
+                        )}
+                        {isChatAdmin && (
+                            <Link to="/chat" onClick={closeMenu}>Assistant</Link>
                         )}
                         <button onClick={() => { handleLogout(); closeMenu(); }}>
                             Sign Out

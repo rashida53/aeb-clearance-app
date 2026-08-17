@@ -5,6 +5,7 @@ const { clearanceDb, fmbDb } = require('./config/connection');
 const { ApolloServer } = require('apollo-server-express');
 const { typeDefs, resolvers } = require('./schemas');
 const { authMiddleware } = require('./utils/auth');
+const chatRouter = require('./routes/chat');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -28,6 +29,10 @@ if (process.env.NODE_ENV === 'production') {
 
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
+
+// Conversational agent endpoint (SSE). Mounted before the SPA fallback so it
+// isn't swallowed by app.get('*') in production.
+app.use('/api', chatRouter);
 
 const startApolloServer = async (typeDefs, resolvers) => {
     await server.start();

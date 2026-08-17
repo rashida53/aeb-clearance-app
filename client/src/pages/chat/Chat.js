@@ -1,0 +1,181 @@
+import React, { useEffect, useRef, useState } from 'react';
+import Nav from '../../components/Nav';
+import Auth from '../../utils/auth';
+import './Chat.css';
+
+const WELCOME = {
+    role: 'assistant',
+    content: "Let's talk!",
+};
+
+const SUGGESTED_PROMPTS = [
+    "Show me Hamza Karachiwala's Open Pledges",
+    'How many active users do we have',
+    'Show me everyone in Zone 4',
+    "What was Murtaza Rawat's Wajebaat last year",
+];
+
+const Chat = () => {
+    const [messages, setMessages] = useState([WELCOME]);
+    const [input, setInput] = useState('');
+    const [streaming, setStreaming] = useState(false);
+    const [error, setError] = useState('');
+
+    // One conversation thread id for this browser session. The backend uses it
+    // as the LangGraph memory key so follow-up questions keep context.
+    const threadId = useRef(
+        (window.crypto?.randomUUID?.() || String(Date.now()))
+    );
+
+    const bottomRef = useRef(null);
+    useEffect(() => {
+        bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, [messages]);
+
+    const sendMessage = (e) => {
+        e.preventDefault();
+        runQuery(input);
+    };
+
+    const runQuery = async (raw) => {
+        const text = (raw || '').trim();
+        if (!text || streaming) return;
+
+        setError('');
+        setInput('');
+        // Show the user's message, plus an empty assistant bubble we stream into.
+        setMessages((prev) => [
+            ...prev,
+            { role: 'user', content: text },
+            { role: 'assistant', content: '' },
+        ]);
+        setStreaming(true);
+
+        try {
+            const res = await fetch('/api/chat', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${Auth.getToken()}`,
+                },
+                body: JSON.stringify({ message: text, threadId: threadId.current }),
+            });
+
+            if (!res.ok) {
+                const detail = await res.text().catch(() => '');
+                throw new Error(
+                    res.status === 403
+                        ? 'You do not have access to the assistant.'
+                        : `Request failed (${res.status}). ${detail}`
+                );
+            }
+
+            // Read the Server-Sent Events stream frame by frame and append each
+            // text delta to the last (assistant) message.
+            const reader = res.body.getReader();
+            const decoder = new TextDecoder();
+            let buffer = '';
+
+            while (true) {
+                const { value, done } = await reader.read();
+                if (done) break;
+                buffer += decoder.decode(value, { stream: true });
+
+                const frames = buffer.split('\n\n');
+                buffer = frames.pop() || '';
+
+                for (const frame of frames) {
+                    const line = frame.split('\n').find((l) => l.startsWith('data:'));
+                    if (!line) continue;
+                    const data = line.slice(5).trim();
+                    if (data === '[DONE]') continue;
+                    let text;
+                    try {
+                        text = JSON.parse(data);
+                    } catch {
+                        text = data;
+                    }
+                    appendToAssistant(text);
+                }
+            }
+        } catch (err) {
+            setError(err.message || 'Something went wrong.');
+            // Drop the empty assistant bubble on failure.
+            setMessages((prev) => {
+                const last = prev[prev.length - 1];
+                if (last?.role === 'assistant' && last.content === '') {
+                    return prev.slice(0, -1);
+                }
+                return prev;
+            });
+        } finally {
+            setStreaming(false);
+        }
+    };
+
+    const appendToAssistant = (delta) => {
+        setMessages((prev) => {
+            const next = [...prev];
+            const last = next[next.length - 1];
+            if (last?.role === 'assistant') {
+                next[next.length - 1] = { ...last, content: last.content + delta };
+            }
+            return next;
+        });
+    };
+
+    return (
+        <>
+            <Nav />
+            <div className="pageContainer">
+                <div className="chatHeader">
+                    <h1>Assistant</h1>
+                </div>
+
+                <div className="chatWindow">
+                    {messages.map((m, i) => (
+                        <div key={i} className={`chatMessage ${m.role}`}>
+                            <div className="chatBubble">
+                                {m.content || (streaming && i === messages.length - 1 ? '…' : '')}
+                            </div>
+                        </div>
+                    ))}
+                    <div ref={bottomRef} />
+                </div>
+
+                {error && <div className="formSubmitError">{error}</div>}
+
+                <form className="chatInputRow" onSubmit={sendMessage}>
+                    <input
+                        type="text"
+                        value={input}
+                        onChange={(e) => setInput(e.target.value)}
+                        placeholder="Type your question…"
+                        disabled={streaming}
+                    />
+                    <button type="submit" disabled={streaming || !input.trim()}>
+                        {streaming ? 'Thinking…' : 'Send'}
+                    </button>
+                </form>
+
+                {messages.length <= 1 && (
+                    <div className="chatSuggestions">
+                        {SUGGESTED_PROMPTS.map((prompt) => (
+                            <button
+                                key={prompt}
+                                type="button"
+                                className="chatSuggestion"
+                                onClick={() => runQuery(prompt)}
+                                disabled={streaming}
+                            >
+                                {prompt}
+                            </button>
+                        ))}
+                    </div>
+                )}
+            </div>
+        </>
+    );
+};
+
+export default Chat;
