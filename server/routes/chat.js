@@ -44,22 +44,23 @@ router.post('/chat', verifyToken, requireChatAdmin, async (req, res) => {
     res.setHeader('Connection', 'keep-alive');
     res.flushHeaders?.();
 
-    // Each token is JSON-encoded so newlines/quotes survive the one-frame-per-line
-    // SSE format; the client JSON.parses each data payload.
-    const send = (payload) => res.write(`data: ${JSON.stringify(payload)}\n\n`);
+    // Each event is a JSON object {type:'token'|'trace', text} so newlines/quotes
+    // survive the one-frame-per-line SSE format; the client JSON.parses each payload.
+    const send = (event) => res.write(`data: ${JSON.stringify(event)}\n\n`);
 
     try {
         // thread_id ties this turn to the conversation's memory. Fall back to the
         // authenticated user's id if the client didn't supply one.
         const thread = threadId || `user:${req.user?.userId || 'anon'}`;
-        await streamTurn({ message, threadId: thread, onToken: (delta) => send(delta) });
+        await streamTurn({ message, threadId: thread, onEvent: (event) => send(event) });
     } catch (err) {
         const rateLimited = /429|rate.?limit/i.test(err.message || '');
-        send(
-            rateLimited
+        send({
+            type: 'token',
+            text: rateLimited
                 ? '\n\n[The assistant is rate-limited right now. Please try again shortly.]'
-                : '\n\n[The assistant hit an error. Please try again.]'
-        );
+                : '\n\n[The assistant hit an error. Please try again.]',
+        });
         console.error('chat stream error:', err.message);
     } finally {
         res.write('data: [DONE]\n\n');

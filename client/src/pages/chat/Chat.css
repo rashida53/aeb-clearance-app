@@ -43,6 +43,21 @@
     white-space: pre-wrap;
     word-break: break-word;
     font-family: var(--font-body);
+    font-size: 16px;
+}
+
+/* Agent thinking / tool calls: italic, half the dialog font size, no bubble. */
+.chatTrace {
+    align-self: flex-start;
+    max-width: 92%;
+    padding: 0 6px;
+    font-family: var(--font-body);
+    font-size: 8px;
+    font-style: italic;
+    line-height: 1.4;
+    color: rgba(0, 32, 61, 0.55);
+    white-space: pre-wrap;
+    word-break: break-word;
 }
 
 .chatMessage.user .chatBubble {

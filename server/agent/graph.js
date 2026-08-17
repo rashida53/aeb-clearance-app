@@ -34,27 +34,49 @@ function getAgent() {
     return agent;
 }
 
+function preview(value, max = 160) {
+    const s = typeof value === 'string' ? value : JSON.stringify(value);
+    return s && s.length > max ? `${s.slice(0, max)}…` : s || '';
+}
+
 /**
- * Run one conversation turn and stream the assistant's text back.
+ * Run one conversation turn and stream events back.
  * LangGraph runs the loop internally: model → (tool calls → tool results →)* → final answer.
- * streamMode 'messages' emits [messageChunk, metadata]; we forward only the
- * assistant text produced by the model node (the "agent" node), skipping the
- * tool node's outputs.
+ * Two stream modes together:
+ *  - 'messages' → incremental assistant answer text, emitted as {type:'token'}
+ *  - 'updates'  → whole-node outputs; we surface tool calls and tool results as
+ *                 {type:'trace'} so the UI can show the agent's work outside the
+ *                 chat bubbles.
  */
-async function streamTurn({ message, threadId, onToken }) {
+async function streamTurn({ message, threadId, onEvent }) {
     const app = getAgent();
     const stream = await app.stream(
         { messages: [{ role: 'user', content: message }] },
-        { configurable: { thread_id: threadId }, streamMode: 'messages' }
+        { configurable: { thread_id: threadId }, streamMode: ['messages', 'updates'] }
     );
 
-    for await (const [chunk, meta] of stream) {
-        if (meta?.langgraph_node !== 'agent') continue;
-        let content = chunk?.content;
-        if (typeof content === 'string' && content.length) {
-            // Some HF-served chat templates leak tool-call markup into the text.
-            content = content.replace(/<\/?tool_call>/g, '');
-            if (content) onToken(content);
+    for await (const [mode, payload] of stream) {
+        if (mode === 'messages') {
+            const [chunk, meta] = payload;
+            if (meta?.langgraph_node !== 'agent') continue;
+            const content = chunk?.content;
+            if (typeof content === 'string' && content.length) {
+                // Some HF-served chat templates leak tool-call markup into the text.
+                const clean = content.replace(/<\/?tool_call>/g, '');
+                if (clean) onEvent({ type: 'token', text: clean });
+            }
+        } else if (mode === 'updates') {
+            for (const [node, data] of Object.entries(payload)) {
+                for (const msg of data?.messages || []) {
+                    if (node === 'agent' && msg.tool_calls?.length) {
+                        for (const tc of msg.tool_calls) {
+                            onEvent({ type: 'trace', text: `${tc.name}(${preview(tc.args)})` });
+                        }
+                    } else if (node === 'tools') {
+                        onEvent({ type: 'trace', text: `↳ ${preview(msg.content)}` });
+                    }
+                }
+            }
         }
     }
 }

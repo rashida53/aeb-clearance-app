@@ -43,12 +43,9 @@ const Chat = () => {
 
         setError('');
         setInput('');
-        // Show the user's message, plus an empty assistant bubble we stream into.
-        setMessages((prev) => [
-            ...prev,
-            { role: 'user', content: text },
-            { role: 'assistant', content: '' },
-        ]);
+        // Show the user's message. The assistant bubble and any trace lines are
+        // created lazily as events stream in (traces appear above the answer).
+        setMessages((prev) => [...prev, { role: 'user', content: text }]);
         setStreaming(true);
 
         try {
@@ -70,8 +67,8 @@ const Chat = () => {
                 );
             }
 
-            // Read the Server-Sent Events stream frame by frame and append each
-            // text delta to the last (assistant) message.
+            // Read the Server-Sent Events stream frame by frame; each frame is a
+            // JSON event: {type:'token'} = answer text, {type:'trace'} = agent work.
             const reader = res.body.getReader();
             const decoder = new TextDecoder();
             let buffer = '';
@@ -89,39 +86,41 @@ const Chat = () => {
                     if (!line) continue;
                     const data = line.slice(5).trim();
                     if (data === '[DONE]') continue;
-                    let text;
+                    let evt;
                     try {
-                        text = JSON.parse(data);
+                        evt = JSON.parse(data);
                     } catch {
-                        text = data;
+                        evt = { type: 'token', text: data };
                     }
-                    appendToAssistant(text);
+                    if (evt.type === 'trace') appendTrace(evt.text);
+                    else appendToAssistant(evt.text || '');
                 }
             }
         } catch (err) {
             setError(err.message || 'Something went wrong.');
-            // Drop the empty assistant bubble on failure.
-            setMessages((prev) => {
-                const last = prev[prev.length - 1];
-                if (last?.role === 'assistant' && last.content === '') {
-                    return prev.slice(0, -1);
-                }
-                return prev;
-            });
         } finally {
             setStreaming(false);
         }
     };
 
+    // Append answer text to the current assistant bubble, creating it lazily if
+    // the last item isn't an assistant bubble (so trace lines stay above it).
     const appendToAssistant = (delta) => {
         setMessages((prev) => {
             const next = [...prev];
             const last = next[next.length - 1];
             if (last?.role === 'assistant') {
                 next[next.length - 1] = { ...last, content: last.content + delta };
+            } else {
+                next.push({ role: 'assistant', content: delta });
             }
             return next;
         });
+    };
+
+    // Agent thinking / tool activity — shown as small italic lines outside bubbles.
+    const appendTrace = (text) => {
+        setMessages((prev) => [...prev, { role: 'trace', content: text }]);
     };
 
     return (
@@ -133,13 +132,18 @@ const Chat = () => {
                 </div>
 
                 <div className="chatWindow">
-                    {messages.map((m, i) => (
-                        <div key={i} className={`chatMessage ${m.role}`}>
-                            <div className="chatBubble">
-                                {m.content || (streaming && i === messages.length - 1 ? '…' : '')}
+                    {messages.map((m, i) =>
+                        m.role === 'trace' ? (
+                            <div key={i} className="chatTrace">{m.content}</div>
+                        ) : (
+                            <div key={i} className={`chatMessage ${m.role}`}>
+                                <div className="chatBubble">{m.content}</div>
                             </div>
-                        </div>
-                    ))}
+                        )
+                    )}
+                    {streaming && messages[messages.length - 1]?.role !== 'assistant' && (
+                        <div className="chatTrace">…</div>
+                    )}
                     <div ref={bottomRef} />
                 </div>
 
