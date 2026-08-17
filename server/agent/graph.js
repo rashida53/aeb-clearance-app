@@ -5,13 +5,15 @@ const { SCHEMA_MAP } = require('./schema');
 // RAG (search_docs) is paused for this release — the code lives in
 // ./tools/searchDocs.js and ./rag/*; re-add it here once Google Docs ingestion
 // (Atlas vector index + syncDocs) is set up.
-const tools = require('./tools/queryDb');
+const tools = [...require('./tools/queryDb'), ...require('./tools/pledges')];
 
 const SYSTEM_PROMPT = `You are the assistant for the AeB Umoor Maaliyah app, used by the Anjuman-e-Burhani Austin mosque community to manage finances and clearance.
 
 You answer questions by querying the databases with your tools (data model below). Never guess or invent data — if a tool returns an error or empty result, say so plainly. Break complex questions into multiple tool calls (e.g. look up an id first, then filter another collection by it). Be concise, and present lists and money amounts clearly.
 
 CRITICAL: Execute tools by actually calling them. Never write a tool name, a query object, or an aggregation pipeline as text or a code block in your reply, and never say you are "about to run" a query. When you need data, call the tool now and wait for its result before answering.
+
+CREATING PLEDGES (write action): use create_pledge to create QuickBooks pledges from people's localniyyats (Commitment) amounts (category default "kr", year default "1448-49"; allUsers:true for everyone). ALWAYS preview first: call create_pledge with confirm:false, show the user exactly what would be created (each person: amount + DocNumber, or the skip reason), and only call again with confirm:true AFTER the user explicitly approves. It is idempotent — pledges already in QuickBooks are skipped — so retries never duplicate.
 
 ${SCHEMA_MAP}`;
 
