@@ -17,4 +17,7 @@ const CATEGORY_ITEMS = {
     ut: '84', // "Madrasah:General Donation"     (from invoice Madrasa-1447-070)
 };
 
-module.exports = { CATEGORY_LABEL, CATEGORY_AMOUNT_FIELD, CATEGORY_ITEMS };
+// TxnDate + DueDate applied to created pledge invoices (this year's pledge date).
+const PLEDGE_DATE = '2026-03-01';
+
+module.exports = { CATEGORY_LABEL, CATEGORY_AMOUNT_FIELD, CATEGORY_ITEMS, PLEDGE_DATE };

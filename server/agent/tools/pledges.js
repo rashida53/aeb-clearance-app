@@ -2,7 +2,7 @@ const { tool } = require('@langchain/core/tools');
 const { z } = require('zod');
 const { User, Commitment } = require('../../models');
 const { findItems, findInvoiceByDocNumber, findCustomerByIts, createInvoice } = require('../qb');
-const { CATEGORY_LABEL, CATEGORY_AMOUNT_FIELD, CATEGORY_ITEMS } = require('../qbConfig');
+const { CATEGORY_LABEL, CATEGORY_AMOUNT_FIELD, CATEGORY_ITEMS, PLEDGE_DATE } = require('../qbConfig');
 
 const MAX_CREATES = 200; // safety cap per confirmed batch
 
@@ -110,7 +110,8 @@ const createPledge = tool(
                     const inv = await createInvoice({
                         DocNumber: p.docNumber,
                         CustomerRef: { value: p.customerId },
-                        TxnDate: new Date().toISOString().slice(0, 10),
+                        TxnDate: PLEDGE_DATE,
+                        DueDate: PLEDGE_DATE,
                         Line: [
                             {
                                 Amount: p.amount,

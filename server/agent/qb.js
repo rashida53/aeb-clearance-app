@@ -190,4 +190,10 @@ async function createInvoice(invoice) {
     return promisify(q.createInvoice, q)(invoice);
 }
 
-module.exports = { getQbo, findItems, findInvoiceByDocNumber, findCustomerByIts, createInvoice };
+// Delete an invoice. Accepts the full invoice entity (needs Id + SyncToken).
+async function deleteInvoice(invoiceEntity) {
+    const q = await getQbo();
+    return promisify(q.deleteInvoice, q)(invoiceEntity);
+}
+
+module.exports = { getQbo, findItems, findInvoiceByDocNumber, findCustomerByIts, createInvoice, deleteInvoice };
