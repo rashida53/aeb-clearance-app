@@ -23,6 +23,22 @@ ${SCHEMA_MAP}`;
 // restarts and are shared across dynos.
 const checkpointer = new MemorySaver();
 
+// Today's date in the community's timezone, e.g. "2026-08-18 (Tuesday)".
+function currentDateLine() {
+    const parts = Object.fromEntries(
+        new Intl.DateTimeFormat('en-US', {
+            timeZone: 'America/Chicago',
+            weekday: 'long',
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+        })
+            .formatToParts(new Date())
+            .map((p) => [p.type, p.value])
+    );
+    return `${parts.year}-${parts.month}-${parts.day} (${parts.weekday})`;
+}
+
 let agent;
 function getAgent() {
     if (!agent) {
@@ -30,7 +46,15 @@ function getAgent() {
             llm: getChatModel(),
             tools,
             checkpointer,
-            prompt: SYSTEM_PROMPT,
+            // Function prompt so the current date is fresh on every turn (not baked
+            // in at startup). Used for relative dates like "the upcoming Sunday".
+            prompt: (state) => [
+                {
+                    role: 'system',
+                    content: `Current date: ${currentDateLine()}, timezone America/Chicago. Use this for ALL relative dates (today, this/last month, the upcoming Sunday, etc.).\n\n${SYSTEM_PROMPT}`,
+                },
+                ...state.messages,
+            ],
         });
     }
     return agent;

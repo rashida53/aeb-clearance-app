@@ -69,6 +69,12 @@ function coerceOids(value) {
             }
             return new Types.ObjectId(value.$oid);
         }
+        // {"$date": "ISO string"} -> a real Date, so date-range filters work.
+        if (keys.length === 1 && keys[0] === '$date' && typeof value.$date === 'string') {
+            const d = new Date(value.$date);
+            if (isNaN(d.getTime())) throw new Error(`Invalid $date "${value.$date}".`);
+            return d;
+        }
         const out = {};
         for (const k of keys) out[k] = coerceOids(value[k]);
         return out;

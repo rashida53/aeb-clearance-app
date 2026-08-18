@@ -47,7 +47,9 @@ GOTCHAS:
 - Facts about people live in "users" (keyed by hofIts). "members" (login accounts, passwords, email) and "ach" (encrypted bank info) are BLOCKED — not queryable.
 - "Active" = {"isActive": {"$ne": false}} — NEVER {"isActive": true} (the field is often missing). Only filter by active when the user asks for active people.
 - Year format is "1448-49" (current) / "1447-48" (last year) — not derivable from data, use these. Clearance collections use the field name "year"; fmb "pledges" uses "period" (same format).
-- Dates: miqaats/events/slots/menuitems.menuDate/pledges.pledgedOn are Date (compare with ISO date ranges). approvals.approvedAt and letters.generatedOn are epoch-millisecond Numbers (compare numerically). No day-of-week is stored — derive it in aggregate with $dayOfWeek if needed.
+- Dates: miqaats/events/slots/menuitems.menuDate/pledges.pledgedOn are Date. To compare against a Date field, pass the value as {"$date": "YYYY-MM-DDT00:00:00Z"} (the tools convert it to a real Date — a plain string will NOT match). approvals.approvedAt and letters.generatedOn are epoch-millisecond Numbers (compare numerically).
+- Relative dates: a "Current date" line is provided at the top of this prompt — use it. For "this month"/"last month"/"upcoming", build {"$date": ...} bounds from that date. Exclude the past with date >= today when the user means an upcoming event.
+- Day of week is NOT stored — compute it in an aggregate with $dayOfWeek (1=Sunday ... 7=Saturday), using timezone "America/Chicago". "Sunday" is a WEEKDAY, never a time-of-day.
 - zone / status / eventType / roles are free-form strings.
 - IDENTIFYING A PERSON (always do this): the "users" collection is the ONLY place to match a person's name. Find them in users by fullName, then take their _id and hofIts and use those to query every other collection (qbopens, pledges, huqooq, localniyyats, slots, rsvps, ...). NEVER match a person's name in qbopens.customer or any other collection.
   - fullName may include a title ("Shk", "Shaikh", "Sk.") and is not "First Last" order. Match with a case-insensitive regex for EACH name token AND-ed together, so titles/word-order/extra words don't matter — e.g. "Murtaza Rawat" -> {"$and": [{"fullName": {"$regex": "Murtaza", "$options": "i"}}, {"fullName": {"$regex": "Rawat", "$options": "i"}}]} matches stored "Shk Murtaza Rawat". Never match a full name as one ordered phrase.
@@ -74,6 +76,13 @@ EXAMPLES:
             {"$match": {"cook": {"$oid": "<cook _id>"}}},
             {"$lookup": {"from": "dishes", "localField": "dish", "foreignField": "_id", "as": "d"}},
             {"$unwind": "$d"}, {"$group": {"_id": "$d.dishName"}}])   // each _id is a unique dish name
+- "what's the program for the upcoming Sunday miqaat" (weekday + date, use the Current date) ->
+  aggregate("miqaats", [
+    {"$match": {"date": {"$gte": {"$date": "<today>T00:00:00Z"}}}},
+    {"$addFields": {"dow": {"$dayOfWeek": {"date": "$date", "timezone": "America/Chicago"}}}},
+    {"$match": {"dow": 1}},
+    {"$sort": {"date": 1}}, {"$limit": 1},
+    {"$project": {"_id": 0, "title": 1, "date": 1, "time": 1, "program": 1, "description": 1}}])   // dow 1 = Sunday
 - "how many children RSVP'd for <miqaat>" (sum a count field) ->
   find the miqaat _id, then aggregate("rsvps", [{"$match": {"miqaat": {"$oid": "<id>"}}},
     {"$group": {"_id": null, "children": {"$sum": "$children"}, "adults": {"$sum": "$adults"}}}])
