@@ -140,6 +140,8 @@ type Takhmeen {
 type CheckInData {
     user: ActiveUser
     commitment: Commitment
+    lastYearKr: Float
+    lastYearUt: Float
     ach: ACHInfo
     openPledges: [QBOpen]
     fmbPledgeAmount: Float

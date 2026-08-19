@@ -346,9 +346,10 @@ const resolvers = {
                 throw new AuthenticationError('You must be logged in');
             }
 
-            const [user, commitment, achRecord, openPledges, fmbPledge, takhmeen] = await Promise.all([
+            const [user, commitment, lastYearCommitment, achRecord, openPledges, fmbPledge, takhmeen] = await Promise.all([
                 User.findById(userId),
                 Commitment.findOne({ user: userId, year }),
+                Commitment.findOne({ user: userId, year: '1447-48' }),
                 ACH.findOne({ user: userId }),
                 QBOpen.find({ user: userId }).sort({ due: 1 }),
                 Pledge.findOne({ user: userId, period: year }),
@@ -365,6 +366,8 @@ const resolvers = {
                     ut: commitment.ut,
                     schedule: commitment.schedule,
                 } : null,
+                lastYearKr: lastYearCommitment?.kr ?? null,
+                lastYearUt: lastYearCommitment?.ut ?? null,
                 ach: achRecord ? {
                     _id: achRecord._id,
                     user,

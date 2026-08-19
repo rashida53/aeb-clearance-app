@@ -25,6 +25,8 @@ export const GET_CHECK_IN_DATA = gql`
                 ut
                 schedule
             }
+            lastYearKr
+            lastYearUt
             ach {
                 _id
                 accountNumber

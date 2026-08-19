@@ -205,7 +205,12 @@ export default function Checkin() {
                                 <div className="ciSection">
                                     <h3 className="ciSectionTitle">Austin Khidmat</h3>
                                     <div className="ciInlineRow">
-                                        <label className="ciInlineLabel">Khidmat Ramadaniyah</label>
+                                        <label className="ciInlineLabel">
+                                            Khidmat Ramadaniyah
+                                            {ciData?.lastYearKr != null && (
+                                                <span className="ciLastYear"> (Last year: {formatCurrency(ciData.lastYearKr)})</span>
+                                            )}
+                                        </label>
                                         <input
                                             className="ciInlineInput"
                                             type="number"
@@ -215,7 +220,12 @@ export default function Checkin() {
                                         />
                                     </div>
                                     <div className="ciInlineRow">
-                                        <label className="ciInlineLabel">Umoor Taalimiyah</label>
+                                        <label className="ciInlineLabel">
+                                            Umoor Taalimiyah
+                                            {ciData?.lastYearUt != null && (
+                                                <span className="ciLastYear"> (Last year: {formatCurrency(ciData.lastYearUt)})</span>
+                                            )}
+                                        </label>
                                         <input
                                             className="ciInlineInput"
                                             type="number"

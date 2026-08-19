@@ -2723,6 +2723,16 @@ label {
   color: var(--color-navy);
 }
 
+.ciLastYear {
+  font-size: 12px;
+  font-weight: normal;
+  font-style: italic;
+  color: var(--color-navy);
+  opacity: 0.65;
+  margin-left: 6px;
+  text-transform: none;
+}
+
 .ciInlineInput {
   width: 120px;
   padding: 6px 10px;
