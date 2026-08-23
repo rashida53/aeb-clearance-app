@@ -190,6 +190,11 @@ const OpenBalances = () => {
                         </p>
                         <div className="wjContactGrid">
                             <div className="wjContactCard">
+                                <div className="wjContactName">Shk Murtaza bhai Rawat</div>
+                                <div className="wjContactDesignation">Secretary</div>
+                                <a href="tel:8325268734" className="wjContactPhone">832-526-8734</a>
+                            </div>
+                            <div className="wjContactCard">
                                 <div className="wjContactName">M Taaha bhai Bhora</div>
                                 <div className="wjContactDesignation">Treasurer</div>
                                 <a href="tel:6823653910" className="wjContactPhone">682-365-3910</a>
@@ -198,11 +203,6 @@ const OpenBalances = () => {
                                 <div className="wjContactName">M Murtaza bhai Kutianawala</div>
                                 <div className="wjContactDesignation">Masjid Committee</div>
                                 <a href="tel:5126585643" className="wjContactPhone">512-658-5643</a>
-                            </div>
-                            <div className="wjContactCard">
-                                <div className="wjContactName">Shk Murtaza bhai Rawat</div>
-                                <div className="wjContactDesignation">Secretary</div>
-                                <a href="tel:8325268734" className="wjContactPhone">832-526-8734</a>
                             </div>
                             <div className="wjContactCard">
                                 <div className="wjContactName">M Murtaza bhai Hirani</div>
