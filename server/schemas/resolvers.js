@@ -209,6 +209,7 @@ const resolvers = {
                 user,
                 accountNumber: decrypt(achRecord.accountNumber),
                 routingNumber: decrypt(achRecord.routingNumber),
+                authorized: achRecord.authorized,
             };
         },
 
@@ -250,8 +251,9 @@ const resolvers = {
                 ach: achRecord ? {
                     _id: achRecord._id,
                     user: await User.findById(userId),
-                    accountNumber: null,
-                    routingNumber: null,
+                    accountNumber: achRecord.accountNumber ? decrypt(achRecord.accountNumber) : null,
+                    routingNumber: achRecord.routingNumber ? decrypt(achRecord.routingNumber) : null,
+                    authorized: achRecord.authorized,
                 } : null,
                 bookedSlot: bookedSlot ? {
                     _id: bookedSlot._id,
@@ -373,6 +375,7 @@ const resolvers = {
                     user,
                     accountNumber: decrypt(achRecord.accountNumber),
                     routingNumber: decrypt(achRecord.routingNumber),
+                    authorized: achRecord.authorized,
                 } : null,
                 openPledges: openPledges.filter(p => !p.pp),
                 fmbPledgeAmount: fmbPledge ? fmbPledge.amount : null,
@@ -466,6 +469,56 @@ const resolvers = {
                     sfcheck: t.sfcheck,
                 };
             });
+        },
+
+        getMasjidDashboard: async (parent, args, context) => {
+            if (!context.user) {
+                throw new AuthenticationError('You must be logged in');
+            }
+
+            const users = await User.find({ isActive: { $ne: false }, zone: { $ne: '9' } }).sort({ fullName: 1 });
+            const hofItsList = users.map(u => u.hofIts);
+            const masjidDocs = await Masjid.find({ its: { $in: hofItsList } });
+            const masjidMap = {};
+            masjidDocs.forEach(m => { masjidMap[m.its] = m; });
+
+            return users.map(u => {
+                const m = masjidMap[u.hofIts];
+                const t1 = m?.t1 || 0;
+                const t2 = m?.t2 || 0;
+                const adaa = m?.adaa || 0;
+                const pending = !m || m.t1 == null;
+                const progress = !pending && t1 > 0 ? Math.round((adaa / t1) * 100) : 0;
+                return { user: u, t1, t2, adaa, progress, pending };
+            });
+        },
+
+        getMasjidNiyyatForUser: async (parent, { userId }, context) => {
+            if (!context.user) {
+                throw new AuthenticationError('You must be logged in');
+            }
+
+            const user = await User.findById(userId);
+            if (!user) return null;
+
+            const doc = await Masjid.findOne({ its: user.hofIts });
+            if (!doc || doc.t1 == null) return null;
+
+            return { t1: doc.t1, t2: doc.t2, adaa: doc.adaa || 0 };
+        },
+
+        getMyMasjidNiyyat: async (parent, args, context) => {
+            if (!context.user) {
+                throw new AuthenticationError('You must be logged in');
+            }
+
+            const user = await User.findById(context.user.userId);
+            if (!user) return null;
+
+            const doc = await Masjid.findOne({ its: user.hofIts });
+            if (!doc || doc.t1 == null) return null;
+
+            return { t1: doc.t1, t2: doc.t2, adaa: doc.adaa || 0 };
         },
     },
 
@@ -841,20 +894,25 @@ ${laagatHtml}
             };
         },
 
-        submitACH: async (parent, { accountNumber, routingNumber, schedule }, context) => {
+        submitACH: async (parent, { accountNumber, routingNumber, schedule, authorized }, context) => {
             if (!context.user) {
                 throw new AuthenticationError('You must be logged in');
             }
 
+            if (!authorized) {
+                throw new Error('ACH authorization is required');
+            }
+
             const userId = context.user.userId;
-            // Upsert: overwrite stored bank details if ACH already exists.
+            let achRecord;
             try {
-                await ACH.findOneAndUpdate(
+                achRecord = await ACH.findOneAndUpdate(
                     { user: userId },
                     {
                         $set: {
                             accountNumber: encrypt(accountNumber),
                             routingNumber: encrypt(routingNumber),
+                            authorized: !!authorized,
                         },
                     },
                     { new: true, upsert: true, setDefaultsOnInsert: true },
@@ -866,7 +924,7 @@ ${laagatHtml}
 
             await Commitment.findOneAndUpdate(
                 { user: userId, year: '1448-49' },
-                { schedule },
+                { schedule, ach: achRecord._id },
             );
 
             return true;
@@ -876,15 +934,6 @@ ${laagatHtml}
             if (!context.user) {
                 throw new AuthenticationError('You must be logged in');
             }
-
-            const userId = context.user.userId;
-            // Record that ACH was deferred (blank) so the user isn't re-prompted
-            // on reload. Restarting from the schedule screen shows the step again.
-            await ACH.findOneAndUpdate(
-                { user: userId },
-                { $set: { accountNumber: null, routingNumber: null } },
-                { new: true, upsert: true, setDefaultsOnInsert: true },
-            );
 
             return true;
         },
@@ -1183,6 +1232,34 @@ ${laagatHtml}
                 wcheck: takhmeen.wcheck,
                 sfcheck: takhmeen.sfcheck,
             };
+        },
+
+        upsertMasjidNiyyat: async (parent, { userId, t1, t2 }, context) => {
+            if (!context.user) {
+                throw new AuthenticationError('You must be logged in');
+            }
+
+            const user = await User.findById(userId);
+            if (!user) throw new Error('User not found');
+
+            await Masjid.findOneAndUpdate(
+                { its: user.hofIts },
+                {
+                    $set: {
+                        t1,
+                        t2,
+                        user: user._id,
+                        facilitator: context.user.userId,
+                    },
+                    $setOnInsert: {
+                        its: user.hofIts,
+                        status: 'CLEAR',
+                    },
+                },
+                { upsert: true },
+            );
+
+            return true;
         },
     },
 };

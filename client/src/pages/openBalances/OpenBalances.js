@@ -1,11 +1,14 @@
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useQuery } from '@apollo/client';
 import Nav from '../../components/Nav';
 import { GET_ME } from '../user/gql/queries';
-import { GET_MY_OPEN_BALANCES } from './gql/queries';
+import { GET_MY_OPEN_BALANCES, GET_MY_MASJID_NIYYAT } from './gql/queries';
 
 const formatCurrency = (amount) =>
     new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
+
+const formatWholeCurrency = (amount) =>
+    new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(amount);
 
 const formatDueDate = (dateStr) => {
     if (!dateStr) return '—';
@@ -30,6 +33,72 @@ const BalanceCard = ({ balance }) => (
     </div>
 );
 
+const ANIM_DURATION = 2000;
+
+const MasjidNiyyatBar = ({ t1, t2, adaa }) => {
+    const max = t2 || t1;
+    const targetPct = max > 0 ? Math.min((adaa / max) * 100, 100) : 0;
+    const t1Pct = max > 0 ? (t1 / max) * 100 : 0;
+
+    const [animPct, setAnimPct] = useState(0);
+    const [displayAdaa, setDisplayAdaa] = useState(0);
+    const started = useRef(false);
+    const sectionRef = useRef(null);
+
+    useEffect(() => {
+        if (started.current || !adaa) return;
+        const observer = new IntersectionObserver(
+            ([entry]) => {
+                if (!entry.isIntersecting || started.current) return;
+                started.current = true;
+                observer.disconnect();
+                const start = performance.now();
+                const tick = (now) => {
+                    const elapsed = now - start;
+                    const progress = Math.min(elapsed / ANIM_DURATION, 1);
+                    const eased = 1 - Math.pow(1 - progress, 3);
+                    setAnimPct(targetPct * eased);
+                    setDisplayAdaa(Math.round(adaa * eased));
+                    if (progress < 1) requestAnimationFrame(tick);
+                };
+                requestAnimationFrame(tick);
+            },
+            { threshold: 0.3 }
+        );
+        if (sectionRef.current) observer.observe(sectionRef.current);
+        return () => observer.disconnect();
+    }, [adaa, targetPct]);
+
+    return (
+        <div className="niyyatSection" ref={sectionRef}>
+            <h1 className="niyyatTitle">Masjid Niyyat</h1>
+            <div className="niyyatBarWrap">
+                <div className="niyyatTrack">
+                    <div className="niyyatFill" style={{ width: `${animPct}%` }} />
+                    <div className="niyyatMilestone" style={{ left: `${t1Pct}%` }}>
+                        <div className="niyyatMilestoneLine" />
+                        <div className="niyyatMilestoneLabel">
+                            <span className="niyyatMilestoneName">Niyyat</span>
+                            <span className="niyyatMilestoneAmt">{formatWholeCurrency(t1)}</span>
+                        </div>
+                    </div>
+                    <div className="niyyatMilestone" style={{ left: '100%' }}>
+                        <div className="niyyatMilestoneLine" />
+                        <div className="niyyatMilestoneLabel">
+                            <span className="niyyatMilestoneName">Future Niyyat</span>
+                            <span className="niyyatMilestoneAmt">{formatWholeCurrency(t2)}</span>
+                        </div>
+                    </div>
+                    <div className="niyyatAdaa">
+                        <span className="niyyatMilestoneName">Adaa</span>
+                        <span className="niyyatMilestoneAmt">{formatWholeCurrency(displayAdaa)}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 const OpenBalances = () => {
     const { data: meData, loading: meLoading } = useQuery(GET_ME);
     const hofIts = meData?.me?.memberHof;
@@ -38,6 +107,8 @@ const OpenBalances = () => {
         variables: { hofIts: hofIts || '' },
         skip: !hofIts,
     });
+
+    const { data: niyyatData } = useQuery(GET_MY_MASJID_NIYYAT);
 
     const balances = data?.getMyOpenBalances || [];
     const customerName = balances[0]?.customer || '';
@@ -103,6 +174,14 @@ const OpenBalances = () => {
                         Adaa Pledges
                     </a>
                 </div>
+
+                {niyyatData?.getMyMasjidNiyyat && (
+                    <MasjidNiyyatBar
+                        t1={niyyatData.getMyMasjidNiyyat.t1}
+                        t2={niyyatData.getMyMasjidNiyyat.t2}
+                        adaa={niyyatData.getMyMasjidNiyyat.adaa}
+                    />
+                )}
             </div>
         </>
     );

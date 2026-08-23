@@ -7,7 +7,6 @@ const achSchema = new Schema(
             type: Schema.Types.ObjectId,
             ref: 'User',
             required: true,
-            unique: true,
         },
         accountNumber: {
             type: String,
@@ -16,6 +15,10 @@ const achSchema = new Schema(
         routingNumber: {
             type: String,
             default: null,
+        },
+        authorized: {
+            type: Boolean,
+            default: false,
         },
     },
     {

@@ -87,6 +87,7 @@ type Commitment {
     kr: Float
     ut: Float
     schedule: String
+    ach: ID
 }
 
 type ACHInfo {
@@ -94,6 +95,7 @@ type ACHInfo {
     user: ActiveUser
     accountNumber: String
     routingNumber: String
+    authorized: Boolean
 }
 
 type SlotWithDetails {
@@ -154,6 +156,21 @@ type FmbPledgeInfo {
     status: String
 }
 
+type MasjidNiyyat {
+    t1: Float
+    t2: Float
+    adaa: Float
+}
+
+type MasjidDashboardRow {
+    user: ActiveUser
+    t1: Float
+    t2: Float
+    adaa: Float
+    progress: Float
+    pending: Boolean
+}
+
 type Query {
     me: LoggedInUser
     getMyOpenBalances(hofIts: String!): [QBOpen]
@@ -174,6 +191,9 @@ type Query {
     getCommitmentForUser(userId: ID!, year: String!): Commitment
     getFmbPledge(userId: ID!, year: String!): FmbPledgeInfo
     getHuqooqExport: [HuqooqExportRow]
+    getMyMasjidNiyyat: MasjidNiyyat
+    getMasjidDashboard: [MasjidDashboardRow]
+    getMasjidNiyyatForUser(userId: ID!): MasjidNiyyat
 }
 
 type HuqooqExportRow {
@@ -196,7 +216,7 @@ type Mutation {
     deleteSlot(slotId: ID!): Boolean
     cancelSignup(slotId: ID!): Slot
     submitCommitments(kr: Float, ut: Float, year: String!): Commitment
-    submitACH(accountNumber: String!, routingNumber: String!, schedule: String!): Boolean
+    submitACH(accountNumber: String!, routingNumber: String!, schedule: String!, authorized: Boolean): Boolean
     deferACH: Boolean
     emailAppointment(emails: String!): Boolean
     bookSlot(slotId: ID!): Slot
@@ -207,6 +227,7 @@ type Mutation {
     upsertCommitmentForUser(userId: ID!, kr: Float, ut: Float, year: String!, schedule: String): Commitment
     upsertACHForUser(userId: ID!, accountNumber: String!, routingNumber: String!): Boolean
     upsertTakhmeen(userId: ID!, year: String!, wajebaat: Float, sf: Float, wcheck: String, sfcheck: String): Takhmeen
+    upsertMasjidNiyyat(userId: ID!, t1: Float!, t2: Float!): Boolean
 }
 `;
 

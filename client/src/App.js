@@ -20,6 +20,7 @@ const Checkin = lazy(() => import('./pages/checkin/Checkin'));
 const Admin = lazy(() => import('./pages/admin/Admin'));
 const Review = lazy(() => import('./pages/review/Review'));
 const Takhmeen = lazy(() => import('./pages/takhmeen/Takhmeen'));
+const MasjidPage = lazy(() => import('./pages/masjid/Masjid'));
 const Chat = lazy(() => import('./pages/chat/Chat'));
 
 const httpLink = createHttpLink({
@@ -111,6 +112,14 @@ function App() {
             element={
               <PrivateRoute requiredRole="LETTER_ADMIN">
                 <Takhmeen />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/masjid"
+            element={
+              <PrivateRoute requiredRole="LETTER_ADMIN">
+                <MasjidPage />
               </PrivateRoute>
             }
           />

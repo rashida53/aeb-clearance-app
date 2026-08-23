@@ -454,6 +454,121 @@ label {
   font-size: 16px;
 }
 
+/* ── Masjid Niyyat Progress Bar ── */
+
+.niyyatSection {
+  margin-top: 32px;
+}
+
+.niyyatTitle {
+  font-family: var(--font-heading);
+  color: var(--color-navy);
+  margin: 0 0 20px;
+}
+
+.niyyatBarWrap {
+  position: relative;
+}
+
+.niyyatTrack {
+  position: relative;
+  height: 14px;
+  background-color: #e8e8e8;
+  border-radius: 7px;
+  margin-bottom: 56px;
+}
+
+.niyyatFill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  background-color: var(--color-gold);
+  border-radius: 7px;
+}
+
+.niyyatMilestone {
+  position: absolute;
+  top: 0;
+  transform: translateX(-50%);
+}
+
+.niyyatMilestoneLine {
+  width: 2px;
+  height: 22px;
+  background-color: var(--color-navy);
+  margin: -4px auto 6px;
+}
+
+.niyyatMilestoneLabel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  white-space: nowrap;
+}
+
+.niyyatMilestoneName {
+  font-size: 12px;
+  font-weight: bold;
+  color: var(--color-navy);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.niyyatMilestoneAmt {
+  font-size: 36px;
+  font-weight: bold;
+  color: var(--color-navy);
+}
+
+.niyyatAdaa {
+  position: absolute;
+  top: 24px;
+  left: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+@media (max-width: 768px) {
+  .niyyatMilestoneAmt {
+    font-size: 26px;
+  }
+
+  .niyyatTrack {
+    margin-bottom: 48px;
+  }
+}
+
+@media (max-width: 540px) {
+  .niyyatMilestoneAmt {
+    font-size: 19px;
+  }
+
+  .niyyatMilestoneName {
+    font-size: 10px;
+  }
+
+  .niyyatTrack {
+    height: 10px;
+    border-radius: 5px;
+    margin-bottom: 40px;
+  }
+
+  .niyyatFill {
+    border-radius: 5px;
+  }
+
+  .niyyatMilestoneLine {
+    height: 18px;
+  }
+}
+
+@media (max-width: 380px) {
+  .niyyatMilestoneAmt {
+    font-size: 14px;
+  }
+}
+
 /* ── Modal ── */
 .modalOverlay {
   position: fixed;
@@ -1597,6 +1712,163 @@ label {
   }
 }
 
+/* ── Masjid Page ── */
+
+.adminSection .niyyatBarWrap {
+  padding-right: 60px;
+}
+
+.adminSection .niyyatMilestoneAmt {
+  font-size: 18px;
+}
+
+.adminSection .niyyatTrack {
+  margin-bottom: 36px;
+}
+
+.adminSection .niyyatMilestone:last-of-type {
+  transform: translateX(-100%);
+}
+
+.adminSection .niyyatMilestone:last-of-type .niyyatMilestoneLabel {
+  align-items: flex-end;
+}
+
+.masjidTakhmeenFields {
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 320px;
+}
+
+.masjidTakhmeenUser {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 4px;
+}
+
+.masjidTakhmeenName {
+  font-size: 18px;
+  font-weight: bold;
+  color: var(--color-navy);
+}
+
+.masjidTakhmeenIts {
+  font-size: 14px;
+  color: #666;
+}
+
+.masjidTakhmeenInput {
+  max-width: 200px;
+}
+
+.masjidTakhmeenAction {
+  text-align: center;
+  width: 100%;
+  max-width: none;
+}
+
+.masjidSortable {
+  cursor: pointer;
+  user-select: none;
+}
+
+.masjidSortable:hover {
+  color: var(--color-gold);
+}
+
+.masjidZone {
+  display: inline-block;
+  margin-left: 8px;
+  font-size: 11px;
+  font-weight: bold;
+  color: #fff;
+  background-color: var(--color-navy);
+  padding: 2px 6px;
+  border-radius: 4px;
+  vertical-align: middle;
+}
+
+.masjidPending {
+  font-size: 12px;
+  font-weight: bold;
+  color: #999;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.masjidProgressCell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.masjidProgressTrack {
+  flex: 1;
+  height: 8px;
+  background-color: #e8e8e8;
+  border-radius: 4px;
+  min-width: 60px;
+}
+
+.masjidProgressFill {
+  height: 100%;
+  background-color: var(--color-gold);
+  border-radius: 4px;
+}
+
+.masjidProgressPct {
+  font-size: 13px;
+  font-weight: bold;
+  color: var(--color-navy);
+  min-width: 40px;
+  text-align: right;
+}
+
+@media (max-width: 768px) {
+  .masjidProgressTrack {
+    min-width: 40px;
+  }
+
+  .adminSection .niyyatMilestoneAmt {
+    font-size: 16px;
+  }
+
+  .adminSection .niyyatBarWrap {
+    padding-right: 50px;
+  }
+}
+
+@media (max-width: 540px) {
+  .adminSection .niyyatMilestoneAmt {
+    font-size: 14px;
+  }
+
+  .adminSection .niyyatMilestoneName {
+    font-size: 9px;
+  }
+
+  .adminSection .niyyatTrack {
+    height: 10px;
+    border-radius: 5px;
+    margin-bottom: 30px;
+  }
+
+  .adminSection .niyyatFill {
+    border-radius: 5px;
+  }
+
+  .adminSection .niyyatBarWrap {
+    padding-right: 40px;
+  }
+
+  .adminSection .niyyatMilestoneLine {
+    height: 16px;
+  }
+}
+
 /* ── Wajebaat Page ── */
 
 .wjHeader {
@@ -1941,6 +2213,36 @@ label {
   background-color: var(--color-navy);
   color: var(--color-gold);
   border-color: var(--color-navy);
+}
+
+/* ACH Authorization Checkbox */
+
+.wjAuthCheckbox {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-top: 20px;
+  padding: 16px;
+  background-color: rgba(206, 156, 1, 0.08);
+  border: 1px solid var(--color-gold);
+  border-radius: 8px;
+  cursor: pointer;
+  line-height: 1.5;
+  font-size: 14px;
+  color: var(--color-navy);
+}
+
+.wjAuthCheckbox input[type="checkbox"] {
+  width: 22px;
+  height: 22px;
+  min-width: 22px;
+  margin-top: 2px;
+  accent-color: var(--color-navy);
+  cursor: pointer;
+}
+
+.wjAuthCheckbox span {
+  flex: 1;
 }
 
 /* Step Actions */
@@ -2362,6 +2664,12 @@ label {
   .wjModalActions {
     flex-direction: column;
   }
+
+  .wjAuthCheckbox {
+    font-size: 13px;
+    padding: 14px;
+    gap: 10px;
+  }
 }
 
 @media (max-width: 540px) {
@@ -2401,6 +2709,18 @@ label {
 
   .wjMiqaatBox {
     padding: 12px 16px;
+  }
+
+  .wjAuthCheckbox {
+    font-size: 12px;
+    padding: 12px;
+    gap: 8px;
+  }
+
+  .wjAuthCheckbox input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    min-width: 18px;
   }
 }
 

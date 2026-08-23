@@ -8,10 +8,27 @@ const masjidSchema = new Schema(
             required: true,
             unique: true,
         },
+        user: {
+            type: Schema.Types.ObjectId,
+            ref: 'User',
+        },
         status: {
             type: String,
             enum: ['CLEAR'],
             required: true,
+        },
+        t1: {
+            type: Number,
+        },
+        t2: {
+            type: Number,
+        },
+        adaa: {
+            type: Number,
+        },
+        facilitator: {
+            type: Schema.Types.ObjectId,
+            ref: 'User',
         },
     },
     {

@@ -25,6 +25,16 @@ export const GET_MY_OPEN_BALANCES = gql`
     }
 `;
 
+export const GET_MY_MASJID_NIYYAT = gql`
+    query getMyMasjidNiyyat {
+        getMyMasjidNiyyat {
+            t1
+            t2
+            adaa
+        }
+    }
+`;
+
 export const GET_APPROVAL_STATUS = gql`
     query getApprovalStatus($hofIts: String!, $userId: ID!) {
         getApprovalStatus(hofIts: $hofIts, userId: $userId) {

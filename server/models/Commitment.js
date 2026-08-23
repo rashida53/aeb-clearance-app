@@ -24,6 +24,11 @@ const commitmentSchema = new Schema(
             type: String,
             default: null,
         },
+        ach: {
+            type: Schema.Types.ObjectId,
+            ref: 'ACH',
+            default: null,
+        },
     },
     {
         collection: 'localniyyats',

@@ -286,15 +286,16 @@ function CommitmentStep({ title, description, amount, onAmountChange, onDefer, o
 
 // ── ACH Step ──
 
-function ACHStep({ onSubmit, onBack, onDefer, submitting }) {
-    const [accountNumber, setAccountNumber] = useState('');
-    const [routingNumber, setRoutingNumber] = useState('');
-    const [schedule, setSchedule] = useState('');
+function ACHStep({ onSubmit, onBack, onDefer, submitting, existingACH, existingSchedule }) {
+    const [accountNumber, setAccountNumber] = useState(existingACH?.accountNumber || '');
+    const [routingNumber, setRoutingNumber] = useState(existingACH?.routingNumber || '');
+    const [schedule, setSchedule] = useState(existingSchedule || '');
+    const [authorized, setAuthorized] = useState(!!existingACH?.authorized);
 
-    const isValid = accountNumber.length >= 8 && routingNumber.length >= 9 && schedule;
+    const isValid = accountNumber.length >= 8 && routingNumber.length >= 9 && schedule && authorized;
 
     const handleSubmit = () => {
-        onSubmit({ accountNumber, routingNumber, schedule });
+        onSubmit({ accountNumber, routingNumber, schedule, authorized });
     };
 
     const scheduleOptions = [
@@ -337,6 +338,21 @@ function ACHStep({ onSubmit, onBack, onDefer, submitting }) {
                     ))}
                 </div>
             </div>
+
+            <label className="wjAuthCheckbox">
+                <input
+                    type="checkbox"
+                    checked={authorized}
+                    onChange={(e) => setAuthorized(e.target.checked)}
+                />
+                <span>
+                    Member authorizes debits to be initiated per the agreed Contribution Plan schedule.
+                    This authority is to remain in effect until the specified end date or until
+                    Anjuman-e-Burhani (Austin), Inc. receives written termination, whichever is earlier.
+                    Written notification must be received in such time and such manner as to afford
+                    Anjuman-e-Burhani (Austin), Inc. 10 business days to act on it.
+                </span>
+            </label>
 
             <div className="wjStepActions">
                 {onBack && (
@@ -781,11 +797,11 @@ export default function Wajebaat() {
         }
     };
 
-    const handleACHSubmit = async ({ accountNumber, routingNumber, schedule }) => {
+    const handleACHSubmit = async ({ accountNumber, routingNumber, schedule, authorized }) => {
         setError('');
         try {
             await submitACH({
-                variables: { accountNumber, routingNumber, schedule },
+                variables: { accountNumber, routingNumber, schedule, authorized },
             });
             goToStep(hasOpenPledges ? STEP_PLEDGES : STEP_SCHEDULER);
             refetchStatus();
@@ -854,7 +870,7 @@ export default function Wajebaat() {
         }
 
         if (resumeState === STEP_ACH && currentStep === STEP_INTRO) {
-            return <ACHStep onSubmit={handleACHSubmit} onDefer={handleACHDefer} submitting={achSubmitting} />;
+            return <ACHStep onSubmit={handleACHSubmit} onDefer={handleACHDefer} submitting={achSubmitting} existingACH={status?.ach} existingSchedule={status?.commitment?.schedule} />;
         }
 
         switch (currentStep) {
@@ -892,7 +908,7 @@ export default function Wajebaat() {
                     />
                 );
             case STEP_ACH:
-                return <ACHStep onSubmit={handleACHSubmit} onBack={canGoBack ? goBack : undefined} onDefer={handleACHDefer} submitting={achSubmitting} />;
+                return <ACHStep onSubmit={handleACHSubmit} onBack={canGoBack ? goBack : undefined} onDefer={handleACHDefer} submitting={achSubmitting} existingACH={status?.ach} existingSchedule={status?.commitment?.schedule} />;
             case STEP_PLEDGES:
                 return (
                     <OpenPledgesStep
