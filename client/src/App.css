@@ -468,6 +468,7 @@ label {
 
 .niyyatBarWrap {
   position: relative;
+  padding-right: 60px;
 }
 
 .niyyatTrack {
@@ -491,6 +492,14 @@ label {
   position: absolute;
   top: 0;
   transform: translateX(-50%);
+}
+
+.niyyatMilestone:last-of-type {
+  transform: translateX(-100%);
+}
+
+.niyyatMilestone:last-of-type .niyyatMilestoneLabel {
+  align-items: flex-end;
 }
 
 .niyyatMilestoneLine {
@@ -541,17 +550,21 @@ label {
 
 @media (max-width: 540px) {
   .niyyatMilestoneAmt {
-    font-size: 19px;
+    font-size: 16px;
   }
 
   .niyyatMilestoneName {
-    font-size: 10px;
+    font-size: 9px;
+  }
+
+  .niyyatBarWrap {
+    padding-right: 40px;
   }
 
   .niyyatTrack {
     height: 10px;
     border-radius: 5px;
-    margin-bottom: 40px;
+    margin-bottom: 36px;
   }
 
   .niyyatFill {
@@ -559,13 +572,25 @@ label {
   }
 
   .niyyatMilestoneLine {
-    height: 18px;
+    height: 16px;
+  }
+
+  .niyyatAdaa {
+    top: 20px;
   }
 }
 
 @media (max-width: 380px) {
   .niyyatMilestoneAmt {
-    font-size: 14px;
+    font-size: 13px;
+  }
+
+  .niyyatBarWrap {
+    padding-right: 30px;
+  }
+
+  .niyyatTrack {
+    margin-bottom: 32px;
   }
 }
 
@@ -1714,24 +1739,12 @@ label {
 
 /* ── Masjid Page ── */
 
-.adminSection .niyyatBarWrap {
-  padding-right: 60px;
-}
-
 .adminSection .niyyatMilestoneAmt {
   font-size: 18px;
 }
 
 .adminSection .niyyatTrack {
   margin-bottom: 36px;
-}
-
-.adminSection .niyyatMilestone:last-of-type {
-  transform: translateX(-100%);
-}
-
-.adminSection .niyyatMilestone:last-of-type .niyyatMilestoneLabel {
-  align-items: flex-end;
 }
 
 .masjidTakhmeenFields {
@@ -1833,39 +1846,27 @@ label {
   }
 
   .adminSection .niyyatMilestoneAmt {
-    font-size: 16px;
-  }
-
-  .adminSection .niyyatBarWrap {
-    padding-right: 50px;
+    font-size: 14px;
   }
 }
 
 @media (max-width: 540px) {
   .adminSection .niyyatMilestoneAmt {
-    font-size: 14px;
+    font-size: 12px;
   }
 
   .adminSection .niyyatMilestoneName {
-    font-size: 9px;
+    font-size: 8px;
   }
 
   .adminSection .niyyatTrack {
-    height: 10px;
-    border-radius: 5px;
-    margin-bottom: 30px;
+    margin-bottom: 28px;
   }
+}
 
-  .adminSection .niyyatFill {
-    border-radius: 5px;
-  }
-
-  .adminSection .niyyatBarWrap {
-    padding-right: 40px;
-  }
-
-  .adminSection .niyyatMilestoneLine {
-    height: 16px;
+@media (max-width: 380px) {
+  .adminSection .niyyatMilestoneAmt {
+    font-size: 10px;
   }
 }
 
