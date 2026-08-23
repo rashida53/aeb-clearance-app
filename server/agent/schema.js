@@ -38,7 +38,7 @@ fmb DATABASE:
 clearance DATABASE (each row is tied to an fmb user):
 - approvals: hofIts (string = users.hofIts), requester (-> users._id), approver (name string, not an id), remarks, masjid, approvedAt (epoch-MILLISECONDS Number).
 - letters: hofIts (string = users.hofIts), requester (name string), approver (name string or "AUTO"), reason, generatedOn (epoch-MILLISECONDS Number).
-- masjid: its (string = users.hofIts), status.
+- masjid (Masjid Niyyat / Taameer): its (string = users.hofIts), user (-> users._id), status, t1 (Number = Niyyat/Takhmeen amount), t2 (Number = Future Niyyat/Future Takhmeen amount), adaa (Number = amount paid so far). Progress = adaa / t1 * 100. To find a person's masjid niyyat, look up by its (hofIts) or user (_id).
 - slots (volunteer time slots): date (Date), startTime/endTime ("HH:MM" strings), group (string), bookedBy (-> users._id), volunteer (-> users._id).
 - localniyyats (a.k.a. Commitment): user (-> users._id), year (string like "1448-49"), kr, ut (Numbers), schedule.
 - huqooq (a.k.a. Takhmeen / Wajebaat): user (-> users._id), year (string), wajebaat (Number), sf (Number), wcheck, sfcheck. Unique (user, year).

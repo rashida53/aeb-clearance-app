@@ -82,6 +82,7 @@ async function streamTurn({ message, threadId, onEvent }) {
     );
 
     let inThinking = false;
+    let firstContent = true;
 
     for await (const [mode, payload] of stream) {
         if (mode === 'messages') {
@@ -90,20 +91,20 @@ async function streamTurn({ message, threadId, onEvent }) {
             const content = chunk?.content;
             if (typeof content === 'string' && content.length) {
                 let text = content.replace(/<\/?tool_call>/g, '');
-                // Handle <think>...</think> tags that may span multiple chunks.
                 let out = '';
                 for (let i = 0; i < text.length; i++) {
                     if (!inThinking && text.startsWith('<think>', i)) {
                         inThinking = true;
-                        i += 6; // skip past '<think>'
+                        i += 6;
                     } else if (inThinking && text.startsWith('</think>', i)) {
                         inThinking = false;
-                        i += 7; // skip past '</think>'
+                        i += 7;
                     } else if (!inThinking) {
                         out += text[i];
                     }
                 }
-                if (out) onEvent({ type: 'token', text: out });
+                if (firstContent) { out = out.replace(/^\s+/, ''); }
+                if (out) { firstContent = false; onEvent({ type: 'token', text: out }); }
             }
         } else if (mode === 'updates') {
             for (const [node, data] of Object.entries(payload)) {
@@ -114,6 +115,7 @@ async function streamTurn({ message, threadId, onEvent }) {
                         }
                     } else if (node === 'tools') {
                         onEvent({ type: 'trace', text: `↳ ${preview(msg.content)}` });
+                        firstContent = true;
                     }
                 }
             }

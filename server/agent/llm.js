@@ -16,8 +16,9 @@ function getChatModel() {
         model = new ChatOpenAI({
             model: modelName,
             apiKey: token,
-            temperature: 0, // deterministic tool selection
+            temperature: 0,
             configuration: { baseURL: 'https://router.huggingface.co/v1' },
+            modelKwargs: { chat_template_kwargs: { enable_thinking: false } },
         });
     }
     return model;
