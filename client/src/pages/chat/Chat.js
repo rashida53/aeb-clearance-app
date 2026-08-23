@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import Markdown from 'react-markdown';
 import Nav from '../../components/Nav';
 import Auth from '../../utils/auth';
 import './Chat.css';
@@ -150,7 +151,9 @@ const Chat = () => {
                         if (m.role === 'assistant' && !m.content?.trim()) return null;
                         return (
                             <div key={i} className={`chatMessage ${m.role}`}>
-                                <div className="chatBubble">{m.content}</div>
+                                <div className="chatBubble">
+                                    <Markdown>{m.content}</Markdown>
+                                </div>
                             </div>
                         );
                     })}
