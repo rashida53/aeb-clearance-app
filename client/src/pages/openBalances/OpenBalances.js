@@ -108,7 +108,7 @@ const OpenBalances = () => {
         skip: !hofIts,
     });
 
-    const { data: niyyatData } = useQuery(GET_MY_MASJID_NIYYAT);
+    const { data: niyyatData, loading: niyyatLoading } = useQuery(GET_MY_MASJID_NIYYAT);
 
     const balances = data?.getMyOpenBalances || [];
     const customerName = balances[0]?.customer || '';
@@ -175,12 +175,42 @@ const OpenBalances = () => {
                     </a>
                 </div>
 
-                {niyyatData?.getMyMasjidNiyyat && (
+                {!niyyatLoading && niyyatData?.getMyMasjidNiyyat && (
                     <MasjidNiyyatBar
                         t1={niyyatData.getMyMasjidNiyyat.t1}
                         t2={niyyatData.getMyMasjidNiyyat.t2}
                         adaa={niyyatData.getMyMasjidNiyyat.adaa}
                     />
+                )}
+
+                {!niyyatLoading && !niyyatData?.getMyMasjidNiyyat && (
+                    <div className="wjStep" style={{ marginTop: '32px' }}>
+                        <p style={{ textAlign: 'center', fontWeight: 'bold', color: 'var(--color-navy)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '24px' }}>
+                            Please contact a member of the Masjid team to be Shaamil in Austin Masjid Taameer
+                        </p>
+                        <div className="wjContactGrid">
+                            <div className="wjContactCard">
+                                <div className="wjContactName">M Taaha bhai Bhora</div>
+                                <div className="wjContactDesignation">Treasurer</div>
+                                <a href="tel:6823653910" className="wjContactPhone">682-365-3910</a>
+                            </div>
+                            <div className="wjContactCard">
+                                <div className="wjContactName">M Murtaza bhai Kutianawala</div>
+                                <div className="wjContactDesignation">Masjid Committee</div>
+                                <a href="tel:5126585643" className="wjContactPhone">512-658-5643</a>
+                            </div>
+                            <div className="wjContactCard">
+                                <div className="wjContactName">Shk Murtaza bhai Rawat</div>
+                                <div className="wjContactDesignation">Secretary</div>
+                                <a href="tel:8325268734" className="wjContactPhone">832-526-8734</a>
+                            </div>
+                            <div className="wjContactCard">
+                                <div className="wjContactName">M Murtaza bhai Hirani</div>
+                                <div className="wjContactDesignation">Masjid Committee</div>
+                                <a href="tel:5124135284" className="wjContactPhone">512-413-5284</a>
+                            </div>
+                        </div>
+                    </div>
                 )}
             </div>
         </>
