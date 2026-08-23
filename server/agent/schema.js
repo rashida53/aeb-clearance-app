@@ -14,6 +14,7 @@ USERS IS THE HUB: the fmb "users" collection is the join point for almost everyt
 
 TOOL USAGE:
 - count_documents for "how many"; find_documents to fetch/list (max 100); aggregate for group-bys and $lookup joins WITHIN one database.
+- COLLECTION NAMES: always use the BARE collection name exactly as listed below (e.g. "masjid", "localniyyats", "users"). NEVER prefix with a database name (e.g. "clearance.masjid" or "clearance/localniyyats" is WRONG — use "masjid" or "localniyyats"). The tools route to the correct database automatically.
 - _id and reference fields appear as 24-hex strings; to filter by one, pass {"$oid": "<hex>"}. In aggregate $match on an id, also use {"$oid": ...} (raw aggregation does not auto-cast ids).
 - NEVER invent an id — first find the target to get its real _id, then use it.
 - The database is the SOURCE OF TRUTH; if a question maps to a collection below, use the data tools even if the info might also be written in a document.
