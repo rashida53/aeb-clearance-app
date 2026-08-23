@@ -118,6 +118,7 @@ const Chat = () => {
     // Append answer text to the current assistant bubble, creating it lazily if
     // the last item isn't an assistant bubble (so trace lines stay above it).
     const appendToAssistant = (delta) => {
+        if (!delta) return;
         setMessages((prev) => {
             const next = [...prev];
             const last = next[next.length - 1];
@@ -144,15 +145,15 @@ const Chat = () => {
                 </div>
 
                 <div className="chatWindow">
-                    {messages.map((m, i) =>
-                        m.role === 'trace' ? (
-                            <div key={i} className="chatTrace">{m.content}</div>
-                        ) : (
+                    {messages.map((m, i) => {
+                        if (m.role === 'trace') return <div key={i} className="chatTrace">{m.content}</div>;
+                        if (m.role === 'assistant' && !m.content?.trim()) return null;
+                        return (
                             <div key={i} className={`chatMessage ${m.role}`}>
                                 <div className="chatBubble">{m.content}</div>
                             </div>
-                        )
-                    )}
+                        );
+                    })}
                     {streaming && messages[messages.length - 1]?.role !== 'assistant' && (
                         <div className="chatTrace">…</div>
                     )}

@@ -51,7 +51,7 @@ function getAgent() {
             prompt: (state) => [
                 {
                     role: 'system',
-                    content: `Current date: ${currentDateLine()}, timezone America/Chicago. Use this for ALL relative dates (today, this/last month, the upcoming Sunday, etc.).\n\n${SYSTEM_PROMPT}`,
+                    content: `/no_think\nCurrent date: ${currentDateLine()}, timezone America/Chicago. Use this for ALL relative dates (today, this/last month, the upcoming Sunday, etc.).\n\n${SYSTEM_PROMPT}`,
                 },
                 ...state.messages,
             ],
@@ -81,15 +81,29 @@ async function streamTurn({ message, threadId, onEvent }) {
         { configurable: { thread_id: threadId }, streamMode: ['messages', 'updates'] }
     );
 
+    let inThinking = false;
+
     for await (const [mode, payload] of stream) {
         if (mode === 'messages') {
             const [chunk, meta] = payload;
             if (meta?.langgraph_node !== 'agent') continue;
             const content = chunk?.content;
             if (typeof content === 'string' && content.length) {
-                // Some HF-served chat templates leak tool-call markup into the text.
-                const clean = content.replace(/<\/?tool_call>/g, '');
-                if (clean) onEvent({ type: 'token', text: clean });
+                let text = content.replace(/<\/?tool_call>/g, '');
+                // Handle <think>...</think> tags that may span multiple chunks.
+                let out = '';
+                for (let i = 0; i < text.length; i++) {
+                    if (!inThinking && text.startsWith('<think>', i)) {
+                        inThinking = true;
+                        i += 6; // skip past '<think>'
+                    } else if (inThinking && text.startsWith('</think>', i)) {
+                        inThinking = false;
+                        i += 7; // skip past '</think>'
+                    } else if (!inThinking) {
+                        out += text[i];
+                    }
+                }
+                if (out) onEvent({ type: 'token', text: out });
             }
         } else if (mode === 'updates') {
             for (const [node, data] of Object.entries(payload)) {
