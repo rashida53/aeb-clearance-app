@@ -40,6 +40,66 @@ const FORBIDDEN_OPERATORS = ['$where', '$function', '$accumulator', '$out', '$me
 const MAX_LIMIT = 100;
 const DEFAULT_LIMIT = 25;
 
+// The community's timezone. A "day" like 2026-08-24 means midnight-to-midnight
+// in this zone, not UTC — so $dateDay ranges line up with how people think
+// about dates locally (and with $dayOfWeek elsewhere in the agent).
+const APP_TIMEZONE = 'America/Chicago';
+
+// Given a calendar date (Y, M, D) and an IANA timezone, return the exact UTC
+// instant of local midnight that day. We guess UTC midnight, ask Intl what the
+// local wall-clock is at that instant, and subtract the resulting offset. This
+// handles DST because the offset is computed for that specific date.
+function zonedDayStartUtc(year, month, day, tz) {
+    const utcGuess = Date.UTC(year, month - 1, day, 0, 0, 0);
+    const parts = Object.fromEntries(
+        new Intl.DateTimeFormat('en-US', {
+            timeZone: tz,
+            hour12: false,
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+        })
+            .formatToParts(new Date(utcGuess))
+            .map((p) => [p.type, p.value])
+    );
+    // en-US formats midnight as "24" instead of "00"; normalize it.
+    const hour = parts.hour === '24' ? 0 : Number(parts.hour);
+    const asUtc = Date.UTC(
+        Number(parts.year),
+        Number(parts.month) - 1,
+        Number(parts.day),
+        hour,
+        Number(parts.minute),
+        Number(parts.second)
+    );
+    const offset = asUtc - utcGuess; // ms the zone is ahead of UTC on this date
+    return new Date(utcGuess - offset);
+}
+
+// Expand a "YYYY-MM-DD" into a half-open [start, nextDayStart) range covering
+// the whole local day. Returned as a Mongo range so a Date field anywhere in
+// that day matches — not just those stored at exactly midnight.
+function dayRange(dateStr) {
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(dateStr).trim());
+    if (!m) throw new Error(`Invalid $dateDay "${dateStr}" (expected YYYY-MM-DD).`);
+    const [, y, mo, d] = m.map(Number);
+    const start = zonedDayStartUtc(y, mo, d, APP_TIMEZONE);
+    // Next calendar day (a UTC Date cleanly rolls month/year over); take its
+    // local midnight as the exclusive upper bound. Computing the boundary from
+    // the calendar date (not start + 24h) keeps it correct across DST.
+    const nextDay = new Date(Date.UTC(y, mo - 1, d + 1));
+    const end = zonedDayStartUtc(
+        nextDay.getUTCFullYear(),
+        nextDay.getUTCMonth() + 1,
+        nextDay.getUTCDate(),
+        APP_TIMEZONE
+    );
+    return { $gte: start, $lt: end };
+}
+
 function isWhitelisted(collection) {
     return Object.prototype.hasOwnProperty.call(COLLECTIONS, collection);
 }
@@ -74,6 +134,12 @@ function coerceOids(value) {
             const d = new Date(value.$date);
             if (isNaN(d.getTime())) throw new Error(`Invalid $date "${value.$date}".`);
             return d;
+        }
+        // {"$dateDay": "YYYY-MM-DD"} -> a {$gte, $lt} range spanning the whole
+        // local calendar day, so "on <date>" matches records at ANY time that
+        // day, not just those stored at exactly midnight.
+        if (keys.length === 1 && keys[0] === '$dateDay' && typeof value.$dateDay === 'string') {
+            return dayRange(value.$dateDay);
         }
         const out = {};
         for (const k of keys) out[k] = coerceOids(value[k]);

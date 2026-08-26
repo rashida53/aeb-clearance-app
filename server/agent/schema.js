@@ -49,6 +49,7 @@ GOTCHAS:
 - "Active" = {"isActive": {"$ne": false}} — NEVER {"isActive": true} (the field is often missing). Only filter by active when the user asks for active people.
 - Year format is "1448-49" (current) / "1447-48" (last year) — not derivable from data, use these. Clearance collections use the field name "year"; fmb "pledges" uses "period" (same format).
 - Dates: miqaats/events/slots/menuitems.menuDate/pledges.pledgedOn are Date. To compare against a Date field, pass the value as {"$date": "YYYY-MM-DDT00:00:00Z"} (the tools convert it to a real Date — a plain string will NOT match). approvals.approvedAt and letters.generatedOn are epoch-millisecond Numbers (compare numerically).
+- ON A SPECIFIC DAY: to match a Date field for a WHOLE calendar day, use {"<field>": {"$dateDay": "YYYY-MM-DD"}} — the tools expand it to the full midnight-to-midnight range in America/Chicago, so records at ANY time that day match. NEVER use {"$date": "...T00:00:00Z"} for "on <date>" (that matches only the exact midnight instant and misses everything else). Example: slots on Aug 24 -> find_documents("slots", {"date": {"$dateDay": "2026-08-24"}}). Only $dateDay works as a whole value; do not put it inside $gte/$lt yourself.
 - Relative dates: a "Current date" line is provided at the top of this prompt — use it. For "this month"/"last month"/"upcoming", build {"$date": ...} bounds from that date. Exclude the past with date >= today when the user means an upcoming event.
 - Day of week is NOT stored — compute it in an aggregate with $dayOfWeek (1=Sunday ... 7=Saturday), using timezone "America/Chicago". "Sunday" is a WEEKDAY, never a time-of-day.
 - zone / status / eventType / roles are free-form strings.
@@ -88,6 +89,17 @@ EXAMPLES:
   find the miqaat _id, then aggregate("rsvps", [{"$match": {"miqaat": {"$oid": "<id>"}}},
     {"$group": {"_id": null, "children": {"$sum": "$children"}, "adults": {"$sum": "$adults"}}}])
 - "which users have NOT paid sabeel for 2026" (unpaid = open balance on a billing category) ->
-  find_documents("qbopens", {"qb_id": {"$regex": "Sabil.*2026", "$options": "i"}, "balance": {"$gt": 0}}), then list each result's "customer".`;
+  find_documents("qbopens", {"qb_id": {"$regex": "Sabil.*2026", "$options": "i"}, "balance": {"$gt": 0}}), then list each result's "customer".
+
+QUICKBOOKS (search_quickbooks tool):
+Use search_quickbooks to query live QuickBooks data directly — invoices, customers, payments, items. This is the LIVE SOURCE OF TRUTH for billing; use it when qbopens (a periodic snapshot) might be stale or when you need details not in qbopens (payment dates, invoice line items, customer metadata).
+The query language is SQL-like (QBO Query Language). Use single quotes for string values, LIKE for partial matches.
+Examples:
+- All KR pledges for 1448: "SELECT * FROM Invoice WHERE DocNumber LIKE 'KR-1448%'"
+- A specific customer's invoices: first find the customer ("SELECT * FROM Customer WHERE DisplayName LIKE '%Rawat%'"), then query their invoices ("SELECT * FROM Invoice WHERE CustomerRef = '<Id>'")
+- Total pledges by category: query all invoices for that category prefix, then sum TotalAmt
+- Payments for a customer: "SELECT * FROM Payment WHERE CustomerRef = '<Id>'"
+- All items (billing categories): "SELECT * FROM Item"
+MAXRESULTS defaults to 100; add "MAXRESULTS 1000" for larger result sets.`;
 
 module.exports = { SCHEMA_MAP };

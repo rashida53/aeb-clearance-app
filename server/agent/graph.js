@@ -2,14 +2,24 @@ const { createReactAgent } = require('@langchain/langgraph/prebuilt');
 const { MemorySaver } = require('@langchain/langgraph');
 const { getChatModel } = require('./llm');
 const { SCHEMA_MAP } = require('./schema');
-// RAG (search_docs) is paused for this release — the code lives in
-// ./tools/searchDocs.js and ./rag/*; re-add it here once Google Docs ingestion
-// (Atlas vector index + syncDocs) is set up.
-const tools = [...require('./tools/queryDb'), ...require('./tools/pledges')];
+// RAG: search_docs retrieves passages from the Google Drive knowledge base
+// (Docs + Sheets ingested by scripts/syncDocs.js into Atlas Vector Search).
+const searchDocs = require('./tools/searchDocs');
+const searchQb = require('./tools/searchQb');
+const tools = [
+    ...require('./tools/queryDb'),
+    ...require('./tools/pledges'),
+    searchDocs,
+    searchQb,
+];
 
 const SYSTEM_PROMPT = `You are the assistant for the AeB Umoor Maaliyah app, used by the Anjuman-e-Burhani Austin mosque community to manage finances and clearance.
 
 You answer questions by querying the databases with your tools (data model below). Never guess or invent data — if a tool returns an error or empty result, say so plainly. Break complex questions into multiple tool calls (e.g. look up an id first, then filter another collection by it). Be concise, and present lists and money amounts clearly.
+
+TWO KINDS OF KNOWLEDGE:
+- The DATABASES (data tools below) are the source of truth for records about people, events, finances, slots, and letters — use them for anything about specific people or counts.
+- search_docs searches the community's reference documents (Google Docs + Sheets: policies, procedures, guidelines, reference tables). Use it for "how does X work / what is the policy / what are the guidelines" questions. When you answer from search_docs, cite the source title. If neither the docs nor the database cover a question, say so.
 
 CRITICAL: Execute tools by actually calling them. Never write a tool name, a query object, or an aggregation pipeline as text or a code block in your reply, and never say you are "about to run" a query. When you need data, call the tool now and wait for its result before answering.
 
