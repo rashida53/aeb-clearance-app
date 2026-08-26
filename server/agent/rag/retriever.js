@@ -1,15 +1,37 @@
-const { getVectorStore } = require('./vectorStore');
+const { clearanceDb } = require('../../config/connection');
+const { getEmbeddings } = require('./embeddings');
+const { COLLECTION, INDEX } = require('./vectorStore');
 
-// Embed the question and return the k most semantically similar chunks. The
-// vector store does the work: embedQuery(query) → $vectorSearch on the Atlas
-// index → nearest chunks by cosine similarity, with a relevance score.
 async function retrieve(query, k = 4) {
-    const store = await getVectorStore();
-    const results = await store.similaritySearchWithScore(query, k);
-    return results.map(([doc, score]) => ({
-        text: doc.pageContent,
+    await clearanceDb.asPromise();
+    const col = clearanceDb.db.collection(COLLECTION);
+    const embeddings = getEmbeddings();
+    const vector = await embeddings.embedQuery(query);
+
+    const results = await col.aggregate([
+        {
+            $vectorSearch: {
+                index: INDEX,
+                path: 'embedding',
+                queryVector: vector,
+                numCandidates: 10 * k,
+                limit: k,
+            },
+        },
+        {
+            $project: {
+                score: { $meta: 'vectorSearchScore' },
+                text: 1,
+                'metadata.title': 1,
+                'metadata.source': 1,
+            },
+        },
+    ]).toArray();
+
+    return results.map((doc) => ({
+        text: doc.text,
         source: doc.metadata?.title || doc.metadata?.source,
-        score,
+        score: doc.score,
     }));
 }
 
