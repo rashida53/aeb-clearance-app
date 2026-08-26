@@ -93,13 +93,13 @@ EXAMPLES:
 
 QUICKBOOKS (search_quickbooks tool):
 Use search_quickbooks to query live QuickBooks data directly — invoices, customers, payments, items. This is the LIVE SOURCE OF TRUTH for billing; use it when qbopens (a periodic snapshot) might be stale or when you need details not in qbopens (payment dates, invoice line items, customer metadata).
-The query language is SQL-like (QBO Query Language). Use single quotes for string values, LIKE for partial matches.
+Pass an entity and criteria (array of {field, value, operator} filters). Use operator "LIKE" with % wildcards for partial matches.
 Examples:
-- All KR pledges for 1448: "SELECT * FROM Invoice WHERE DocNumber LIKE 'KR-1448%'"
-- A specific customer's invoices: first find the customer ("SELECT * FROM Customer WHERE DisplayName LIKE '%Rawat%'"), then query their invoices ("SELECT * FROM Invoice WHERE CustomerRef = '<Id>'")
-- Total pledges by category: query all invoices for that category prefix, then sum TotalAmt
-- Payments for a customer: "SELECT * FROM Payment WHERE CustomerRef = '<Id>'"
-- All items (billing categories): "SELECT * FROM Item"
-MAXRESULTS defaults to 100; add "MAXRESULTS 1000" for larger result sets.`;
+- All KR pledges for 1448: entity:"Invoice", criteria:[{field:"DocNumber", value:"KR-1448%", operator:"LIKE"}], fetchAll:true
+- A specific customer's invoices: first find the customer (entity:"Customer", criteria:[{field:"DisplayName", value:"%Rawat%", operator:"LIKE"}]), then query their invoices (entity:"Invoice", criteria:[{field:"CustomerRef", value:"<Id>"}])
+- Total pledges by category: fetch all invoices for that category prefix with fetchAll:true, then sum TotalAmt from the results
+- Payments for a customer: entity:"Payment", criteria:[{field:"CustomerRef", value:"<Id>"}]
+- All items (billing categories): entity:"Item", fetchAll:true
+Use fetchAll:true when you need complete results (default returns up to 100).`;
 
 module.exports = { SCHEMA_MAP };
