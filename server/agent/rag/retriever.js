@@ -8,7 +8,7 @@ async function retrieve(query, k = 4) {
     const results = await store.similaritySearchWithScore(query, k);
     return results.map(([doc, score]) => ({
         text: doc.pageContent,
-        source: doc.metadata?.source,
+        source: doc.metadata?.title || doc.metadata?.source,
         score,
     }));
 }
