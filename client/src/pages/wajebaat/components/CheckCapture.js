@@ -1,7 +1,6 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { Image } from 'cloudinary-react';
-import jscanify from 'jscanify/client';
-import loadOpenCv from '../../../utils/loadOpenCv';
+import { loadJscanify } from '../../../utils/loadOpenCv';
 import { uploadToCloudinary, CLOUD_NAME } from '../../../utils/cloudinary';
 
 // Cap the working resolution for detection + extraction. Detection and capture
@@ -160,9 +159,9 @@ function CheckScanner({ onCapture, onClose }) {
 
         (async () => {
             try {
-                await loadOpenCv();
+                const Jscanify = await loadJscanify();
                 if (cancelled) return;
-                scannerRef.current = new jscanify();
+                scannerRef.current = new Jscanify();
 
                 const stream = await navigator.mediaDevices.getUserMedia({
                     video: { facingMode: { ideal: 'environment' } },
