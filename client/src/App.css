@@ -3547,6 +3547,13 @@ label {
   color: var(--color-gold);
 }
 
+.checkScannerHint {
+  color: #bbb;
+  font-size: 12px;
+  margin: -6px 0 0;
+  text-align: center;
+}
+
 .checkScannerActions {
   display: flex;
   gap: 12px;

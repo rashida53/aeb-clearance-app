@@ -42,9 +42,10 @@ function CheckScanner({ onCapture, onClose }) {
     const stableRef = useRef(0);
     const capturedRef = useRef(false);
 
-    const [status, setStatus] = useState('Loading scanner…');
+    const [status, setStatus] = useState('Starting camera…');
     const [ready, setReady] = useState(false);
     const [detected, setDetected] = useState(false);
+    const [autoOn, setAutoOn] = useState(false);
 
     const finishCapture = useCallback(async (corners) => {
         if (capturedRef.current) return;
@@ -78,10 +79,12 @@ function CheckScanner({ onCapture, onClose }) {
     const tick = useCallback(() => {
         const video = videoRef.current;
         const canvas = canvasRef.current;
-        const cv = window.cv;
-        if (!video || !canvas || !cv || capturedRef.current) return;
+        if (!video || !canvas || capturedRef.current) {
+            rafRef.current = requestAnimationFrame(tick);
+            return;
+        }
 
-        if (video.readyState === video.HAVE_ENOUGH_DATA) {
+        if (video.readyState === video.HAVE_ENOUGH_DATA && video.videoWidth) {
             const scale = Math.min(1, MAX_W / video.videoWidth);
             const w = Math.round(video.videoWidth * scale);
             const h = Math.round(video.videoHeight * scale);
@@ -91,63 +94,68 @@ function CheckScanner({ onCapture, onClose }) {
             const ctx = canvas.getContext('2d');
             ctx.drawImage(video, 0, 0, w, h);
 
-            let corners = null;
-            try {
-                const src = cv.imread(canvas);
-                const contour = scannerRef.current.findPaperContour(src);
-                if (contour) {
-                    corners = scannerRef.current.getCornerPoints(contour);
+            // Detection only runs once OpenCV + jscanify have loaded. Until then
+            // the live preview still shows and manual capture works.
+            const cv = window.cv;
+            const scanner = scannerRef.current;
+            if (cv && cv.Mat && scanner) {
+                let corners = null;
+                try {
+                    const src = cv.imread(canvas);
+                    const contour = scanner.findPaperContour(src);
+                    if (contour) {
+                        corners = scanner.getCornerPoints(contour);
+                    }
+                    src.delete();
+                } catch (err) {
+                    corners = null;
                 }
-                src.delete();
-            } catch (err) {
-                corners = null;
-            }
 
-            const frameArea = w * h;
-            const bigEnough =
-                cornersValid(corners) && polygonArea(corners) / frameArea >= MIN_AREA_RATIO;
+                const frameArea = w * h;
+                const bigEnough =
+                    cornersValid(corners) && polygonArea(corners) / frameArea >= MIN_AREA_RATIO;
 
-            if (bigEnough) {
-                setDetected(true);
-                // Draw the detected outline.
-                ctx.strokeStyle = '#c9a227';
-                ctx.lineWidth = 4;
-                ctx.beginPath();
-                ctx.moveTo(corners.topLeftCorner.x, corners.topLeftCorner.y);
-                ctx.lineTo(corners.topRightCorner.x, corners.topRightCorner.y);
-                ctx.lineTo(corners.bottomRightCorner.x, corners.bottomRightCorner.y);
-                ctx.lineTo(corners.bottomLeftCorner.x, corners.bottomLeftCorner.y);
-                ctx.closePath();
-                ctx.stroke();
+                if (bigEnough) {
+                    setDetected(true);
+                    ctx.strokeStyle = '#c9a227';
+                    ctx.lineWidth = 4;
+                    ctx.beginPath();
+                    ctx.moveTo(corners.topLeftCorner.x, corners.topLeftCorner.y);
+                    ctx.lineTo(corners.topRightCorner.x, corners.topRightCorner.y);
+                    ctx.lineTo(corners.bottomRightCorner.x, corners.bottomRightCorner.y);
+                    ctx.lineTo(corners.bottomLeftCorner.x, corners.bottomLeftCorner.y);
+                    ctx.closePath();
+                    ctx.stroke();
 
-                const prev = lastCornersRef.current;
-                let moved = Infinity;
-                if (prev) {
-                    moved = Math.max(
-                        distance(prev.topLeftCorner, corners.topLeftCorner),
-                        distance(prev.topRightCorner, corners.topRightCorner),
-                        distance(prev.bottomLeftCorner, corners.bottomLeftCorner),
-                        distance(prev.bottomRightCorner, corners.bottomRightCorner)
-                    );
-                }
-                lastCornersRef.current = corners;
+                    const prev = lastCornersRef.current;
+                    let moved = Infinity;
+                    if (prev) {
+                        moved = Math.max(
+                            distance(prev.topLeftCorner, corners.topLeftCorner),
+                            distance(prev.topRightCorner, corners.topRightCorner),
+                            distance(prev.bottomLeftCorner, corners.bottomLeftCorner),
+                            distance(prev.bottomRightCorner, corners.bottomRightCorner)
+                        );
+                    }
+                    lastCornersRef.current = corners;
 
-                if (moved < STABLE_EPS) {
-                    stableRef.current += 1;
-                    setStatus('Hold steady…');
-                    if (stableRef.current >= STABLE_FRAMES) {
-                        finishCapture(corners);
-                        return;
+                    if (moved < STABLE_EPS) {
+                        stableRef.current += 1;
+                        setStatus('Hold steady…');
+                        if (stableRef.current >= STABLE_FRAMES) {
+                            finishCapture(corners);
+                            return;
+                        }
+                    } else {
+                        stableRef.current = 0;
+                        setStatus('Check detected — hold steady');
                     }
                 } else {
+                    setDetected(false);
                     stableRef.current = 0;
-                    setStatus('Check detected — hold steady');
+                    lastCornersRef.current = null;
+                    setStatus('Point the camera at your check');
                 }
-            } else {
-                setDetected(false);
-                stableRef.current = 0;
-                lastCornersRef.current = null;
-                setStatus('Point the camera at your check');
             }
         }
 
@@ -157,12 +165,9 @@ function CheckScanner({ onCapture, onClose }) {
     useEffect(() => {
         let cancelled = false;
 
+        // 1) Start the camera immediately — independent of the (heavy) OpenCV load.
         (async () => {
             try {
-                const Jscanify = await loadJscanify();
-                if (cancelled) return;
-                scannerRef.current = new Jscanify();
-
                 const stream = await navigator.mediaDevices.getUserMedia({
                     video: { facingMode: { ideal: 'environment' } },
                     audio: false,
@@ -174,7 +179,14 @@ function CheckScanner({ onCapture, onClose }) {
                 streamRef.current = stream;
                 const video = videoRef.current;
                 video.srcObject = stream;
-                await video.play();
+                // iOS Safari needs these set for inline autoplay.
+                video.setAttribute('playsinline', '');
+                video.muted = true;
+                try {
+                    await video.play();
+                } catch (playErr) {
+                    // Some browsers resolve playback lazily; the rAF loop still draws.
+                }
                 setReady(true);
                 setStatus('Point the camera at your check');
                 rafRef.current = requestAnimationFrame(tick);
@@ -188,6 +200,18 @@ function CheckScanner({ onCapture, onClose }) {
                 }
             }
         })();
+
+        // 2) Load OpenCV + jscanify in the background to enable auto-capture.
+        loadJscanify()
+            .then((Jscanify) => {
+                if (cancelled) return;
+                scannerRef.current = new Jscanify();
+                setAutoOn(true);
+            })
+            .catch(() => {
+                // Auto-capture unavailable; manual "Capture now" still works.
+                if (!cancelled) setAutoOn(false);
+            });
 
         return () => {
             cancelled = true;
@@ -211,9 +235,20 @@ function CheckScanner({ onCapture, onClose }) {
     return (
         <div className="modalOverlay">
             <div className="checkScannerModal">
-                <video ref={videoRef} playsInline muted style={{ display: 'none' }} />
+                <video
+                    ref={videoRef}
+                    playsInline
+                    muted
+                    autoPlay
+                    // Kept in the DOM (not display:none) so iOS Safari will play it,
+                    // but visually hidden — the canvas shows the mirrored frames.
+                    style={{ position: 'absolute', width: 1, height: 1, opacity: 0, pointerEvents: 'none' }}
+                />
                 <canvas ref={canvasRef} className="checkScannerCanvas" />
                 <p className={`checkScannerStatus ${detected ? 'detected' : ''}`}>{status}</p>
+                {ready && !autoOn && (
+                    <p className="checkScannerHint">Loading auto-detect… you can tap “Capture now”.</p>
+                )}
                 <div className="checkScannerActions">
                     <button type="button" className="wjBtnSecondary" onClick={onClose}>
                         Cancel
