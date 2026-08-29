@@ -3,6 +3,8 @@ import { useQuery, useMutation, useLazyQuery } from '@apollo/client';
 import Nav from '../../components/Nav';
 import { GET_ALL_ACTIVE_USERS, GET_CHECK_IN_DATA } from './gql/queries';
 import { UPSERT_COMMITMENT_FOR_USER, UPSERT_ACH_FOR_USER, UPSERT_TAKHMEEN } from './gql/mutations';
+import CheckCapture from '../wajebaat/components/CheckCapture';
+import SignaturePad from '../wajebaat/components/SignaturePad';
 
 const CURRENT_YEAR = '1448-49';
 
@@ -35,6 +37,8 @@ export default function Checkin() {
     const [schedule, setSchedule] = useState('');
     const [accountNumber, setAccountNumber] = useState('');
     const [routingNumber, setRoutingNumber] = useState('');
+    const [check, setCheck] = useState(null);
+    const [signature, setSignature] = useState(null);
     const [wcheck, setWcheck] = useState('');
     const [sfcheck, setSfcheck] = useState('');
     const [saving, setSaving] = useState('');
@@ -56,6 +60,8 @@ export default function Checkin() {
         setSchedule(ciData.commitment?.schedule || '');
         setAccountNumber(ciData.ach?.accountNumber || '');
         setRoutingNumber(ciData.ach?.routingNumber || '');
+        setCheck(ciData.ach?.check || null);
+        setSignature(ciData.ach?.signature || null);
         setWcheck(ciData.takhmeen?.wcheck || '');
         setSfcheck(ciData.takhmeen?.sfcheck || '');
     }, [ciData]);
@@ -74,9 +80,15 @@ export default function Checkin() {
             promises.push(upsertCommitment({
                 variables: { userId: selectedUser._id, kr: parseFloat(kr) || 0, ut: parseFloat(ut) || 0, year: CURRENT_YEAR, schedule: schedule || null },
             }));
-            if (accountNumber && routingNumber) {
+            if (accountNumber || routingNumber || check || signature) {
                 promises.push(upsertACH({
-                    variables: { userId: selectedUser._id, accountNumber, routingNumber },
+                    variables: {
+                        userId: selectedUser._id,
+                        accountNumber: accountNumber || null,
+                        routingNumber: routingNumber || null,
+                        check: check || null,
+                        signature: signature || null,
+                    },
                 }));
             }
             promises.push(upsertTakhmeen({
@@ -200,6 +212,30 @@ export default function Checkin() {
                                             />
                                         </div>
                                     </div>
+                                    <div className="ciScheduleRow">
+                                        <label className="ciLabel">Payment Schedule</label>
+                                        <div className="ciScheduleOptions">
+                                            {[
+                                                { value: 'ONE_TIME', label: '1 time' },
+                                                { value: 'THREE_MONTH', label: '3 month' },
+                                                { value: 'SIX_MONTH', label: '6 month' },
+                                                { value: 'NINE_MONTH', label: '9 month' },
+                                            ].map((opt) => (
+                                                <button
+                                                    key={opt.value}
+                                                    type="button"
+                                                    className={`ciScheduleBtn ${schedule === opt.value ? 'selected' : ''}`}
+                                                    onClick={() => setSchedule(opt.value)}
+                                                >
+                                                    {opt.label}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <div className="ciAchMedia">
+                                        <CheckCapture value={check} onChange={setCheck} />
+                                        <SignaturePad value={signature} onChange={setSignature} />
+                                    </div>
                                 </div>
 
                                 <div className="ciSection">
@@ -239,26 +275,6 @@ export default function Checkin() {
                                         <span className="ciInlineValue">
                                             {formatFmb(ciData?.fmbPledgeAmount, ciData?.fmbPledgeStatus)}
                                         </span>
-                                    </div>
-                                    <div className="ciScheduleRow">
-                                        <label className="ciLabel">Payment Schedule</label>
-                                        <div className="ciScheduleOptions">
-                                            {[
-                                                { value: 'ONE_TIME', label: '1 time' },
-                                                { value: 'THREE_MONTH', label: '3 month' },
-                                                { value: 'SIX_MONTH', label: '6 month' },
-                                                { value: 'NINE_MONTH', label: '9 month' },
-                                            ].map((opt) => (
-                                                <button
-                                                    key={opt.value}
-                                                    type="button"
-                                                    className={`ciScheduleBtn ${schedule === opt.value ? 'selected' : ''}`}
-                                                    onClick={() => setSchedule(opt.value)}
-                                                >
-                                                    {opt.label}
-                                                </button>
-                                            ))}
-                                        </div>
                                     </div>
                                 </div>
 

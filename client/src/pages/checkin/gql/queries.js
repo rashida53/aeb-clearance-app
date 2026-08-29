@@ -31,6 +31,8 @@ export const GET_CHECK_IN_DATA = gql`
                 _id
                 accountNumber
                 routingNumber
+                check
+                signature
             }
             openPledges {
                 _id

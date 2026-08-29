@@ -210,6 +210,8 @@ const resolvers = {
                 accountNumber: decrypt(achRecord.accountNumber),
                 routingNumber: decrypt(achRecord.routingNumber),
                 authorized: achRecord.authorized,
+                check: achRecord.check,
+                signature: achRecord.signature,
             };
         },
 
@@ -254,6 +256,8 @@ const resolvers = {
                     accountNumber: achRecord.accountNumber ? decrypt(achRecord.accountNumber) : null,
                     routingNumber: achRecord.routingNumber ? decrypt(achRecord.routingNumber) : null,
                     authorized: achRecord.authorized,
+                    check: achRecord.check,
+                    signature: achRecord.signature,
                 } : null,
                 bookedSlot: bookedSlot ? {
                     _id: bookedSlot._id,
@@ -376,6 +380,8 @@ const resolvers = {
                     accountNumber: decrypt(achRecord.accountNumber),
                     routingNumber: decrypt(achRecord.routingNumber),
                     authorized: achRecord.authorized,
+                    check: achRecord.check,
+                    signature: achRecord.signature,
                 } : null,
                 openPledges: openPledges.filter(p => !p.pp),
                 fmbPledgeAmount: fmbPledge ? fmbPledge.amount : null,
@@ -894,7 +900,7 @@ ${laagatHtml}
             };
         },
 
-        submitACH: async (parent, { accountNumber, routingNumber, schedule, authorized }, context) => {
+        submitACH: async (parent, { accountNumber, routingNumber, schedule, authorized, check, signature }, context) => {
             if (!context.user) {
                 throw new AuthenticationError('You must be logged in');
             }
@@ -906,15 +912,18 @@ ${laagatHtml}
             const userId = context.user.userId;
             let achRecord;
             try {
+                const setFields = {
+                    accountNumber: encrypt(accountNumber),
+                    routingNumber: encrypt(routingNumber),
+                    authorized: !!authorized,
+                };
+                // Cloudinary public IDs for the check image and signature.
+                if (check !== undefined && check !== null) setFields.check = check;
+                if (signature !== undefined && signature !== null) setFields.signature = signature;
+
                 achRecord = await ACH.findOneAndUpdate(
                     { user: userId },
-                    {
-                        $set: {
-                            accountNumber: encrypt(accountNumber),
-                            routingNumber: encrypt(routingNumber),
-                            authorized: !!authorized,
-                        },
-                    },
+                    { $set: setFields },
                     { new: true, upsert: true, setDefaultsOnInsert: true },
                 );
             } catch (err) {
@@ -1165,14 +1174,21 @@ ${laagatHtml}
             };
         },
 
-        upsertACHForUser: async (parent, { userId, accountNumber, routingNumber }, context) => {
+        upsertACHForUser: async (parent, { userId, accountNumber, routingNumber, check, signature }, context) => {
             if (!context.user) {
                 throw new AuthenticationError('You must be logged in');
             }
 
+            const setFields = {};
+            if (accountNumber !== undefined && accountNumber !== null) setFields.accountNumber = encrypt(accountNumber);
+            if (routingNumber !== undefined && routingNumber !== null) setFields.routingNumber = encrypt(routingNumber);
+            // Cloudinary public IDs for the check image and signature.
+            if (check !== undefined && check !== null) setFields.check = check;
+            if (signature !== undefined && signature !== null) setFields.signature = signature;
+
             await ACH.findOneAndUpdate(
                 { user: userId },
-                { accountNumber: encrypt(accountNumber), routingNumber: encrypt(routingNumber) },
+                { $set: setFields },
                 { upsert: true }
             );
             return true;

@@ -20,6 +20,14 @@ const achSchema = new Schema(
             type: Boolean,
             default: false,
         },
+        check: {
+            type: String,
+            default: null,
+        },
+        signature: {
+            type: String,
+            default: null,
+        },
     },
     {
         collection: 'ach',

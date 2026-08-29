@@ -11,8 +11,8 @@ export const SUBMIT_COMMITMENTS = gql`
 `;
 
 export const SUBMIT_ACH = gql`
-    mutation submitACH($accountNumber: String!, $routingNumber: String!, $schedule: String!, $authorized: Boolean) {
-        submitACH(accountNumber: $accountNumber, routingNumber: $routingNumber, schedule: $schedule, authorized: $authorized)
+    mutation submitACH($accountNumber: String!, $routingNumber: String!, $schedule: String!, $authorized: Boolean, $check: String, $signature: String) {
+        submitACH(accountNumber: $accountNumber, routingNumber: $routingNumber, schedule: $schedule, authorized: $authorized, check: $check, signature: $signature)
     }
 `;
 

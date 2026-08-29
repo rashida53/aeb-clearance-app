@@ -96,6 +96,8 @@ type ACHInfo {
     accountNumber: String
     routingNumber: String
     authorized: Boolean
+    check: String
+    signature: String
 }
 
 type SlotWithDetails {
@@ -216,7 +218,7 @@ type Mutation {
     deleteSlot(slotId: ID!): Boolean
     cancelSignup(slotId: ID!): Slot
     submitCommitments(kr: Float, ut: Float, year: String!): Commitment
-    submitACH(accountNumber: String!, routingNumber: String!, schedule: String!, authorized: Boolean): Boolean
+    submitACH(accountNumber: String!, routingNumber: String!, schedule: String!, authorized: Boolean, check: String, signature: String): Boolean
     deferACH: Boolean
     emailAppointment(emails: String!): Boolean
     bookSlot(slotId: ID!): Slot
@@ -225,7 +227,7 @@ type Mutation {
     unclaimSlotGroup(date: String!, group: String!): Boolean
     reassignSlotGroup(date: String!, group: String!, volunteerId: ID!): Boolean
     upsertCommitmentForUser(userId: ID!, kr: Float, ut: Float, year: String!, schedule: String): Commitment
-    upsertACHForUser(userId: ID!, accountNumber: String!, routingNumber: String!): Boolean
+    upsertACHForUser(userId: ID!, accountNumber: String, routingNumber: String, check: String, signature: String): Boolean
     upsertTakhmeen(userId: ID!, year: String!, wajebaat: Float, sf: Float, wcheck: String, sfcheck: String): Takhmeen
     upsertMasjidNiyyat(userId: ID!, t1: Float!, t2: Float!): Boolean
 }

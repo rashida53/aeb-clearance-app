@@ -7,6 +7,10 @@ import { UPSERT_MASJID_NIYYAT } from './gql/mutations';
 const formatWholeCurrency = (amount) =>
     new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(amount);
 
+// Compact millions form (e.g. $4.69M) — keeps the milestone labels from
+// overlapping now that the bar spans the full width of the card.
+const formatMillions = (amount) => `$${((amount || 0) / 1e6).toFixed(2)}M`;
+
 const ANIM_DURATION = 2000;
 
 function OverallBar({ t1, t2, adaa }) {
@@ -53,14 +57,14 @@ function OverallBar({ t1, t2, adaa }) {
                         <div className="niyyatMilestoneLine" />
                         <div className="niyyatMilestoneLabel">
                             <span className="niyyatMilestoneName">Niyyat</span>
-                            <span className="niyyatMilestoneAmt">{formatWholeCurrency(t1)}</span>
+                            <span className="niyyatMilestoneAmt">{formatMillions(t1)}</span>
                         </div>
                     </div>
                     <div className="niyyatMilestone" style={{ left: '100%' }}>
                         <div className="niyyatMilestoneLine" />
                         <div className="niyyatMilestoneLabel">
                             <span className="niyyatMilestoneName">Future Niyyat</span>
-                            <span className="niyyatMilestoneAmt">{formatWholeCurrency(t2)}</span>
+                            <span className="niyyatMilestoneAmt">{formatMillions(t2)}</span>
                         </div>
                     </div>
                     <div className="niyyatAdaa">

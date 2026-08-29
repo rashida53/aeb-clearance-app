@@ -6,6 +6,8 @@ import { GET_MY_WAJEBAAT_STATUS, GET_AVAILABLE_SLOTS } from './gql/queries';
 import { SUBMIT_COMMITMENTS, SUBMIT_ACH, DEFER_ACH, EMAIL_APPOINTMENT, BOOK_SLOT, CANCEL_MY_SLOT } from './gql/mutations';
 import { GET_MY_OPEN_BALANCES } from '../openBalances/gql/queries';
 import { GET_ME } from '../user/gql/queries';
+import CheckCapture from './components/CheckCapture';
+import SignaturePad from './components/SignaturePad';
 
 const formatDate = (dateStr) => {
     const date = new Date(dateStr);
@@ -291,11 +293,13 @@ function ACHStep({ onSubmit, onBack, onDefer, submitting, existingACH, existingS
     const [routingNumber, setRoutingNumber] = useState(existingACH?.routingNumber || '');
     const [schedule, setSchedule] = useState(existingSchedule || '');
     const [authorized, setAuthorized] = useState(!!existingACH?.authorized);
+    const [check, setCheck] = useState(existingACH?.check || null);
+    const [signature, setSignature] = useState(existingACH?.signature || null);
 
-    const isValid = accountNumber.length >= 8 && routingNumber.length >= 9 && schedule && authorized;
+    const isValid = accountNumber.length >= 8 && routingNumber.length >= 9 && schedule && authorized && !!signature && !!check;
 
     const handleSubmit = () => {
-        onSubmit({ accountNumber, routingNumber, schedule, authorized });
+        onSubmit({ accountNumber, routingNumber, schedule, authorized, check, signature });
     };
 
     const scheduleOptions = [
@@ -322,6 +326,8 @@ function ACHStep({ onSubmit, onBack, onDefer, submitting, existingACH, existingS
                 onChange={setRoutingNumber}
                 placeholder="Enter routing number"
             />
+
+            <CheckCapture value={check} onChange={setCheck} />
 
             <div className="wjFormGroup">
                 <label>Preferred Schedule</label>
@@ -353,6 +359,8 @@ function ACHStep({ onSubmit, onBack, onDefer, submitting, existingACH, existingS
                     Anjuman-e-Burhani (Austin), Inc. 10 business days to act on it.
                 </span>
             </label>
+
+            <SignaturePad value={signature} onChange={setSignature} />
 
             <div className="wjStepActions">
                 {onBack && (
@@ -797,11 +805,11 @@ export default function Wajebaat() {
         }
     };
 
-    const handleACHSubmit = async ({ accountNumber, routingNumber, schedule, authorized }) => {
+    const handleACHSubmit = async ({ accountNumber, routingNumber, schedule, authorized, check, signature }) => {
         setError('');
         try {
             await submitACH({
-                variables: { accountNumber, routingNumber, schedule, authorized },
+                variables: { accountNumber, routingNumber, schedule, authorized, check, signature },
             });
             goToStep(hasOpenPledges ? STEP_PLEDGES : STEP_SCHEDULER);
             refetchStatus();

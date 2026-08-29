@@ -12,8 +12,8 @@ export const UPSERT_COMMITMENT_FOR_USER = gql`
 `;
 
 export const UPSERT_ACH_FOR_USER = gql`
-    mutation upsertACHForUser($userId: ID!, $accountNumber: String!, $routingNumber: String!) {
-        upsertACHForUser(userId: $userId, accountNumber: $accountNumber, routingNumber: $routingNumber)
+    mutation upsertACHForUser($userId: ID!, $accountNumber: String, $routingNumber: String, $check: String, $signature: String) {
+        upsertACHForUser(userId: $userId, accountNumber: $accountNumber, routingNumber: $routingNumber, check: $check, signature: $signature)
     }
 `;
 

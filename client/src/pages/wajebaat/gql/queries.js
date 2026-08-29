@@ -19,6 +19,8 @@ export const GET_MY_WAJEBAAT_STATUS = gql`
                 accountNumber
                 routingNumber
                 authorized
+                check
+                signature
             }
             bookedSlot {
                 _id
