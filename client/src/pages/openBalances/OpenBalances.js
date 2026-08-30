@@ -82,7 +82,7 @@ const MasjidNiyyatBar = ({ t1, t2, adaa }) => {
                             <span className="niyyatMilestoneAmt">{formatWholeCurrency(t1)}</span>
                         </div>
                     </div>
-                    <div className="niyyatMilestone" style={{ left: '100%' }}>
+                    <div className="niyyatMilestone" style={{ right: 0 }}>
                         <div className="niyyatMilestoneLine" />
                         <div className="niyyatMilestoneLabel">
                             <span className="niyyatMilestoneName">Future Niyyat</span>

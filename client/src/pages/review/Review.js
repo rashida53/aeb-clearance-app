@@ -1,12 +1,80 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation } from '@apollo/client';
 import Nav from '../../components/Nav';
-import { GET_ALL_ACTIVE_USERS, GET_APPROVALS_BY_REQUESTER } from './gql/queries';
+import { GET_ALL_ACTIVE_USERS, GET_APPROVALS_BY_REQUESTER, GET_MASJID_NIYYAT_FOR_USER } from './gql/queries';
 import { CREATE_APPROVAL } from './gql/mutations';
 import { GET_MY_OPEN_BALANCES } from '../openBalances/gql/queries';
 
 const formatCurrency = (amount) =>
     new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
+
+const formatWholeCurrency = (amount) =>
+    new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(amount);
+
+const ANIM_DURATION = 2000;
+
+const MasjidNiyyatBar = ({ t1, t2, adaa }) => {
+    const max = t2 || t1;
+    const targetPct = max > 0 ? Math.min((adaa / max) * 100, 100) : 0;
+    const t1Pct = max > 0 ? (t1 / max) * 100 : 0;
+
+    const [animPct, setAnimPct] = useState(0);
+    const [displayAdaa, setDisplayAdaa] = useState(0);
+    const started = useRef(false);
+    const sectionRef = useRef(null);
+
+    useEffect(() => {
+        if (started.current || !adaa) return;
+        const observer = new IntersectionObserver(
+            ([entry]) => {
+                if (!entry.isIntersecting || started.current) return;
+                started.current = true;
+                observer.disconnect();
+                const start = performance.now();
+                const tick = (now) => {
+                    const elapsed = now - start;
+                    const progress = Math.min(elapsed / ANIM_DURATION, 1);
+                    const eased = 1 - Math.pow(1 - progress, 3);
+                    setAnimPct(targetPct * eased);
+                    setDisplayAdaa(Math.round(adaa * eased));
+                    if (progress < 1) requestAnimationFrame(tick);
+                };
+                requestAnimationFrame(tick);
+            },
+            { threshold: 0.3 }
+        );
+        if (sectionRef.current) observer.observe(sectionRef.current);
+        return () => observer.disconnect();
+    }, [adaa, targetPct]);
+
+    return (
+        <div ref={sectionRef}>
+            <div className="niyyatBarWrap">
+                <div className="niyyatTrack">
+                    <div className="niyyatFill" style={{ width: `${animPct}%` }} />
+                    <div className="niyyatMilestone" style={{ left: `${t1Pct}%` }}>
+                        <div className="niyyatMilestoneLine" />
+                        <div className="niyyatMilestoneLabel">
+                            <span className="niyyatMilestoneName">Niyyat</span>
+                            <span className="niyyatMilestoneAmt">{formatWholeCurrency(t1)}</span>
+                        </div>
+                    </div>
+                    <div className="niyyatMilestone" style={{ right: 0 }}>
+                        <div className="niyyatMilestoneLine" />
+                        <div className="niyyatMilestoneLabel">
+                            <span className="niyyatMilestoneName">Future Niyyat</span>
+                            <span className="niyyatMilestoneAmt">{formatWholeCurrency(t2)}</span>
+                        </div>
+                    </div>
+                    <div className="niyyatAdaa">
+                        <span className="niyyatMilestoneName">Adaa</span>
+                        <span className="niyyatMilestoneAmt">{formatWholeCurrency(displayAdaa)}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
 
 const formatDueDate = (dateStr) => {
     if (!dateStr) return '—';
@@ -42,6 +110,13 @@ const Review = () => {
         variables: { userId: selectedUser?._id || '' },
         skip: !selectedUser,
     });
+
+    const { data: niyyatData, loading: niyyatLoading } = useQuery(GET_MASJID_NIYYAT_FOR_USER, {
+        variables: { userId: selectedUser?._id || '' },
+        skip: !selectedUser,
+    });
+
+    const niyyat = niyyatData?.getMasjidNiyyatForUser;
 
     const pastApprovals = approvalsData?.getApprovalsByRequester || [];
 
@@ -181,6 +256,21 @@ const Review = () => {
                                     </div>
                                 </>
                             )}
+
+                            <div className="reviewPastApprovalsSection">
+                                <h3 className="reviewPastApprovalsTitle">Masjid Niyyat</h3>
+                                {niyyatLoading ? (
+                                    <div className="loadingState">Loading Masjid Niyyat…</div>
+                                ) : !niyyat ? (
+                                    <div className="reviewNoPastApprovals">Takhmeen Pending</div>
+                                ) : !niyyat.adaa ? (
+                                    <p className="reviewNiyyatCommitted">
+                                        Committed {formatWholeCurrency(niyyat.t1)} but no payments yet.
+                                    </p>
+                                ) : (
+                                    <MasjidNiyyatBar t1={niyyat.t1} t2={niyyat.t2} adaa={niyyat.adaa} />
+                                )}
+                            </div>
 
                             <div className="reviewPastApprovalsSection">
                                 <h3 className="reviewPastApprovalsTitle">Past Approvals</h3>

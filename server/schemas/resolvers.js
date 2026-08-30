@@ -3,6 +3,7 @@ const { signToken } = require('../utils/auth');
 const { AuthenticationError } = require('apollo-server-express');
 const { SendHtmlEmail, SendAppointmentEmail } = require('../utils/email');
 const { encrypt, decrypt } = require('../utils/encryption');
+const { destroyImage } = require('../utils/cloudinary');
 
 const resolvers = {
     Query: {
@@ -213,6 +214,34 @@ const resolvers = {
                 check: achRecord.check,
                 signature: achRecord.signature,
             };
+        },
+
+        getAllACH: async (parent, args, context) => {
+            if (!context.user) {
+                throw new AuthenticationError('You must be logged in');
+            }
+
+            const achRecords = await ACH.find({});
+            const userIds = achRecords.map((a) => a.user).filter(Boolean);
+            const users = await User.find({ _id: { $in: userIds } });
+            const userMap = {};
+            users.forEach((u) => { userMap[u._id.toString()] = u; });
+
+            const rows = achRecords.map((a) => ({
+                _id: a._id,
+                user: a.user ? userMap[a.user.toString()] : null,
+                accountNumber: a.accountNumber ? decrypt(a.accountNumber) : null,
+                routingNumber: a.routingNumber ? decrypt(a.routingNumber) : null,
+                authorized: a.authorized,
+                check: a.check,
+                signature: a.signature,
+            }));
+
+            rows.sort((a, b) =>
+                (a.user?.fullName || '').localeCompare(b.user?.fullName || '')
+            );
+
+            return rows;
         },
 
         getMyWajebaatStatus: async (parent, args, context) => {
@@ -1191,6 +1220,27 @@ ${laagatHtml}
                 { $set: setFields },
                 { upsert: true }
             );
+            return true;
+        },
+
+        deleteACH: async (parent, { achId }, context) => {
+            if (!context.user) {
+                throw new AuthenticationError('You must be logged in');
+            }
+
+            const achRecord = await ACH.findById(achId);
+            if (!achRecord) return true;
+
+            // Remove the check + signature images from Cloudinary first.
+            await Promise.all([
+                destroyImage(achRecord.check),
+                destroyImage(achRecord.signature),
+            ]);
+
+            // Detach the ACH reference from any commitment pointing at it.
+            await Commitment.updateMany({ ach: achRecord._id }, { $unset: { ach: '' } });
+
+            await ACH.deleteOne({ _id: achRecord._id });
             return true;
         },
 

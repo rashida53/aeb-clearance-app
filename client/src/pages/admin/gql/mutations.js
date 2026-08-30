@@ -32,6 +32,12 @@ export const CANCEL_SIGNUP = gql`
     }
 `;
 
+export const DELETE_ACH = gql`
+    mutation deleteACH($achId: ID!) {
+        deleteACH(achId: $achId)
+    }
+`;
+
 export const REASSIGN_SLOT_GROUP = gql`
     mutation reassignSlotGroup($date: String!, $group: String!, $volunteerId: ID!) {
         reassignSlotGroup(date: $date, group: $group, volunteerId: $volunteerId)

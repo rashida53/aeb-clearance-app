@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useLazyQuery } from '@apollo/client';
+import { Image } from 'cloudinary-react';
 import Nav from '../../components/Nav';
-import { GET_SLOTS, GET_HOF_SLOT_STATUSES, GET_HUQOOQ_EXPORT, GET_MAALIYA_VOLUNTEERS } from './gql/queries';
-import { CREATE_SLOTS, DELETE_SLOT, CANCEL_SIGNUP, REASSIGN_SLOT_GROUP } from './gql/mutations';
+import { GET_SLOTS, GET_HOF_SLOT_STATUSES, GET_HUQOOQ_EXPORT, GET_MAALIYA_VOLUNTEERS, GET_ALL_ACH } from './gql/queries';
+import { CREATE_SLOTS, DELETE_SLOT, CANCEL_SIGNUP, REASSIGN_SLOT_GROUP, DELETE_ACH } from './gql/mutations';
 import { GET_ALL_ACTIVE_USERS } from '../review/gql/queries';
 import { GET_VOLUNTEER_SLOT_GROUPS } from '../volunteer/gql/queries';
+import { CLOUD_NAME } from '../../utils/cloudinary';
 
 const formatDate = (dateStr) => {
     const date = new Date(dateStr);
@@ -520,6 +522,119 @@ function VolunteerManagement() {
     );
 }
 
+// ── Section 6: ACH Details ──
+
+function ACHTable() {
+    const { data, loading, refetch } = useQuery(GET_ALL_ACH);
+    const [deleteACH] = useMutation(DELETE_ACH);
+    const [viewer, setViewer] = useState(null); // { title, publicId }
+    const [deletingId, setDeletingId] = useState('');
+    const [error, setError] = useState('');
+
+    const rows = data?.getAllACH || [];
+
+    const handleDelete = async (achId) => {
+        if (!window.confirm('Delete this ACH record and its check/signature images? This cannot be undone.')) {
+            return;
+        }
+        setError('');
+        setDeletingId(achId);
+        try {
+            await deleteACH({ variables: { achId } });
+            await refetch();
+        } catch (err) {
+            setError(err.message);
+        }
+        setDeletingId('');
+    };
+
+    return (
+        <div className="adminSection">
+            <h2 className="adminSectionTitle">ACH Details</h2>
+            {error && <p className="adminError">{error}</p>}
+
+            {loading ? (
+                <p>Loading…</p>
+            ) : rows.length === 0 ? (
+                <p className="adminEmpty">No ACH records.</p>
+            ) : (
+                <div className="adminTableWrapper">
+                    <table className="adminTable">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Account Number</th>
+                                <th>Routing Number</th>
+                                <th>Check</th>
+                                <th>Sign</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {rows.map((r) => (
+                                <tr key={r._id}>
+                                    <td>{r.user?.fullName || '—'}</td>
+                                    <td>{r.accountNumber || '—'}</td>
+                                    <td>{r.routingNumber || '—'}</td>
+                                    <td>
+                                        {r.check ? (
+                                            <button
+                                                className="adminLinkBtn"
+                                                onClick={() => setViewer({ title: 'Voided Check', publicId: r.check })}
+                                            >
+                                                View Check
+                                            </button>
+                                        ) : '—'}
+                                    </td>
+                                    <td>
+                                        {r.signature ? (
+                                            <button
+                                                className="adminLinkBtn"
+                                                onClick={() => setViewer({ title: 'Signature', publicId: r.signature })}
+                                            >
+                                                View Sign
+                                            </button>
+                                        ) : '—'}
+                                    </td>
+                                    <td>
+                                        <button
+                                            className="adminCancelBtn"
+                                            onClick={() => handleDelete(r._id)}
+                                            disabled={deletingId === r._id}
+                                        >
+                                            {deletingId === r._id ? 'Deleting…' : 'Delete'}
+                                        </button>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            )}
+
+            {viewer && (
+                <div className="modalOverlay" onClick={() => setViewer(null)}>
+                    <div className="achViewerModal" onClick={(e) => e.stopPropagation()}>
+                        <h3 className="achViewerTitle">{viewer.title}</h3>
+                        <div className="achViewerImgWrap">
+                            <Image
+                                cloudName={CLOUD_NAME}
+                                publicId={viewer.publicId}
+                                width="700"
+                                crop="fit"
+                                alt={viewer.title}
+                            />
+                        </div>
+                        <button className="wjBtnSecondary" onClick={() => setViewer(null)}>
+                            Close
+                        </button>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}
+
 // ── Main Admin Page ──
 
 export default function Admin() {
@@ -533,6 +648,7 @@ export default function Admin() {
                 <SlotCreation />
                 <HOFDashboard />
                 <VolunteerManagement />
+                <ACHTable />
             </div>
         </>
     );

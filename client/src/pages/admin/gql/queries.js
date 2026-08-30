@@ -79,6 +79,22 @@ export const LOOKUP_ACH = gql`
     }
 `;
 
+export const GET_ALL_ACH = gql`
+    query getAllACH {
+        getAllACH {
+            _id
+            user {
+                _id
+                fullName
+            }
+            accountNumber
+            routingNumber
+            check
+            signature
+        }
+    }
+`;
+
 export const GET_HUQOOQ_EXPORT = gql`
     query getHuqooqExport {
         getHuqooqExport {

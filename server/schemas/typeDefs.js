@@ -184,6 +184,7 @@ type Query {
     getSlotsByDate(date: String!): [SlotWithDetails]
     getHOFSlotStatuses: [HOFSlotStatus]
     lookupACH(userId: ID!): ACHInfo
+    getAllACH: [ACHInfo]
     getMyWajebaatStatus: MyWajebaatStatus
     getAvailableSlots: [Slot]
     getVolunteerSlotGroups: [SlotGroup]
@@ -230,6 +231,7 @@ type Mutation {
     upsertACHForUser(userId: ID!, accountNumber: String, routingNumber: String, check: String, signature: String): Boolean
     upsertTakhmeen(userId: ID!, year: String!, wajebaat: Float, sf: Float, wcheck: String, sfcheck: String): Takhmeen
     upsertMasjidNiyyat(userId: ID!, t1: Float!, t2: Float!): Boolean
+    deleteACH(achId: ID!): Boolean
 }
 `;
 
