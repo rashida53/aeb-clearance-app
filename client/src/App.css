@@ -1226,6 +1226,26 @@ label {
   padding: 8px 0;
 }
 
+/* Review page Masjid Niyyat bar: keep amounts modest (matching "Total Due")
+   so the Niyyat / Future Niyyat labels don't blow up and overlap. */
+.reviewPastApprovalsSection .niyyatMilestoneAmt {
+  font-size: 18px;
+}
+
+.reviewPastApprovalsSection .niyyatMilestoneName {
+  font-size: 10px;
+}
+
+.reviewPastApprovalsSection .niyyatTrack {
+  margin-bottom: 44px;
+}
+
+@media (max-width: 540px) {
+  .reviewPastApprovalsSection .niyyatMilestoneAmt {
+    font-size: 13px;
+  }
+}
+
 @media (max-width: 540px) {
   .reviewCard {
     padding: 20px 12px;
