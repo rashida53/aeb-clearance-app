@@ -23,13 +23,16 @@ export default function SignaturePad({ value, onChange }) {
         setError('');
         setUploading(true);
         try {
-            // getTrimmedCanvas() crops to the drawn strokes; PNG preserves transparency.
-            const dataUrl = sigRef.current.getTrimmedCanvas().toDataURL('image/png');
+            // Use getCanvas() rather than getTrimmedCanvas() — the alpha build's
+            // trim-canvas import is broken ("trim_canvas... is not a function").
+            const dataUrl = sigRef.current.getCanvas().toDataURL('image/png');
             const publicId = await uploadToCloudinary(dataUrl);
             onChange(publicId);
             setEditing(false);
         } catch (err) {
-            setError('Upload failed. Please try again.');
+            console.error('Signature upload failed:', err, err?.response?.data);
+            const detail = err?.response?.data?.error?.message || err?.message || 'unknown error';
+            setError(`Upload failed: ${detail}`);
         } finally {
             setUploading(false);
         }

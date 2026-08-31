@@ -528,16 +528,15 @@ function ACHTable() {
     const { data, loading, refetch } = useQuery(GET_ALL_ACH);
     const [deleteACH] = useMutation(DELETE_ACH);
     const [viewer, setViewer] = useState(null); // { title, publicId }
+    const [confirmId, setConfirmId] = useState(''); // achId pending deletion
     const [deletingId, setDeletingId] = useState('');
     const [error, setError] = useState('');
 
     const rows = data?.getAllACH || [];
 
     const handleDelete = async (achId) => {
-        if (!window.confirm('Delete this ACH record and its check/signature images? This cannot be undone.')) {
-            return;
-        }
         setError('');
+        setConfirmId('');
         setDeletingId(achId);
         try {
             // The server deletes the check + signature images from Cloudinary
@@ -601,7 +600,7 @@ function ACHTable() {
                                     <td>
                                         <button
                                             className="adminCancelBtn"
-                                            onClick={() => handleDelete(r._id)}
+                                            onClick={() => setConfirmId(r._id)}
                                             disabled={deletingId === r._id}
                                         >
                                             {deletingId === r._id ? 'Deleting…' : 'Delete'}
@@ -611,6 +610,25 @@ function ACHTable() {
                             ))}
                         </tbody>
                     </table>
+                </div>
+            )}
+
+            {confirmId && (
+                <div className="modalOverlay" onClick={() => setConfirmId('')}>
+                    <div className="modalCard" onClick={(e) => e.stopPropagation()}>
+                        <h3>Delete ACH Record</h3>
+                        <p className="achConfirmText">
+                            The Check and Signature will be deleted with the ACH record.
+                        </p>
+                        <div className="achConfirmActions">
+                            <button className="wjBtnSecondary" onClick={() => setConfirmId('')}>
+                                Cancel
+                            </button>
+                            <button className="achConfirmDeleteBtn" onClick={() => handleDelete(confirmId)}>
+                                Confirm
+                            </button>
+                        </div>
+                    </div>
                 </div>
             )}
 

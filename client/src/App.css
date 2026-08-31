@@ -1639,6 +1639,36 @@ label {
   border-radius: 8px;
 }
 
+.achConfirmText {
+  color: var(--color-navy);
+  font-size: 15px;
+  line-height: 1.6;
+  margin-bottom: 24px;
+}
+
+.achConfirmActions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.achConfirmDeleteBtn {
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: bold;
+  padding: 10px 24px;
+  background-color: #d15252;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color var(--transition-standard);
+}
+
+.achConfirmDeleteBtn:hover {
+  background-color: #a00;
+}
+
 /* ACH Lookup */
 
 .adminACHCard {

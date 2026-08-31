@@ -15,7 +15,9 @@ export default function CheckCapture({ value, onChange }) {
             const publicId = await uploadToCloudinary(file);
             onChange(publicId);
         } catch (err) {
-            setError('Upload failed. Please try again.');
+            console.error('Check upload failed:', err, err?.response?.data);
+            const detail = err?.response?.data?.error?.message || err?.message || 'unknown error';
+            setError(`Upload failed: ${detail}`);
         } finally {
             setUploading(false);
         }
