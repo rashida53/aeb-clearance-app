@@ -540,6 +540,8 @@ function ACHTable() {
         setError('');
         setDeletingId(achId);
         try {
+            // The server deletes the check + signature images from Cloudinary
+            // (API secret lives in a server env var) then removes the record.
             await deleteACH({ variables: { achId } });
             await refetch();
         } catch (err) {

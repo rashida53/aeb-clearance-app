@@ -1,7 +1,10 @@
 import axios from 'axios';
 
-const CLOUD_NAME = process.env.REACT_APP_CLOUD_NAME;
-const UPLOAD_PRESET = process.env.REACT_APP_UPLOAD_PRESET;
+// Public by nature — the cloud name and unsigned upload preset ship in the
+// client bundle regardless (same as the FMB dish upload). No secrets here:
+// image deletion is done server-side where the API secret lives in an env var.
+const CLOUD_NAME = 'dbnbsbmwv';
+const UPLOAD_PRESET = 'weumsenv';
 
 /**
  * Upload a file/blob/data-URL to Cloudinary using the shared unsigned preset.
