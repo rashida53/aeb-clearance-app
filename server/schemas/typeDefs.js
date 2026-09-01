@@ -139,6 +139,9 @@ type Takhmeen {
     sf: Float
     wcheck: String
     sfcheck: String
+    ha: Boolean
+    na: Boolean
+    reason: String
 }
 
 type CheckInData {
@@ -151,6 +154,13 @@ type CheckInData {
     fmbPledgeAmount: Float
     fmbPledgeStatus: String
     takhmeen: Takhmeen
+    masjid: MasjidInfo
+}
+
+type MasjidInfo {
+    t1: Float
+    t2: Float
+    adaa: Float
 }
 
 type FmbPledgeInfo {
@@ -207,6 +217,7 @@ type HuqooqExportRow {
     wcheck: String
     sfAmount: Float
     sfcheck: String
+    comments: String
 }
 
 type Mutation {
@@ -229,7 +240,7 @@ type Mutation {
     reassignSlotGroup(date: String!, group: String!, volunteerId: ID!): Boolean
     upsertCommitmentForUser(userId: ID!, kr: Float, ut: Float, year: String!, schedule: String): Commitment
     upsertACHForUser(userId: ID!, accountNumber: String, routingNumber: String, check: String, signature: String): Boolean
-    upsertTakhmeen(userId: ID!, year: String!, wajebaat: Float, sf: Float, wcheck: String, sfcheck: String): Takhmeen
+    upsertTakhmeen(userId: ID!, year: String!, wajebaat: Float, sf: Float, wcheck: String, sfcheck: String, ha: Boolean, na: Boolean, reason: String): Takhmeen
     upsertMasjidNiyyat(userId: ID!, t1: Float!, t2: Float!): Boolean
     deleteACH(achId: ID!): Boolean
 }

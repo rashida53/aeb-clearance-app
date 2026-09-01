@@ -115,6 +115,7 @@ function SlotCreation() {
     const [duration, setDuration] = useState('');
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
+    const [confirmSlot, setConfirmSlot] = useState(null);
 
     const { data: slotsData, loading: slotsLoading, refetch: refetchSlots } = useQuery(GET_SLOTS);
     const [createSlots, { loading: creating }] = useMutation(CREATE_SLOTS);
@@ -181,9 +182,18 @@ function SlotCreation() {
         }
     };
 
-    const handleDelete = async (slotId) => {
+    const handleDelete = async (slot) => {
+        if (slot.bookedBy) {
+            setConfirmSlot(slot);
+            return;
+        }
+        await doDelete(slot);
+    };
+
+    const doDelete = async (slot) => {
         try {
-            await deleteSlot({ variables: { slotId } });
+            await deleteSlot({ variables: { slotId: slot._id } });
+            setConfirmSlot(null);
             refetchSlots();
         } catch (err) {
             setError(err.message);
@@ -267,24 +277,40 @@ function SlotCreation() {
                                         className={`adminSlotChip ${slot.bookedBy ? 'booked' : ''}`}
                                     >
                                         <span>{formatTime12(slot.startTime)}</span>
-                                        {slot.bookedBy ? (
+                                        {slot.bookedBy && (
                                             <span className="adminSlotBookedBy">
                                                 {slot.bookedBy.fullName}
                                             </span>
-                                        ) : (
-                                            <button
-                                                className="adminSlotDeleteBtn"
-                                                onClick={() => handleDelete(slot._id)}
-                                                title="Delete slot"
-                                            >
-                                                ×
-                                            </button>
                                         )}
+                                        <button
+                                            className="adminSlotDeleteBtn"
+                                            onClick={() => handleDelete(slot)}
+                                            title={slot.bookedBy ? 'Delete booked slot (cancels booking)' : 'Delete slot'}
+                                        >
+                                            ×
+                                        </button>
                                     </div>
                                 ))}
                             </div>
                         </div>
                     ))
+            )}
+
+            {confirmSlot && (
+                <div className="wjModal" onClick={() => setConfirmSlot(null)}>
+                    <div className="wjModalContent" onClick={(e) => e.stopPropagation()}>
+                        <h3>Cancel Booked Slot</h3>
+                        <p>You are cancelling a booked slot. Are you sure?</p>
+                        <div className="wjModalActions">
+                            <button className="wjBtnSecondary" onClick={() => setConfirmSlot(null)}>
+                                Back
+                            </button>
+                            <button className="wjBtnPrimary" onClick={() => doDelete(confirmSlot)}>
+                                Delete
+                            </button>
+                        </div>
+                    </div>
+                </div>
             )}
         </div>
     );
@@ -311,10 +337,11 @@ function HOFDashboard() {
                 'ITS', 'Previous Year', 'Name',
                 'Wajebaat Amount', 'Wajebaat Check #',
                 'Silat ul-Fitr Amount', 'Silat ul-Fitr Check #',
+                'Comments',
             ];
             const body = rows.map((r) => [
                 r.its, r.previousYear, r.name,
-                r.wajebaatAmount, r.wcheck, r.sfAmount, r.sfcheck,
+                r.wajebaatAmount, r.wcheck, r.sfAmount, r.sfcheck, r.comments,
             ]);
             downloadCsv('huqooq-export.csv', [header, ...body]);
         } catch (err) {

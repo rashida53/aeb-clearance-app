@@ -28,6 +28,20 @@ const takhmeenSchema = new Schema(
             type: String,
             default: null,
         },
+        // Wajebaat adaa in Hazrat Aaliyah — no check number is collected.
+        ha: {
+            type: Boolean,
+            default: false,
+        },
+        // No wajebaat niyyat — wajebaat amount is 0 and a reason is captured.
+        na: {
+            type: Boolean,
+            default: false,
+        },
+        reason: {
+            type: String,
+            default: null,
+        },
     },
     {
         collection: 'huqooq',

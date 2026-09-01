@@ -17,6 +17,9 @@ export const GET_TAKHMEEN = gql`
             _id
             wajebaat
             sf
+            ha
+            na
+            reason
         }
     }
 `;

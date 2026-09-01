@@ -3542,6 +3542,70 @@ label {
   margin-right: auto;
 }
 
+/* Overlaid on the form image, directly beneath the wajebaat total (jumla A) box. */
+.tkWajebaatDeclarations {
+  position: absolute;
+  top: 68.5%;
+  left: 62%;
+  right: 2%;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(4px, 0.8vw, 8px);
+}
+
+.tkCheckOption {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-body);
+  font-size: clamp(10px, 1.3vw, 14px);
+  font-weight: bold;
+  color: var(--color-navy);
+  cursor: pointer;
+}
+
+.tkCheckOption input[type='checkbox'] {
+  width: clamp(14px, 1.6vw, 18px);
+  height: clamp(14px, 1.6vw, 18px);
+  flex-shrink: 0;
+  accent-color: var(--color-navy);
+  cursor: pointer;
+}
+
+.tkCheckOption.disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.tkCheckOption.disabled input[type='checkbox'] {
+  cursor: not-allowed;
+}
+
+.tkReasonRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tkReasonLabel {
+  font-family: var(--font-body);
+  font-weight: bold;
+  font-size: clamp(10px, 1.3vw, 14px);
+  color: var(--color-navy);
+}
+
+.tkReasonInput {
+  flex: 0 1 auto;
+  width: 72%;
+  min-width: 0;
+  padding: clamp(3px, 0.5vw, 6px) clamp(4px, 0.8vw, 10px);
+  font-family: var(--font-body);
+  font-size: clamp(10px, 1.3vw, 14px);
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(0, 32, 61, 0.3);
+  border-radius: 4px;
+}
+
 .tkSaved {
   font-family: var(--font-body);
   font-weight: bold;

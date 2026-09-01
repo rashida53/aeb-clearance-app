@@ -33,6 +33,10 @@ export default function Takhmeen() {
     const [minnat, setMinnat] = useState('');
     // Editable lumpsum total — mutually exclusive with the itemized amounts above.
     const [lumpTotal, setLumpTotal] = useState('');
+    // Wajebaat declarations: ha = adaa in Hazrat Aaliyah, na = no niyyat (with reason).
+    const [ha, setHa] = useState(false);
+    const [na, setNa] = useState(false);
+    const [reason, setReason] = useState('');
 
     const itemsA = [zakaat, khumus, silat, nafs, najwa, nm, kaffarat, minnat];
     const itemsSumA = itemsA.reduce((sum, v) => sum + (parseFloat(v) || 0), 0);
@@ -79,6 +83,9 @@ export default function Takhmeen() {
                 setSavedTotalB(tk.sf);
                 // Only the total is stored, so seed it as the lumpsum value.
                 setLumpTotal(tk.wajebaat != null ? String(tk.wajebaat) : '');
+                setHa(!!tk.ha);
+                setNa(!!tk.na);
+                setReason(tk.reason || '');
             }
         },
     });
@@ -120,6 +127,9 @@ export default function Takhmeen() {
         setKaffarat('');
         setMinnat('');
         setLumpTotal('');
+        setHa(false);
+        setNa(false);
+        setReason('');
         setR1c2('');
         setR2c2('');
         setR3c2('');
@@ -146,8 +156,8 @@ export default function Takhmeen() {
         setSaved(false);
         try {
             // Match the on-screen display exactly (only positive totals count),
-            // so we never persist a value the UI isn't showing.
-            const finalA = totalA > 0 ? totalA : (savedTotalA != null ? savedTotalA : null);
+            // so we never persist a value the UI isn't showing. No Niyyat forces 0.
+            const finalA = na ? 0 : (totalA > 0 ? totalA : (savedTotalA != null ? savedTotalA : null));
             const finalB = totalB > 0 ? totalB : (savedTotalB != null ? savedTotalB : null);
             const promises = [
                 upsertTakhmeen({
@@ -156,6 +166,9 @@ export default function Takhmeen() {
                         year: CURRENT_YEAR,
                         wajebaat: finalA,
                         sf: finalB,
+                        ha,
+                        na,
+                        reason: na ? (reason || null) : null,
                     },
                 }),
             ];
@@ -239,7 +252,7 @@ export default function Takhmeen() {
                                 min="0"
                                 value={zakaat}
                                 onChange={(e) => setZakaat(e.target.value)}
-                                disabled={lumpTotal !== ''}
+                                disabled={lumpTotal !== '' || na}
                                 placeholder="0"
                             />
                             <input
@@ -248,7 +261,7 @@ export default function Takhmeen() {
                                 min="0"
                                 value={khumus}
                                 onChange={(e) => setKhumus(e.target.value)}
-                                disabled={lumpTotal !== ''}
+                                disabled={lumpTotal !== '' || na}
                                 placeholder="0"
                             />
                             <input
@@ -257,7 +270,7 @@ export default function Takhmeen() {
                                 min="0"
                                 value={silat}
                                 onChange={(e) => setSilat(e.target.value)}
-                                disabled={lumpTotal !== ''}
+                                disabled={lumpTotal !== '' || na}
                                 placeholder="0"
                             />
                             <input
@@ -266,7 +279,7 @@ export default function Takhmeen() {
                                 min="0"
                                 value={nafs}
                                 onChange={(e) => setNafs(e.target.value)}
-                                disabled={lumpTotal !== ''}
+                                disabled={lumpTotal !== '' || na}
                                 placeholder="0"
                             />
                             <input
@@ -275,7 +288,7 @@ export default function Takhmeen() {
                                 min="0"
                                 value={najwa}
                                 onChange={(e) => setNajwa(e.target.value)}
-                                disabled={lumpTotal !== ''}
+                                disabled={lumpTotal !== '' || na}
                                 placeholder="0"
                             />
                             <input
@@ -284,7 +297,7 @@ export default function Takhmeen() {
                                 min="0"
                                 value={nm}
                                 onChange={(e) => setNm(e.target.value)}
-                                disabled={lumpTotal !== ''}
+                                disabled={lumpTotal !== '' || na}
                                 placeholder="0"
                             />
                             <input
@@ -293,7 +306,7 @@ export default function Takhmeen() {
                                 min="0"
                                 value={kaffarat}
                                 onChange={(e) => setKaffarat(e.target.value)}
-                                disabled={lumpTotal !== ''}
+                                disabled={lumpTotal !== '' || na}
                                 placeholder="0"
                             />
                             <input
@@ -302,16 +315,16 @@ export default function Takhmeen() {
                                 min="0"
                                 value={minnat}
                                 onChange={(e) => setMinnat(e.target.value)}
-                                disabled={lumpTotal !== ''}
+                                disabled={lumpTotal !== '' || na}
                                 placeholder="0"
                             />
                             <input
                                 className="tkOverlayInput tkInputTotal"
                                 type="number"
                                 min="0"
-                                value={anyItemA ? String(itemsSumA) : lumpTotal}
+                                value={na ? '0' : (anyItemA ? String(itemsSumA) : lumpTotal)}
                                 onChange={(e) => setLumpTotal(e.target.value)}
-                                disabled={anyItemA}
+                                disabled={anyItemA || na}
                                 placeholder="0"
                             />
 
@@ -341,6 +354,39 @@ export default function Takhmeen() {
                             ))}
                             <div className="tkOverlayTotal tkSfTotalB">
                                 {totalB > 0 ? formatCurrency(totalB) : savedTotalB != null ? formatCurrency(savedTotalB) : ''}
+                            </div>
+
+                            <div className="tkWajebaatDeclarations">
+                                <label className={`tkCheckOption ${na ? 'disabled' : ''}`}>
+                                    <input
+                                        type="checkbox"
+                                        checked={ha}
+                                        disabled={na}
+                                        onChange={(e) => setHa(e.target.checked)}
+                                    />
+                                    <span>Adaa in Hazrat Aaliyah</span>
+                                </label>
+                                <label className={`tkCheckOption ${ha ? 'disabled' : ''}`}>
+                                    <input
+                                        type="checkbox"
+                                        checked={na}
+                                        disabled={ha}
+                                        onChange={(e) => setNa(e.target.checked)}
+                                    />
+                                    <span>No Niyyat</span>
+                                </label>
+                                {na && (
+                                    <div className="tkReasonRow">
+                                        <label className="tkReasonLabel">Reason:</label>
+                                        <input
+                                            className="tkReasonInput"
+                                            type="text"
+                                            value={reason}
+                                            onChange={(e) => setReason(e.target.value)}
+                                            placeholder="Enter reason"
+                                        />
+                                    </div>
+                                )}
                             </div>
                         </div>
 
@@ -373,7 +419,7 @@ export default function Takhmeen() {
                         </div>
 
                         <div className="tkSaveRow">
-                            <button className="wjBtnPrimary" onClick={handleSave} disabled={saving || (!totalA && !totalB && savedTotalA == null && savedTotalB == null && kr === initialKr && ut === initialUt)}>
+                            <button className="wjBtnPrimary" onClick={handleSave} disabled={saving || (!totalA && !totalB && savedTotalA == null && savedTotalB == null && kr === initialKr && ut === initialUt && !ha && !na)}>
                                 {saving ? 'Saving...' : 'Save'}
                             </button>
                             {saved && <span className="tkSaved">Takhmeen Complete.</span>}

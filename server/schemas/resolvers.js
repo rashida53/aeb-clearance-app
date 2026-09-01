@@ -391,6 +391,8 @@ const resolvers = {
                 Takhmeen.findOne({ user: userId, year }),
             ]);
 
+            const masjidRecord = user ? await Masjid.findOne({ its: user.hofIts }) : null;
+
             return {
                 user,
                 commitment: commitment ? {
@@ -423,6 +425,14 @@ const resolvers = {
                     sf: takhmeen.sf,
                     wcheck: takhmeen.wcheck,
                     sfcheck: takhmeen.sfcheck,
+                    ha: takhmeen.ha,
+                    na: takhmeen.na,
+                    reason: takhmeen.reason,
+                } : null,
+                masjid: masjidRecord ? {
+                    t1: masjidRecord.t1 ?? null,
+                    t2: masjidRecord.t2 ?? null,
+                    adaa: masjidRecord.adaa ?? null,
                 } : null,
             };
         },
@@ -440,6 +450,9 @@ const resolvers = {
                 year: takhmeen.year,
                 wajebaat: takhmeen.wajebaat,
                 sf: takhmeen.sf,
+                ha: takhmeen.ha,
+                na: takhmeen.na,
+                reason: takhmeen.reason,
             };
         },
 
@@ -476,8 +489,9 @@ const resolvers = {
             const previousYear = '1447-48';
 
             const takhmeens = await Takhmeen.find({ year: currentYear });
-            // Complete = both check numbers have been entered.
-            const complete = takhmeens.filter((t) => !!t.wcheck && !!t.sfcheck);
+            // Complete = Sila Fitra check entered, and the wajebaat side resolved
+            // (a check number, or a Hazrat Aaliyah / No Niyyat declaration).
+            const complete = takhmeens.filter((t) => (!!t.wcheck || t.ha || t.na) && !!t.sfcheck);
 
             const userIds = complete.map((t) => t.user);
             const [users, prevTakhmeens] = await Promise.all([
@@ -494,14 +508,24 @@ const resolvers = {
                 const uid = t.user.toString();
                 const u = userMap[uid];
                 const prev = prevMap[uid];
+                let comments = '';
+                if (t.ha) {
+                    comments = 'Hazrat Aaliyah Wajebaat';
+                } else if (t.na) {
+                    comments = t.reason
+                        ? `No Wajebaat Niyyat: ${t.reason}`
+                        : 'No Wajebaat Niyyat';
+                }
                 return {
                     its: u?.hofIts || '',
                     previousYear: prev ? prev.wajebaat : null,
                     name: u?.fullName || '',
                     wajebaatAmount: t.wajebaat,
-                    wcheck: t.wcheck,
+                    // No check number for Hazrat Aaliyah / No Niyyat cases.
+                    wcheck: (t.ha || t.na) ? '' : t.wcheck,
                     sfAmount: t.sf,
                     sfcheck: t.sfcheck,
+                    comments,
                 };
             });
         },
@@ -874,10 +898,9 @@ ${laagatHtml}
             if (!slot) {
                 throw new Error('Slot not found');
             }
-            if (slot.bookedBy) {
-                throw new Error('Cannot delete a booked slot. Cancel the signup first.');
-            }
 
+            // Deleting an occupied slot is allowed. The user who had booked it
+            // will simply see the scheduling screen again (feels like a cancel).
             await Slot.findByIdAndDelete(slotId);
             return true;
         },
@@ -1269,7 +1292,7 @@ ${laagatHtml}
             };
         },
 
-        upsertTakhmeen: async (parent, { userId, year, wajebaat, sf, wcheck, sfcheck }, context) => {
+        upsertTakhmeen: async (parent, { userId, year, wajebaat, sf, wcheck, sfcheck, ha, na, reason }, context) => {
             if (!context.user) {
                 throw new AuthenticationError('You must be logged in');
             }
@@ -1281,6 +1304,9 @@ ${laagatHtml}
             if (sf !== undefined) updateFields.sf = sf;
             if (wcheck !== undefined) updateFields.wcheck = wcheck;
             if (sfcheck !== undefined) updateFields.sfcheck = sfcheck;
+            if (ha !== undefined) updateFields.ha = ha;
+            if (na !== undefined) updateFields.na = na;
+            if (reason !== undefined) updateFields.reason = reason;
 
             const takhmeen = await Takhmeen.findOneAndUpdate(
                 { user: userId, year },
@@ -1297,6 +1323,9 @@ ${laagatHtml}
                 sf: takhmeen.sf,
                 wcheck: takhmeen.wcheck,
                 sfcheck: takhmeen.sfcheck,
+                ha: takhmeen.ha,
+                na: takhmeen.na,
+                reason: takhmeen.reason,
             };
         },
 

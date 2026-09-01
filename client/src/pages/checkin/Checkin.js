@@ -91,11 +91,13 @@ export default function Checkin() {
                     },
                 }));
             }
+            // No wajebaat check number is collected for Hazrat Aaliyah / No Niyyat.
+            const isHaOrNa = ciData?.takhmeen?.ha || ciData?.takhmeen?.na;
             promises.push(upsertTakhmeen({
                 variables: {
                     userId: selectedUser._id,
                     year: CURRENT_YEAR,
-                    wcheck,
+                    wcheck: isHaOrNa ? '' : wcheck,
                     sfcheck,
                 },
             }));
@@ -152,20 +154,30 @@ export default function Checkin() {
                                         <div className="ciFieldGroup">
                                             <label className="ciLabel">Wajebaat Amount</label>
                                             <div className="ciReadonly">
-                                                {ciData?.takhmeen?.wajebaat != null
-                                                    ? formatCurrency(ciData.takhmeen.wajebaat)
-                                                    : 'Pending'}
+                                                {ciData?.takhmeen?.na
+                                                    ? formatCurrency(0)
+                                                    : ciData?.takhmeen?.wajebaat != null
+                                                        ? formatCurrency(ciData.takhmeen.wajebaat)
+                                                        : 'Pending'}
                                             </div>
                                         </div>
                                         <div className="ciFieldGroup">
-                                            <label className="ciLabel">Check Number</label>
-                                            <input
-                                                className="ciInput"
-                                                type="text"
-                                                placeholder="Check #"
-                                                value={wcheck}
-                                                onChange={(e) => setWcheck(e.target.value)}
-                                            />
+                                            {!ciData?.takhmeen?.ha && !ciData?.takhmeen?.na && (
+                                                <label className="ciLabel">Check Number</label>
+                                            )}
+                                            {ciData?.takhmeen?.ha ? (
+                                                <div className="ciReadonly">Hazrat Aaliyah Adaa</div>
+                                            ) : ciData?.takhmeen?.na ? (
+                                                <div className="ciReadonly">{ciData.takhmeen.reason || '—'}</div>
+                                            ) : (
+                                                <input
+                                                    className="ciInput"
+                                                    type="text"
+                                                    placeholder="Check #"
+                                                    value={wcheck}
+                                                    onChange={(e) => setWcheck(e.target.value)}
+                                                />
+                                            )}
                                         </div>
                                     </div>
                                     <div className="ciFieldRow">
@@ -274,6 +286,14 @@ export default function Checkin() {
                                         <label className="ciInlineLabel">Faiz ul Mawaid il Burhaniyah</label>
                                         <span className="ciInlineValue">
                                             {formatFmb(ciData?.fmbPledgeAmount, ciData?.fmbPledgeStatus)}
+                                        </span>
+                                    </div>
+                                    <div className="ciInlineRow">
+                                        <label className="ciInlineLabel">Masjid</label>
+                                        <span className="ciInlineValue">
+                                            {ciData?.masjid
+                                                ? `${formatCurrency(ciData.masjid.adaa || 0)} out of ${formatCurrency(ciData.masjid.t1 || 0)}`
+                                                : 'PENDING'}
                                         </span>
                                     </div>
                                 </div>

@@ -105,6 +105,7 @@ export const GET_HUQOOQ_EXPORT = gql`
             wcheck
             sfAmount
             sfcheck
+            comments
         }
     }
 `;

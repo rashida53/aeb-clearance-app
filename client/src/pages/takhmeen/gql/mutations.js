@@ -1,11 +1,14 @@
 import { gql } from '@apollo/client';
 
 export const UPSERT_TAKHMEEN = gql`
-    mutation upsertTakhmeen($userId: ID!, $year: String!, $wajebaat: Float, $sf: Float) {
-        upsertTakhmeen(userId: $userId, year: $year, wajebaat: $wajebaat, sf: $sf) {
+    mutation upsertTakhmeen($userId: ID!, $year: String!, $wajebaat: Float, $sf: Float, $ha: Boolean, $na: Boolean, $reason: String) {
+        upsertTakhmeen(userId: $userId, year: $year, wajebaat: $wajebaat, sf: $sf, ha: $ha, na: $na, reason: $reason) {
             _id
             wajebaat
             sf
+            ha
+            na
+            reason
         }
     }
 `;

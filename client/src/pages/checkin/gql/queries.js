@@ -50,6 +50,14 @@ export const GET_CHECK_IN_DATA = gql`
                 sf
                 wcheck
                 sfcheck
+                ha
+                na
+                reason
+            }
+            masjid {
+                t1
+                t2
+                adaa
             }
         }
     }
