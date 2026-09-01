@@ -2122,6 +2122,14 @@ label {
   margin-bottom: 16px;
 }
 
+.wjNiyyatNote {
+  font-family: var(--font-body);
+  font-size: 13.5px;
+  color: #666;
+  font-style: italic;
+  margin: 0 0 16px;
+}
+
 .wjFormGroupInline {
   display: flex;
   align-items: center;

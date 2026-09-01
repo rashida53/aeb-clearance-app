@@ -222,6 +222,12 @@ function CommitmentStep({ title, description, amount, onAmountChange, onDefer, o
             <h2 className="wjStepTitle">{title}</h2>
             {description && <p className="wjStepDesc">{description}</p>}
 
+            {isItemized && (
+                <p className="wjNiyyatNote">
+                    You can provide an item wise niyyat or a collective niyyat at the bottom
+                </p>
+            )}
+
             {lastYearAmount > 0 && (
                 <div className="wjLastYear">
                     Last year, you committed ${Math.round(lastYearAmount)} towards this cause

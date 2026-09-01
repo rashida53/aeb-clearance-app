@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import SignatureCanvas from 'react-signature-canvas';
 import { Image } from 'cloudinary-react';
 import { uploadToCloudinary, CLOUD_NAME } from '../../../utils/cloudinary';
@@ -9,6 +9,12 @@ export default function SignaturePad({ value, onChange }) {
     const [error, setError] = useState('');
     const [editing, setEditing] = useState(!value);
     const [empty, setEmpty] = useState(true);
+
+    // The signature may load in asynchronously (e.g. on the check-in screen).
+    // When an existing value arrives, collapse to the preview + Re-sign view.
+    useEffect(() => {
+        if (value) setEditing(false);
+    }, [value]);
 
     const clear = () => {
         if (sigRef.current) sigRef.current.clear();
