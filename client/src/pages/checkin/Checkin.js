@@ -11,6 +11,11 @@ const CURRENT_YEAR = '1448-49';
 const formatCurrency = (amount) =>
     amount != null ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount) : '—';
 
+// Compact currency for large amounts: $53K (rounded up to the nearest thousand).
+// Amounts of 0 show the full value so it doesn't render as "$0K".
+const formatK = (amount) =>
+    amount ? `$${Math.ceil(amount / 1000)}K` : formatCurrency(0);
+
 // FMB pledge display: no pledge → PENDING; otherwise the amount, appending
 // (PENDING) when the pledge itself is still pending.
 const formatFmb = (amount, status) => {
@@ -292,7 +297,7 @@ export default function Checkin() {
                                         <label className="ciInlineLabel">Masjid</label>
                                         <span className="ciInlineValue">
                                             {ciData?.masjid
-                                                ? `${formatCurrency(ciData.masjid.adaa || 0)} out of ${formatCurrency(ciData.masjid.t1 || 0)}`
+                                                ? `${formatK(ciData.masjid.adaa || 0)} out of ${formatK(ciData.masjid.t1 || 0)}`
                                                 : 'PENDING'}
                                         </span>
                                     </div>
