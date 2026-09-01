@@ -2391,8 +2391,18 @@ label {
 .wjBtnPrimary:disabled {
   opacity: 0.5;
   cursor: not-allowed;
-  /* Let hover reach the wrapping span so its title tooltip shows. */
-  pointer-events: none;
+}
+
+/* Greyed "disabled" look while staying clickable, so a tap/click can surface
+   the incomplete-info modal on mobile (where hover tooltips don't exist). */
+.wjBtnPrimary.wjBtnInvalid {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.wjBtnPrimary.wjBtnInvalid:hover:not(:disabled) {
+  background-color: var(--color-navy);
+  color: var(--color-gold);
 }
 
 .wjBtnSecondary {
