@@ -301,15 +301,11 @@ function ACHStep({ onSubmit, onBack, onDefer, submitting, existingACH, existingS
     const [authorized, setAuthorized] = useState(!!existingACH?.authorized);
     const [check, setCheck] = useState(existingACH?.check || null);
     const [signature, setSignature] = useState(existingACH?.signature || null);
-    const [showIncomplete, setShowIncomplete] = useState(false);
 
     const isValid = accountNumber.length >= 8 && routingNumber.length >= 9 && schedule && authorized && !!signature && !!check;
 
     const handleSubmit = () => {
-        if (!isValid) {
-            setShowIncomplete(true);
-            return;
-        }
+        if (!isValid) return;
         onSubmit({ accountNumber, routingNumber, schedule, authorized, check, signature });
     };
 
@@ -384,24 +380,15 @@ function ACHStep({ onSubmit, onBack, onDefer, submitting, existingACH, existingS
                         Defer
                     </button>
                 )}
-                <button className="wjBtnPrimary" onClick={handleSubmit} disabled={submitting}>
-                    {submitting ? 'Submitting…' : 'Next'}
-                </button>
+                <span
+                    className="wjBtnTooltipWrap"
+                    title={!isValid ? 'ACH Information is incomplete. Please provide all fields on this page' : undefined}
+                >
+                    <button className="wjBtnPrimary" onClick={handleSubmit} disabled={!isValid || submitting}>
+                        {submitting ? 'Submitting…' : 'Next'}
+                    </button>
+                </span>
             </div>
-
-            {showIncomplete && (
-                <div className="wjModal" onClick={() => setShowIncomplete(false)}>
-                    <div className="wjModalContent" onClick={(e) => e.stopPropagation()}>
-                        <h3>ACH Information Incomplete</h3>
-                        <p>Please provide all fields on this page before continuing.</p>
-                        <div className="wjModalActions">
-                            <button className="wjBtnPrimary" onClick={() => setShowIncomplete(false)}>
-                                OK
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
         </div>
     );
 }

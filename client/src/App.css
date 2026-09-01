@@ -2365,6 +2365,11 @@ label {
   margin-top: 24px;
 }
 
+.wjBtnTooltipWrap {
+  display: inline-flex;
+  cursor: not-allowed;
+}
+
 .wjBtnPrimary {
   font-family: var(--font-body);
   font-size: 18px;
@@ -2386,6 +2391,8 @@ label {
 .wjBtnPrimary:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+  /* Let hover reach the wrapping span so its title tooltip shows. */
+  pointer-events: none;
 }
 
 .wjBtnSecondary {
