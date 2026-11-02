@@ -37,9 +37,11 @@ export default function Nav() {
                         <li>
                             <Link to="/letter" onClick={closeMenu}>Letter</Link>
                         </li>
-                        <li>
-                            <Link to="/wajebaat" onClick={closeMenu}>Wajebaat</Link>
-                        </li>
+                        {isLetterAdmin && (
+                            <li>
+                                <Link to="/review" onClick={closeMenu}>Review</Link>
+                            </li>
+                        )}
                         {isMaaliyaVolunteer && (
                             <li>
                                 <Link to="/volunteer" onClick={closeMenu}>Volunteer</Link>
@@ -52,22 +54,20 @@ export default function Nav() {
                         )}
                         {isLetterAdmin && (
                             <li>
-                                <Link to="/review" onClick={closeMenu}>Review</Link>
+                                <Link to="/takhmeen" onClick={closeMenu}>Takhmeen</Link>
                             </li>
                         )}
+                        <li>
+                            <Link to="/wajebaat" onClick={closeMenu}>Wajebaat</Link>
+                        </li>
                         {isLetterAdmin && (
                             <li>
-                                <Link to="/takhmeen" onClick={closeMenu}>Takhmeen</Link>
+                                <Link to="/admin" onClick={closeMenu}>Admin</Link>
                             </li>
                         )}
                         {isLetterAdmin && (
                             <li>
                                 <Link to="/masjid" onClick={closeMenu}>Masjid</Link>
-                            </li>
-                        )}
-                        {isLetterAdmin && (
-                            <li>
-                                <Link to="/admin" onClick={closeMenu}>Admin</Link>
                             </li>
                         )}
                         {isChatAdmin && (
@@ -84,7 +84,9 @@ export default function Nav() {
 
                     <div className={`navMobileMenu ${menuOpen ? 'open' : ''}`}>
                         <Link to="/letter" onClick={closeMenu}>Letter</Link>
-                        <Link to="/wajebaat" onClick={closeMenu}>Wajebaat</Link>
+                        {isLetterAdmin && (
+                            <Link to="/review" onClick={closeMenu}>Review</Link>
+                        )}
                         {isMaaliyaVolunteer && (
                             <Link to="/volunteer" onClick={closeMenu}>Volunteer</Link>
                         )}
@@ -92,16 +94,14 @@ export default function Nav() {
                             <Link to="/checkin" onClick={closeMenu}>Check-In</Link>
                         )}
                         {isLetterAdmin && (
-                            <Link to="/review" onClick={closeMenu}>Review</Link>
-                        )}
-                        {isLetterAdmin && (
                             <Link to="/takhmeen" onClick={closeMenu}>Takhmeen</Link>
+                        )}
+                        <Link to="/wajebaat" onClick={closeMenu}>Wajebaat</Link>
+                        {isLetterAdmin && (
+                            <Link to="/admin" onClick={closeMenu}>Admin</Link>
                         )}
                         {isLetterAdmin && (
                             <Link to="/masjid" onClick={closeMenu}>Masjid</Link>
-                        )}
-                        {isLetterAdmin && (
-                            <Link to="/admin" onClick={closeMenu}>Admin</Link>
                         )}
                         {isChatAdmin && (
                             <Link to="/chat" onClick={closeMenu}>Assistant</Link>

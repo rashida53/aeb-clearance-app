@@ -169,7 +169,7 @@ function MaskedInput({ value, onChange, placeholder, label }) {
 
 // ── Commitment Step ──
 
-function CommitmentStep({ title, description, amount, onAmountChange, onDefer, onNext, onBack, lastYearAmount, minAmount = 353, unitHint, items }) {
+function CommitmentStep({ title, causeName, description, amount, onAmountChange, onDefer, onNext, onBack, lastYearAmount, minAmount = 353, unitHint, items }) {
     const parsedAmount = amount ? parseFloat(amount) : 0;
     const belowMin = minAmount > 0 && amount && parsedAmount < minAmount;
     const isValid = amount && parsedAmount > 0 && (!minAmount || parsedAmount >= minAmount);
@@ -230,7 +230,7 @@ function CommitmentStep({ title, description, amount, onAmountChange, onDefer, o
 
             {lastYearAmount > 0 && (
                 <div className="wjLastYear">
-                    Last year, you committed ${Math.round(lastYearAmount)} towards this cause
+                    You contributed ${Math.round(lastYearAmount)} towards {causeName} last year
                 </div>
             )}
 
@@ -924,6 +924,7 @@ export default function Wajebaat() {
                     <CommitmentStep
                         key={STEP_KR}
                         title={<span style={{ color: 'var(--color-gold)' }}>Khidmat Ramadaniyah</span>}
+                        causeName="Khidmat Ramadaniyah"
                         amount={krAmount}
                         onAmountChange={setKrAmount}
                         onBack={canGoBack ? goBack : undefined}
@@ -939,6 +940,7 @@ export default function Wajebaat() {
                     <CommitmentStep
                         key={STEP_UT}
                         title={<span style={{ color: 'var(--color-gold)' }}>Umoor Taalimiyah</span>}
+                        causeName="Umoor Taalimiyah"
                         amount={utAmount}
                         onAmountChange={setUtAmount}
                         onBack={canGoBack ? goBack : undefined}
