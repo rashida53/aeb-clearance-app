@@ -495,11 +495,24 @@ label {
 
 /* Pinned to the right edge of the track (rendered with right:0) so the tick
    sits at the very end and the label stays fully inside the card. */
-.niyyatMilestone:last-of-type {
+.niyyatMilestoneEnd {
   transform: none;
 }
 
-.niyyatMilestone:last-of-type .niyyatMilestoneLine {
+.niyyatMilestoneEnd .niyyatMilestoneLine {
+  margin-left: auto;
+  margin-right: 0;
+}
+
+.niyyatMilestoneEnd .niyyatMilestoneLabel {
+  align-items: flex-end;
+}
+
+.niyyatAmtShort {
+  display: none;
+}
+
+.niyyatMilestoneLine {
   margin-left: auto;
   margin-right: 0;
 }
@@ -579,6 +592,29 @@ label {
 
   .niyyatAdaa {
     top: 20px;
+  }
+
+  .niyyatAmtFull {
+    display: none;
+  }
+
+  .niyyatAmtShort {
+    display: inline;
+  }
+
+  /* Hang the Niyyat label to the left of its tick so it can't run into the
+     right-aligned Future Niyyat label. */
+  .niyyatMilestoneMid {
+    transform: translateX(calc(-100% + 1px));
+  }
+
+  .niyyatMilestoneMid .niyyatMilestoneLine {
+    margin-left: auto;
+    margin-right: 0;
+  }
+
+  .niyyatMilestoneMid .niyyatMilestoneLabel {
+    align-items: flex-end;
   }
 }
 

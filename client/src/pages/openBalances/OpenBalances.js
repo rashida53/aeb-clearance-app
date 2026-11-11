@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useQuery } from '@apollo/client';
 import Nav from '../../components/Nav';
+import NiyyatAmount, { formatCompactCurrency } from '../../components/NiyyatAmount';
 import { GET_ME } from '../user/gql/queries';
 import { GET_MY_OPEN_BALANCES, GET_MY_MASJID_NIYYAT } from './gql/queries';
 
@@ -75,23 +76,23 @@ const MasjidNiyyatBar = ({ t1, t2, adaa }) => {
             <div className="niyyatBarWrap">
                 <div className="niyyatTrack">
                     <div className="niyyatFill" style={{ width: `${animPct}%` }} />
-                    <div className="niyyatMilestone" style={{ left: `${t1Pct}%` }}>
+                    <div className="niyyatMilestone niyyatMilestoneMid" style={{ left: `${t1Pct}%` }}>
                         <div className="niyyatMilestoneLine" />
                         <div className="niyyatMilestoneLabel">
                             <span className="niyyatMilestoneName">Niyyat</span>
-                            <span className="niyyatMilestoneAmt">{formatWholeCurrency(t1)}</span>
+                            <NiyyatAmount full={formatWholeCurrency(t1)} short={formatCompactCurrency(t1)} />
                         </div>
                     </div>
-                    <div className="niyyatMilestone" style={{ right: 0 }}>
+                    <div className="niyyatMilestone niyyatMilestoneEnd" style={{ right: 0 }}>
                         <div className="niyyatMilestoneLine" />
                         <div className="niyyatMilestoneLabel">
                             <span className="niyyatMilestoneName">Future Niyyat</span>
-                            <span className="niyyatMilestoneAmt">{formatWholeCurrency(t2)}</span>
+                            <NiyyatAmount full={formatWholeCurrency(t2)} short={formatCompactCurrency(t2)} />
                         </div>
                     </div>
                     <div className="niyyatAdaa">
                         <span className="niyyatMilestoneName">Adaa</span>
-                        <span className="niyyatMilestoneAmt">{formatWholeCurrency(displayAdaa)}</span>
+                        <NiyyatAmount full={formatWholeCurrency(displayAdaa)} short={formatCompactCurrency(displayAdaa)} />
                     </div>
                 </div>
             </div>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useQuery, useLazyQuery, useMutation } from '@apollo/client';
 import Nav from '../../components/Nav';
+import NiyyatAmount from '../../components/NiyyatAmount';
 import { GET_MASJID_DASHBOARD, GET_ALL_ACTIVE_USERS, GET_MASJID_NIYYAT_FOR_USER } from './gql/queries';
 import { UPSERT_MASJID_NIYYAT } from './gql/mutations';
 
@@ -53,23 +54,23 @@ function OverallBar({ t1, t2, adaa }) {
             <div className="niyyatBarWrap">
                 <div className="niyyatTrack">
                     <div className="niyyatFill" style={{ width: `${animPct}%` }} />
-                    <div className="niyyatMilestone" style={{ left: `${t1Pct}%` }}>
+                    <div className="niyyatMilestone niyyatMilestoneMid" style={{ left: `${t1Pct}%` }}>
                         <div className="niyyatMilestoneLine" />
                         <div className="niyyatMilestoneLabel">
                             <span className="niyyatMilestoneName">Niyyat</span>
-                            <span className="niyyatMilestoneAmt">{formatMillions(t1)}</span>
+                            <NiyyatAmount full={formatMillions(t1)} short={formatMillions(t1)} />
                         </div>
                     </div>
-                    <div className="niyyatMilestone" style={{ right: 0 }}>
+                    <div className="niyyatMilestone niyyatMilestoneEnd" style={{ right: 0 }}>
                         <div className="niyyatMilestoneLine" />
                         <div className="niyyatMilestoneLabel">
                             <span className="niyyatMilestoneName">Future Niyyat</span>
-                            <span className="niyyatMilestoneAmt">{formatMillions(t2)}</span>
+                            <NiyyatAmount full={formatMillions(t2)} short={formatMillions(t2)} />
                         </div>
                     </div>
                     <div className="niyyatAdaa">
                         <span className="niyyatMilestoneName">Adaa</span>
-                        <span className="niyyatMilestoneAmt">{formatWholeCurrency(displayAdaa)}</span>
+                        <NiyyatAmount full={formatWholeCurrency(displayAdaa)} short={formatMillions(displayAdaa)} />
                     </div>
                 </div>
             </div>
